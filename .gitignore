@@ -1,0 +1,24 @@
+# Ignore Python virtual environment
+venv/
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore build artifacts
+dist/
+
+# Ignore environment files
+.env
+
+# Ignore editor/IDE specific files
+.vscode/
+.idea/
+
+# Ignore OS specific files
+.DS_Store
+thumbs.db 
+
+# Cursor stuff
+.cursor/
+PLANNING.md
+TASKS.md
