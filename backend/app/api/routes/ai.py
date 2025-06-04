@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from app.models.ai import ResearchRequest, ResearchResponse
+from app.models.structured import StructureRequest, StructuredOutput
 from app.services.ai_agents.research_agent import research_agent
+from app.services.ai_agents.structure_agent import structure_agent
+
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -38,6 +41,25 @@ async def research_influences(request: ResearchRequest):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to research influences: {str(e)}"
+        )
+
+
+@router.post("/structure", response_model=StructuredOutput)
+async def structure_influences(request: StructureRequest):
+    """Convert free text influences into structured data"""
+    try:
+        structured_data = await structure_agent.structure_influences(
+            influences_text=request.influences_text,
+            main_item=request.main_item,
+            main_item_type=request.main_item_type,
+            main_item_artist=request.main_item_artist,
+        )
+
+        return structured_data
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to structure influences: {str(e)}"
         )
 
 
