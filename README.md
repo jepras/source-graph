@@ -11,6 +11,8 @@ Refer to TASKS.md and PLANNING.md for detailed setup instructions and project pl
 - Start & open database from Neo4j Desktop.
 - Test FastAPI: cd backend python run.py
     - Go to http://localhost:8000/docs
+    - To kill whatever is on 8000: lsof -i :8000 | grep LISTEN | awk '{print $2}' | xargs kill -9
 
 ## Security stuff to fix
 CORS
+Avoid pycache to be pushed

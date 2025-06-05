@@ -18,20 +18,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [showResults, setShowResults] = useState(false);
 
   const handleSearch = (value: string) => {
-    console.log('SearchBar handleSearch called with:', value);
     setQuery(value);
     if (value.length > 2) {
-      console.log('Triggering search with query:', value);
       onSearch(value);
       setShowResults(true);
     } else {
-      console.log('Query too short, hiding results');
       setShowResults(false);
     }
   };
 
   const handleItemClick = (item: Item) => {
-    console.log('SearchBar handleItemClick called with:', item);
     onItemSelect(item);
     setQuery(item.name);
     setShowResults(false);
@@ -42,11 +38,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <input
         type="text"
         value={query}
-        onChange={(e) => {
-          console.log('Input onChange event:', e.target.value);
-          handleSearch(e.target.value);
-        }}
-        placeholder="Search for songs, movies, innovations..."
+        onChange={(e) => handleSearch(e.target.value)}
+        placeholder="Search for items..."
         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
       
@@ -62,11 +55,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
               >
                 <div className="font-medium">{item.name}</div>
-                {item.artist && (
-                  <div className="text-sm text-gray-600">by {item.artist}</div>
+                {item.auto_detected_type && (
+                  <div className="text-sm text-gray-600">{item.auto_detected_type}</div>
                 )}
                 <div className="text-xs text-gray-500">
-                  {item.type} • {item.year}
+                  {item.year} • {item.verification_status}
                 </div>
               </div>
             ))
