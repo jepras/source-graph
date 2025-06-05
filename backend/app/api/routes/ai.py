@@ -51,8 +51,7 @@ async def structure_influences(request: StructureRequest):
         structured_data = await structure_agent.structure_influences(
             influences_text=request.influences_text,
             main_item=request.main_item,
-            main_item_type=request.main_item_type,
-            main_item_artist=request.main_item_artist,
+            main_item_creator=request.main_item_creator,
         )
 
         return structured_data

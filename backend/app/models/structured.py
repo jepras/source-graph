@@ -1,56 +1,41 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from enum import Enum
-
-
-class InfluenceType(str, Enum):
-    AUDIO_SAMPLE = "audio_sample"
-    LITERARY_TECHNIQUE = "literary_technique"
-    PERSONAL_EXPERIENCE = "personal_experience"
-    CINEMATIC_INFLUENCE = "cinematic_influence"
-    MUSICAL_TECHNIQUE = "musical_technique"
-    CULTURAL_CONTEXT = "cultural_context"
-    TECHNOLOGICAL = "technological"
-    OTHER = "other"
 
 
 class StructuredInfluence(BaseModel):
     name: str = Field(description="Name of the influencing item")
-    type: str = Field(
-        description="Type of item: song, movie, book, person, technique, etc."
+    type: Optional[str] = Field(None, description="Type will be auto-detected by LLM")
+    creator_name: Optional[str] = Field(
+        None, description="Creator, artist, director, company, etc."
     )
-    artist_creator: Optional[str] = Field(
-        None, description="Artist, author, director, or creator"
+    creator_type: Optional[str] = Field(
+        None, description="person/organization/collective"
     )
-    year: Optional[int] = Field(None, description="Year of creation or influence")
-    category: str = Field(
-        description="Category like 'Audio Samples', 'Literary Techniques', etc."
+    year: Optional[int] = Field(None, description="Year of creation")
+    category: str = Field(description="Category - LLM creates freely")
+    influence_type: str = Field(
+        description="How it influenced (sample/technique/inspiration/etc)"
     )
-    influence_type: InfluenceType = Field(description="Type of influence relationship")
     confidence: float = Field(description="Confidence score 0.0-1.0", ge=0.0, le=1.0)
-    explanation: str = Field(
-        description="Brief explanation of how this influenced the main item"
-    )
-    source: Optional[str] = Field(None, description="Source of this information")
+    explanation: str = Field(description="How this influenced the main item")
+    source: Optional[str] = Field(None, description="Source of information")
 
 
 class StructuredOutput(BaseModel):
-    main_item: str = Field(description="The item being analyzed")
-    main_item_type: str = Field(description="Type of the main item")
-    main_item_artist: Optional[str] = Field(
-        None, description="Artist/creator of main item"
+    main_item: str
+    main_item_type: Optional[str] = Field(None, description="Auto-detected by LLM")
+    main_item_creator: Optional[str] = Field(None, description="Main creator")
+    main_item_creator_type: Optional[str] = Field(
+        None, description="person/organization"
     )
-    main_item_year: Optional[int] = Field(None, description="Year of main item")
-    influences: List[StructuredInfluence] = Field(
-        description="List of structured influences"
-    )
-    categories: List[str] = Field(description="List of unique categories found")
+    main_item_year: Optional[int] = None
+    influences: List[StructuredInfluence]
+    categories: List[str]  # All unique categories found
 
 
 class StructureRequest(BaseModel):
     influences_text: str = Field(description="Free text about influences to structure")
     main_item: str = Field(description="The main item name")
-    main_item_type: str = Field(description="The main item type")
-    main_item_artist: Optional[str] = Field(
-        None, description="The main item artist/creator"
+    main_item_creator: Optional[str] = Field(
+        None, description="The main item creator (optional)"
     )
