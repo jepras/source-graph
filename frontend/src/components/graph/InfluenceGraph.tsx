@@ -1,20 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
-import { positionNewNodes, findConnectedNodes } from '../../utils/graphUtils';
+import { positionNewNodes, findConnectedNodes, positionNodesChronologically } from '../../utils/graphUtils';
+
 
 interface InfluenceGraphProps {
   accumulatedGraph: AccumulatedGraph;
   onNodeClick?: (itemId: string) => void;
+  isChronologicalOrder?: boolean; // Add this prop
+  onChronologicalToggle?: (enabled: boolean) => void;
 }
 
 export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({ 
   accumulatedGraph, 
-  onNodeClick 
+  onNodeClick,
+  isChronologicalOrder = false, // Default to false
+  onChronologicalToggle
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [previousNodeCount, setPreviousNodeCount] = useState(0);
+
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -94,6 +100,12 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     }
   };
 
+  const handleChronologicalToggle = () => {
+    if (onChronologicalToggle) {
+      onChronologicalToggle(!isChronologicalOrder);
+    }
+  };
+
   useEffect(() => {
     if (accumulatedGraph.nodes.size === 0 || !svgRef.current) return;
 
@@ -115,14 +127,20 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const unpositionedNodes = nodes.filter(n => !n.x || !n.y);
     const positionedNodes = nodes.filter(n => n.x && n.y);
 
-    if (positionedNodes.length === 0) {
-      // First time: initial layout
-      initialLayout(nodes, width, height);
-    } else if (unpositionedNodes.length > 0) {
-      // New nodes: position near connected nodes
-      positionNewNodes(positionedNodes, unpositionedNodes, links, width, height);
+    // In your useEffect positioning logic
+    if (isChronologicalOrder) {
+      // Chronological mode: reposition all nodes
+      positionNodesChronologically(nodes, width, height);
+    } else {
+      // Normal mode: use existing positioning logic
+      if (positionedNodes.length === 0) {
+        // First time: initial layout
+        initialLayout(nodes, width, height);
+      } else if (unpositionedNodes.length > 0) {
+        // New nodes: position near connected nodes, but respect chronological mode
+        positionNewNodes(positionedNodes, unpositionedNodes, links, width, height, isChronologicalOrder);
+      }
     }
-
     // Add zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 3])
@@ -228,12 +246,24 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
     setPreviousNodeCount(currentNodeCount);
 
-  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount]);
+  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount, isChronologicalOrder]);
 
   return (
     <div className="relative w-full h-full">
       {/* Controls */}
       <div className="absolute top-4 right-4 z-10 flex space-x-2">
+        <button
+      onClick={handleChronologicalToggle}
+      className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
+        isChronologicalOrder 
+          ? 'bg-blue-500 text-white hover:bg-blue-600' 
+          : 'bg-white hover:bg-gray-50'
+      }`}
+      title="Toggle chronological ordering (newest to oldest)"
+    >
+      📅 Chronological
+    </button>
+        
         <button
           onClick={handleFitToView}
           className="px-3 py-2 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"

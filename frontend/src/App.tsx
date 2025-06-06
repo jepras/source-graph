@@ -13,6 +13,8 @@ function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [graphLoading, setGraphLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isChronologicalOrder, setIsChronologicalOrder] = useState(false);
+
 
   // Replace graphData with accumulated graph
   const [accumulatedGraph, setAccumulatedGraph] = useState<AccumulatedGraph>({
@@ -221,9 +223,11 @@ function App() {
                     <div className="text-gray-500">Loading graph...</div>
                   </div>
                 ) : accumulatedGraph.nodes.size > 0 ? (
-                  <InfluenceGraph 
+                  <InfluenceGraph
                     accumulatedGraph={accumulatedGraph}
                     onNodeClick={handleNodeClick}
+                    isChronologicalOrder={isChronologicalOrder}
+                    onChronologicalToggle={setIsChronologicalOrder}
                   />
                 ) : (
                   <div className="flex justify-center items-center h-full text-gray-500">

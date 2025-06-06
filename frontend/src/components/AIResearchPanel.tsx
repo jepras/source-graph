@@ -19,6 +19,10 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
   const [savedItemId, setSavedItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conflictData, setConflictData] = useState<any>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isStructuredExpanded, setIsStructuredExpanded] = useState(false);
+
+
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,7 +221,6 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         </div>
       )}
 
-      {/* Research Results */}
       {result && result.success && (
         <div className="space-y-3">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -235,49 +238,105 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
               </button>
             </div>
             
-            <div className="text-xs text-gray-600 max-h-24 overflow-y-auto">
-              {result.influences_text.substring(0, 200)}...
+            <div className="text-xs text-gray-600">
+              {isExpanded ? (
+                <div className="whitespace-pre-wrap">
+                  {result.influences_text}
+                </div>
+              ) : (
+                <div>
+                  {result.influences_text.substring(0, 200)}...
+                </div>
+              )}
             </div>
+            
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-2 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+            >
+              {isExpanded ? 'Show Less' : 'Show More'}
+            </button>
           </div>
         </div>
       )}
 
       {/* Structured Results */}
       {structuredResult && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <h4 className="text-sm font-semibold text-blue-800 mb-2">
-            📊 Structured Data
-          </h4>
-          
-          <div className="text-xs space-y-1 mb-3">
-            <div><strong>Item:</strong> {structuredResult.main_item}</div>
-            <div><strong>Influences:</strong> {structuredResult.influences.length}</div>
-            <div><strong>Categories:</strong> {structuredResult.categories.join(', ')}</div>
-          </div>
-
-          {/* Conflict Resolution or Save Button */}
-            {conflictData ? (
-            <ConflictResolution
-                similarItems={conflictData.similar_items}
-                newData={conflictData.new_data}
-                onResolve={handleConflictResolve}
-                onCancel={() => setConflictData(null)}
-            />
-            ) : structuredResult && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                {/* ... existing structured result display ... */}
-                
-                <button 
-                onClick={handleSave}
-                disabled={saveLoading || savedItemId !== null}
-                className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                {saveLoading ? 'Checking for conflicts...' : savedItemId ? '✅ Saved' : '💾 Save to Graph'}
-                </button>
-            </div>
-            )}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <h4 className="text-sm font-semibold text-blue-800 mb-2">
+          📊 Structured Data
+        </h4>
+        
+        <div className="text-xs space-y-1 mb-3">
+          <div><strong>Item:</strong> {structuredResult.main_item}</div>
+          <div><strong>Influences:</strong> {structuredResult.influences.length}</div>
+          <div><strong>Categories:</strong> {structuredResult.categories.join(', ')}</div>
         </div>
-      )}
+
+        {/* Expandable structured data details */}
+        <div className="text-xs text-gray-700 mb-3">
+          {isStructuredExpanded ? (
+            <div className="space-y-2">
+              <div>
+                <strong>All Influences:</strong>
+                <ul className="mt-1 space-y-1 ml-2">
+                  {structuredResult.influences.map((influence, index) => (
+                    <li key={index} className="text-xs">
+                      • <strong>{influence.name}</strong> ({influence.year}) - {influence.influence_type}
+                      {influence.explanation && (
+                        <div className="text-gray-600 ml-2 mt-1">{influence.explanation}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {structuredResult.main_item_data && (
+                <div>
+                  <strong>Main Item Details:</strong>
+                  <div className="ml-2 mt-1">
+                    <div>Type: {structuredResult.main_item_data.type}</div>
+                    <div>Year: {structuredResult.main_item_data.year}</div>
+                    {structuredResult.main_item_data.description && (
+                      <div>Description: {structuredResult.main_item_data.description}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-gray-600">
+              Click "Show Details" to see all influences and structured data
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => setIsStructuredExpanded(!isStructuredExpanded)}
+          className="mb-3 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+        >
+          {isStructuredExpanded ? 'Hide Details' : 'Show Details'}
+        </button>
+
+        {/* Conflict Resolution or Save Button */}
+        {conflictData ? (
+          <ConflictResolution
+            similarItems={conflictData.similar_items}
+            newData={conflictData.new_data}
+            onResolve={handleConflictResolve}
+            onCancel={() => setConflictData(null)}
+          />
+        ) : (
+          <button 
+            onClick={handleSave}
+            disabled={saveLoading || savedItemId !== null}
+            className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saveLoading ? 'Checking for conflicts...' : savedItemId ? '✅ Saved' : '💾 Save to Graph'}
+          </button>
+        )}
+      </div>
+    )}
 
       {/* Empty State */}
       {!result && !loading && !error && (

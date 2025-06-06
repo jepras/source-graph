@@ -137,139 +137,22 @@ const wouldOverlap = (
     });
   };
   
-// Helper function to find a non-overlapping position using spiral search
-// Improved positioning using grid-based search
-const findNonOverlappingPosition = (
-    centerX: number,
-    centerY: number,
-    existingNodes: GraphNode[],
-    width: number,
-    height: number,
-    minDistance: number = 120
-  ): { x: number; y: number } => {
-    const gridSize = minDistance * 0.8; // Slightly smaller than min distance for efficiency
-    const maxRadius = Math.min(width, height) / 2;
-    
-    // Try positions in expanding rings around the center
-    for (let radius = gridSize; radius < maxRadius; radius += gridSize) {
-      const circumference = 2 * Math.PI * radius;
-      const numPositions = Math.max(8, Math.floor(circumference / gridSize));
-      
-      for (let i = 0; i < numPositions; i++) {
-        const angle = (2 * Math.PI * i) / numPositions;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        
-        // Check bounds
-        if (x < 60 || x > width - 60 || y < 60 || y > height - 60) {
-          continue;
-        }
-        
-        if (!wouldOverlap(x, y, existingNodes, minDistance)) {
-          return { x, y };
-        }
-      }
-    }
-    
-    // If still no position found, use force-based positioning
-    return findPositionUsingForces(centerX, centerY, existingNodes, width, height, minDistance);
-  };
-
-// Helper function to position a node randomly without overlaps
-const positionNodeRandomly = (
-    node: GraphNode,
-    existingNodes: GraphNode[],
-    width: number,
-    height: number,
-    minDistance: number,
-    maxAttempts: number = 100
-  ) => {
-    let positioned = false;
-    let attempts = 0;
-    
-    while (!positioned && attempts < maxAttempts) {
-      const x = 60 + Math.random() * (width - 120);
-      const y = 60 + Math.random() * (height - 120);
-      
-      if (!wouldOverlap(x, y, existingNodes, minDistance)) {
-        node.x = x;
-        node.y = y;
-        positioned = true;
-      }
-      attempts++;
-    }
-    
-    // If still not positioned after max attempts, place it anyway but try to minimize overlap
-    if (!positioned) {
-      node.x = 60 + Math.random() * (width - 120);
-      node.y = 60 + Math.random() * (height - 120);
-    }
-  };
-
-// Calculate density map of the graph area
-const calculateDensityMap = (
-    nodes: GraphNode[],
-    width: number,
-    height: number,
-    minDistance: number
-  ): number[][] => {
-    const gridSize = minDistance;
-    const cols = Math.ceil(width / gridSize);
-    const rows = Math.ceil(height / gridSize);
-    
-    const densityMap: number[][] = Array(rows).fill(0).map(() => Array(cols).fill(0));
-    
-    nodes.forEach(node => {
-      if (!node.x || !node.y) return;
-      
-      const col = Math.floor(node.x / gridSize);
-      const row = Math.floor(node.y / gridSize);
-      
-      // Increase density in surrounding cells
-      for (let r = Math.max(0, row - 1); r <= Math.min(rows - 1, row + 1); r++) {
-        for (let c = Math.max(0, col - 1); c <= Math.min(cols - 1, col + 1); c++) {
-          densityMap[r][c]++;
-        }
-      }
-    });
-    
-    return densityMap;
-  };
-  
-  // Find the least dense spot in the graph
-  const findLeastDenseSpot = (
-    densityMap: number[][],
-    width: number,
-    height: number
-  ): { x: number; y: number } => {
-    let minDensity = Infinity;
-    let bestSpot = { x: width / 2, y: height / 2 };
-    
-    const gridSize = Math.min(width / densityMap[0].length, height / densityMap.length);
-    
-    for (let row = 0; row < densityMap.length; row++) {
-      for (let col = 0; col < densityMap[row].length; col++) {
-        if (densityMap[row][col] < minDensity) {
-          minDensity = densityMap[row][col];
-          bestSpot = {
-            x: col * gridSize + gridSize / 2,
-            y: row * gridSize + gridSize / 2
-          };
-        }
-      }
-    }
-    
-    return bestSpot;
-  };
-
 // Modified positionNewNodes function
 export const positionNewNodes = (
     existingNodes: GraphNode[], 
     newNodes: GraphNode[], 
     allLinks: GraphLink[],
     width: number,
-    height: number
+    height: number,
+    forceChronological: boolean = false // Add this parameter
+
   ) => {
+    // If chronological mode is forced, use chronological positioning
+    if (forceChronological) {
+      positionNodesChronologically([...existingNodes, ...newNodes], width, height);
+      return;
+    }
+    
     const MIN_NODE_DISTANCE = 120;
     
     // Find the main/selected node (the one being expanded)
@@ -474,3 +357,41 @@ const findPositionUsingForces = (
     // Fallback to force-based positioning
     return findPositionUsingForces(avgX, avgY, allPositionedNodes, width, height, minDistance);
   };
+
+export const positionNodesChronologically = (
+  nodes: GraphNode[], 
+  width: number, 
+  height: number
+) => {
+  // Filter nodes with years and sort them
+  const nodesWithYears = nodes.filter(node => node.year !== undefined);
+  const nodesWithoutYears = nodes.filter(node => node.year === undefined);
+  
+  // Sort by year (newest first)
+  nodesWithYears.sort((a, b) => (b.year || 0) - (a.year || 0));
+  
+  const padding = 80;
+  const availableHeight = height - (2 * padding);
+  
+  // Position nodes with years vertically by chronology
+  nodesWithYears.forEach((node, index) => {
+    const yPosition = padding + (index / Math.max(nodesWithYears.length - 1, 1)) * availableHeight;
+    
+    // Spread horizontally with some variation
+    const baseX = width / 2;
+    const horizontalSpread = Math.min(300, width * 0.3);
+    const xOffset = (index % 2 === 0 ? 1 : -1) * (horizontalSpread * Math.random() * 0.5);
+    
+    node.x = Math.max(padding, Math.min(width - padding, baseX + xOffset));
+    node.y = yPosition;
+  });
+  
+  // Position nodes without years at the bottom
+  nodesWithoutYears.forEach((node, index) => {
+    const yPosition = height - padding - 50;
+    const spacing = Math.min(120, (width - 2 * padding) / Math.max(nodesWithoutYears.length, 1));
+    
+    node.x = padding + index * spacing;
+    node.y = yPosition;
+  });
+};

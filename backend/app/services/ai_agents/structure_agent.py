@@ -53,7 +53,7 @@ Convert influence descriptions into valid JSON format with this exact structure:
 
 IMPORTANT RULES:
 - Use null (not quoted) for missing values
-- Years must be numbers (1999) or null, never text like "1980s"
+- Years must be numbers (1999) or null, never text like "1980s". All inputs have a year integer value, so use that.
 - All string values must be quoted
 - No trailing commas
 - Return ONLY valid JSON, no other text
@@ -63,8 +63,8 @@ IMPORTANT RULES:
 - Create categories freely - we'll clean up duplicates later when we have 20+
 - Use confidence scores 0.3-0.9 (0.7-0.9 for well-documented, 0.5-0.7 for likely, 0.3-0.5 for speculative)
 - Extract 3-7 influences from the text if they exist
-- Be specific in explanations - HOW did this influence the main item?
-- If year is uncertain, use null rather than guessing
+- The input has an explanation of how this influenced the main item. Be specific in explanations - HOW did this influence the main item?
+- Never use "other" in category. Always try to put a category to it.
 
 CATEGORY EXAMPLES (create new ones as needed):
 - Audio Samples & Music
