@@ -1,38 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import type { GraphResponse } from '../../services/api';
+import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
+import { positionNewNodes, findConnectedNodes } from '../../utils/graphUtils';
 
 interface InfluenceGraphProps {
-  data: GraphResponse | null;
+  accumulatedGraph: AccumulatedGraph;
   onNodeClick?: (itemId: string) => void;
 }
 
-interface GraphNode {
-  id: string;
-  name: string;
-  type: string;
-  year?: number;
-  artist?: string;
-  x?: number;
-  y?: number;
-  category: 'main' | 'influence';
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-  confidence: number;
-  influence_type: string;
-  explanation: string;
-  category: string;
-}
-
 export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({ 
-  data, 
+  accumulatedGraph, 
   onNodeClick 
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [previousNodeCount, setPreviousNodeCount] = useState(0);
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -51,35 +33,32 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Helper function: Position nodes in circle
-  const positionNodesInCircle = (nodes: GraphNode[], centerX: number, centerY: number, radius: number) => {
-    nodes.forEach((node, index) => {
-      const angle = (index / nodes.length) * 2 * Math.PI;
-      node.x = centerX + radius * Math.cos(angle);
-      node.y = centerY + radius * Math.sin(angle);
-    });
-  };
+  // Helper function: Initial layout for first nodes
+  const initialLayout = (nodes: GraphNode[], width: number, height: number) => {
+    const mainNode = nodes.find(n => n.category === 'main');
+    const influenceNodes = nodes.filter(n => n.category === 'influence');
 
-  // Helper function: Position nodes in grid
-  const positionNodesInGrid = (nodes: GraphNode[], startX: number, startY: number, width: number, height: number) => {
-    const cols = Math.ceil(Math.sqrt(nodes.length));
-    const rows = Math.ceil(nodes.length / cols);
-    const cellWidth = width / cols;
-    const cellHeight = height / rows;
+    // Position main node in center
+    if (mainNode) {
+      mainNode.x = width / 2;
+      mainNode.y = height / 2;
+    }
 
-    nodes.forEach((node, index) => {
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-      node.x = startX + (col + 0.5) * cellWidth;
-      node.y = startY + (row + 0.5) * cellHeight;
-    });
+    // Position influence nodes in circle around main
+    if (influenceNodes.length > 0) {
+      const radius = Math.min(width, height) / 4;
+      influenceNodes.forEach((node, index) => {
+        const angle = (index / influenceNodes.length) * 2 * Math.PI;
+        node.x = (width / 2) + radius * Math.cos(angle);
+        node.y = (height / 2) + radius * Math.sin(angle);
+      });
+    }
   };
 
   // Helper function: Auto-fit all nodes in view
   const autoFitView = (svg: any, nodes: GraphNode[], width: number, height: number) => {
     if (nodes.length === 0) return;
 
-    // Calculate bounds of all nodes
     const padding = 80;
     const bounds = {
       minX: Math.min(...nodes.map(n => n.x!)) - padding,
@@ -91,38 +70,38 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const boundsWidth = bounds.maxX - bounds.minX;
     const boundsHeight = bounds.maxY - bounds.minY;
 
-    // Calculate scale to fit all nodes
     const scaleX = width / boundsWidth;
     const scaleY = height / boundsHeight;
-    const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+    const scale = Math.min(scaleX, scaleY, 1);
 
-    // Calculate translation to center the bounds
     const translateX = (width - boundsWidth * scale) / 2 - bounds.minX * scale;
     const translateY = (height - boundsHeight * scale) / 2 - bounds.minY * scale;
 
-    // Apply transform with smooth transition
     svg.select("g.graph-content")
       .transition()
       .duration(750)
       .attr("transform", `translate(${translateX}, ${translateY}) scale(${scale})`);
   };
 
-  // Fit to view function for button
   const handleFitToView = () => {
-    if (!svgRef.current || !data) return;
+    if (!svgRef.current) return;
     
     const svg = d3.select(svgRef.current);
+    const nodes = Array.from(accumulatedGraph.nodes.values());
     
-    // Get all nodes with positions
-    const allNodes = svg.selectAll('.node').data() as GraphNode[];
-    
-    if (allNodes.length > 0) {
-      autoFitView(svg, allNodes, dimensions.width, dimensions.height);
+    if (nodes.length > 0) {
+      autoFitView(svg, nodes, dimensions.width, dimensions.height);
     }
   };
 
   useEffect(() => {
-    if (!data || !svgRef.current) return;
+    if (accumulatedGraph.nodes.size === 0 || !svgRef.current) return;
+
+    const nodes = Array.from(accumulatedGraph.nodes.values());
+    const links = Array.from(accumulatedGraph.relationships.values());
+    const currentNodeCount = nodes.length;
+
+    console.log('Rendering graph:', { nodes: currentNodeCount, links: links.length });
 
     // Clear previous graph
     d3.select(svgRef.current).selectAll("*").remove();
@@ -132,57 +111,16 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
     svg.attr("width", width).attr("height", height);
 
-    // Prepare data
-    const nodes: GraphNode[] = [
-      {
-        id: data.main_item.id,
-        name: data.main_item.name,
-        type: data.main_item.auto_detected_type || 'unknown',
-        year: data.main_item.year,
-        category: 'main'
-      },
-      ...data.influences.map(influence => ({
-        id: influence.from_item.id,
-        name: influence.from_item.name,
-        type: influence.from_item.auto_detected_type || 'unknown',
-        year: influence.from_item.year,
-        category: 'influence' as const
-      }))
-    ];
+    // Position nodes
+    const unpositionedNodes = nodes.filter(n => !n.x || !n.y);
+    const positionedNodes = nodes.filter(n => n.x && n.y);
 
-    const links: GraphLink[] = data.influences.map(influence => ({
-      source: influence.from_item.id,
-      target: influence.to_item.id,
-      confidence: influence.confidence,
-      influence_type: influence.influence_type,
-      explanation: influence.explanation,
-      category: influence.category
-    }));
-
-    // Smart positioning
-    const margin = 60;
-    const usableWidth = width - (margin * 2);
-    const usableHeight = height - (margin * 2);
-
-    // Position main item in center
-    const mainNode = nodes.find(n => n.category === 'main');
-    if (mainNode) {
-      mainNode.x = width / 2;
-      mainNode.y = height / 2;
-    }
-
-    // Position influence nodes
-    const influenceNodes = nodes.filter(n => n.category === 'influence');
-    
-    if (influenceNodes.length > 0) {
-      if (influenceNodes.length <= 8) {
-        // Small number: arrange in circle around center
-        const radius = Math.min(usableWidth, usableHeight) / 3;
-        positionNodesInCircle(influenceNodes, width / 2, height / 2, radius);
-      } else {
-        // Large number: arrange in grid
-        positionNodesInGrid(influenceNodes, margin, margin, usableWidth, usableHeight);
-      }
+    if (positionedNodes.length === 0) {
+      // First time: initial layout
+      initialLayout(nodes, width, height);
+    } else if (unpositionedNodes.length > 0) {
+      // New nodes: position near connected nodes
+      positionNewNodes(positionedNodes, unpositionedNodes, links, width, height);
     }
 
     // Add zoom behavior
@@ -237,12 +175,22 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         if (onNodeClick) onNodeClick(d.id);
       });
 
-    // Add circles
+    // Add circles with selection highlighting
     nodeGroups.append("circle")
       .attr("r", d => d.category === 'main' ? 30 : 25)
       .attr("fill", d => d.category === 'main' ? "#3b82f6" : "#ef4444")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 3);
+      .attr("stroke", d => d.id === accumulatedGraph.selectedNodeId ? "#f59e0b" : "#fff")
+      .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 4 : 3);
+
+    // Add selection indicator for selected node
+    nodeGroups.filter(d => d.id === accumulatedGraph.selectedNodeId)
+      .append("circle")
+      .attr("r", d => d.category === 'main' ? 35 : 30)
+      .attr("fill", "none")
+      .attr("stroke", "#f59e0b")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "5,5")
+      .style("animation", "pulse 2s infinite");
 
     // Add labels
     nodeGroups.append("text")
@@ -271,23 +219,29 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .style("fill", "#9ca3af")
       .text(d => d.year?.toString() || "");
 
-    // Auto-fit view after everything is positioned
-    setTimeout(() => {
-      autoFitView(svg, nodes, width, height);
-    }, 100);
+    // Auto-fit view if many new nodes were added
+    if (currentNodeCount > previousNodeCount + 2) {
+      setTimeout(() => {
+        autoFitView(svg, nodes, width, height);
+      }, 100);
+    }
 
-  }, [data, dimensions, onNodeClick]);
+    setPreviousNodeCount(currentNodeCount);
+
+  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount]);
 
   return (
     <div className="relative w-full h-full">
-      {/* Fit to View Button */}
-      <button
-        onClick={handleFitToView}
-        className="absolute top-4 right-4 z-10 px-3 py-2 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
-        title="Fit all nodes to view"
-      >
-        🔍 Fit to View
-      </button>
+      {/* Controls */}
+      <div className="absolute top-4 right-4 z-10 flex space-x-2">
+        <button
+          onClick={handleFitToView}
+          className="px-3 py-2 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
+          title="Fit all nodes to view"
+        >
+          🔍 Fit to View
+        </button>
+      </div>
 
       {/* Graph SVG */}
       <svg 
@@ -297,31 +251,39 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       />
 
       {/* Legend */}
-      {data && (
-        <div className="absolute bottom-4 left-4 bg-white border border-gray-300 rounded p-3 shadow text-sm">
-          <div className="font-semibold mb-2">Legend</div>
-          <div className="flex items-center mb-1">
-            <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
-            <span>Main Item</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-            <span>Influences</span>
-          </div>
+      <div className="absolute bottom-4 left-4 bg-white border border-gray-300 rounded p-3 shadow text-sm">
+        <div className="font-semibold mb-2">Legend</div>
+        <div className="flex items-center mb-1">
+          <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+          <span>Main Item</span>
         </div>
-      )}
+        <div className="flex items-center mb-1">
+          <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+          <span>Influences</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 rounded-full border-2 border-orange-500 bg-transparent mr-2"></div>
+          <span>Selected</span>
+        </div>
+      </div>
 
-      {/* Node Count */}
-      {data && (
-        <div className="absolute top-4 left-4 bg-white border border-gray-300 rounded p-2 shadow text-sm">
-          <div className="font-semibold">
-            {data.influences.length + 1} items
-          </div>
-          <div className="text-gray-600">
-            {data.categories.length} categories
-          </div>
+      {/* Graph Stats */}
+      <div className="absolute top-4 left-4 bg-white border border-gray-300 rounded p-2 shadow text-sm">
+        <div className="font-semibold">
+          {accumulatedGraph.nodes.size} nodes
         </div>
-      )}
+        <div className="text-gray-600">
+          {accumulatedGraph.relationships.size} connections
+        </div>
+      </div>
+
+      {/* CSS for pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 };

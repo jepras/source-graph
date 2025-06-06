@@ -1,20 +1,26 @@
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { SearchBar } from './components/SearchBar';
 import { InfluenceGraph } from './components/graph/InfluenceGraph';
 import { AIResearchPanel } from './components/AIResearchPanel';
 import { GraphExpansionControls } from './components/GraphExpansionControls';
-import { api } from './services/api';
-import type { Item, GraphResponse } from './services/api';
-import { convertExpandedGraphToGraphResponse } from './services/api';
+import { api, convertExpandedGraphToGraphResponse } from './services/api';
+import { extractNodesAndRelationships, mergeExpandedGraphData } from './utils/graphUtils';
+import type { Item } from './services/api';
+import type { AccumulatedGraph } from './types/graph';
 
 function App() {
   const [searchResults, setSearchResults] = useState<Item[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [graphData, setGraphData] = useState<GraphResponse | null>(null);
   const [graphLoading, setGraphLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Replace graphData with accumulated graph
+  const [accumulatedGraph, setAccumulatedGraph] = useState<AccumulatedGraph>({
+    nodes: new Map(),
+    relationships: new Map(),
+    selectedNodeId: null,
+    expandedNodeIds: new Set()
+  });
 
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
@@ -34,95 +40,123 @@ function App() {
     setGraphLoading(true);
     try {
       const influences = await api.getInfluences(item.id);
-      setGraphData(influences);
+      const { nodes, relationships } = extractNodesAndRelationships(influences);
+      
+      // Start fresh with this item
+      setAccumulatedGraph({
+        nodes,
+        relationships,
+        selectedNodeId: item.id,
+        expandedNodeIds: new Set([item.id])
+      });
       setError(null);
     } catch (err) {
       setError('Failed to load influences');
-      setGraphData(null);
     } finally {
       setGraphLoading(false);
     }
   };
 
-  // Update handleNodeClick to track selection
   const handleNodeClick = async (itemId: string) => {
-    setSelectedItemId(itemId);
+    console.log('Node clicked:', itemId);
     
-    // Only reload graph if this item isn't already the center
-    if (!graphData || graphData.main_item.id !== itemId) {
+    // If this is a completely new starting point (empty graph), load its influences
+    if (accumulatedGraph.nodes.size === 0) {
       setGraphLoading(true);
       try {
         const influences = await api.getInfluences(itemId);
-        setGraphData(influences);
-        setExpandedItems(new Set([itemId])); // Track expanded items
-        setError(null);
+        const { nodes, relationships } = extractNodesAndRelationships(influences);
+        
+        setAccumulatedGraph({
+          nodes,
+          relationships,
+          selectedNodeId: itemId,
+          expandedNodeIds: new Set([itemId])
+        });
       } catch (err) {
         setError('Failed to load influences');
-        setGraphData(null);
-      } finally {
-        setGraphLoading(false);
-      }
-    }
-  };
-
-  // New handler for when AI research saves new data
-  const handleNewItemSaved = async (itemId: string) => {
-    console.log('New item saved:', itemId);
-    
-    // If we currently have graph data, try to expand it with the new item
-    if (graphData) {
-      try {
-        setGraphLoading(true);
-        
-        // Get the new item's influences
-        const newItemData = await api.getInfluences(itemId);
-        
-        // For now, just replace the graph data with the new item
-        // TODO: In the future, we could merge the graphs
-        setGraphData(newItemData);
-        
-      } catch (err) {
-        console.error('Failed to load new item influences:', err);
-        setError('Failed to load new item in graph');
       } finally {
         setGraphLoading(false);
       }
     } else {
-      // If no current graph, just load the new item
-      handleNodeClick(itemId);
+      // Just change selection in existing graph
+      setAccumulatedGraph(prev => ({
+        ...prev,
+        selectedNodeId: itemId
+      }));
     }
   };
 
-  
-
-  // Update the expansion handler
   const handleExpansion = async (itemId: string, direction: 'incoming' | 'outgoing' | 'both') => {
+    console.log(`Expanding ${itemId} in direction: ${direction}`);
+    
     setGraphLoading(true);
     try {
       const includeIncoming = direction === 'incoming' || direction === 'both';
       const includeOutgoing = direction === 'outgoing' || direction === 'both';
       
-      console.log(`Expanding ${itemId} in direction: ${direction}`);
-      
-      // Get expanded graph
       const expandedGraph = await api.getExpandedGraph(itemId, includeIncoming, includeOutgoing, 2);
       console.log('Expanded graph received:', expandedGraph);
       
-      // Convert to GraphResponse format
-      const convertedGraph = convertExpandedGraphToGraphResponse(expandedGraph);
-      console.log('Converted graph:', convertedGraph);
+      // Merge new data with existing accumulated graph
+      setAccumulatedGraph(prev => 
+        mergeExpandedGraphData(prev, expandedGraph, itemId)
+      );
       
-      // Update the graph data
-      setGraphData(convertedGraph);
-      setSelectedItemId(itemId); // Keep the expanded item as selected
       setError(null);
-      
     } catch (err) {
       console.error('Expansion error:', err);
       setError('Failed to expand graph');
     } finally {
       setGraphLoading(false);
     }
+  };
+
+  const handleNewItemSaved = async (itemId: string) => {
+    console.log('New item saved:', itemId);
+    
+    // If no current graph, start with this item
+    if (accumulatedGraph.nodes.size === 0) {
+      handleNodeClick(itemId);
+    } else {
+      // Add this item to existing graph by loading its influences
+      try {
+        setGraphLoading(true);
+        const influences = await api.getInfluences(itemId);
+        const { nodes, relationships } = extractNodesAndRelationships(influences);
+        
+        // Merge with existing graph
+        setAccumulatedGraph(prev => {
+          const newNodes = new Map(prev.nodes);
+          const newRelationships = new Map(prev.relationships);
+          
+          // Add new nodes and relationships
+          nodes.forEach((node, id) => newNodes.set(id, node));
+          relationships.forEach((rel, id) => newRelationships.set(id, rel));
+          
+          return {
+            nodes: newNodes,
+            relationships: newRelationships,
+            selectedNodeId: itemId,
+            expandedNodeIds: new Set([...prev.expandedNodeIds, itemId])
+          };
+        });
+      } catch (err) {
+        console.error('Failed to load new item influences:', err);
+        setError('Failed to load new item in graph');
+      } finally {
+        setGraphLoading(false);
+      }
+    }
+  };
+
+  const handleClearGraph = () => {
+    setAccumulatedGraph({
+      nodes: new Map(),
+      relationships: new Map(),
+      selectedNodeId: null,
+      expandedNodeIds: new Set()
+    });
   };
 
   return (
@@ -139,7 +173,7 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content - New Layout */}
+      {/* Main Content */}
       <main className="h-[calc(100vh-120px)] flex">
         {/* Left Sidebar - AI Research Panel (20%) */}
         <div className="w-1/5 bg-white border-r border-gray-200 flex flex-col">
@@ -186,9 +220,9 @@ function App() {
                   <div className="flex justify-center items-center h-full">
                     <div className="text-gray-500">Loading graph...</div>
                   </div>
-                ) : graphData ? (
+                ) : accumulatedGraph.nodes.size > 0 ? (
                   <InfluenceGraph 
-                    data={graphData} 
+                    accumulatedGraph={accumulatedGraph}
                     onNodeClick={handleNodeClick}
                   />
                 ) : (
@@ -205,22 +239,41 @@ function App() {
               </div>
 
               {/* Expansion Controls Sidebar */}
-              {graphData && (
+              {accumulatedGraph.nodes.size > 0 && (
                 <div className="w-80 border-l border-gray-200 p-4 overflow-y-auto">
                   <GraphExpansionControls
-                    selectedItemId={selectedItemId}
+                    selectedItemId={accumulatedGraph.selectedNodeId}
                     onExpand={handleExpansion}
                     loading={graphLoading}
                   />
                   
+                  {/* Graph Info */}
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                      Graph Info
+                    </h4>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div>Nodes: {accumulatedGraph.nodes.size}</div>
+                      <div>Connections: {accumulatedGraph.relationships.size}</div>
+                      <div>Expanded: {accumulatedGraph.expandedNodeIds.size}</div>
+                    </div>
+                    
+                    <button
+                      onClick={handleClearGraph}
+                      className="mt-3 w-full px-3 py-2 text-sm bg-red-50 border border-red-200 text-red-700 rounded hover:bg-red-100"
+                    >
+                      🗑️ Clear Graph
+                    </button>
+                  </div>
+
                   {/* Selected Item Info */}
-                  {selectedItemId && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
+                  {accumulatedGraph.selectedNodeId && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
                       <h4 className="text-sm font-semibold text-gray-800 mb-2">
                         Selected Item
                       </h4>
                       <div className="text-sm text-gray-600">
-                        {graphData.main_item.name}
+                        {accumulatedGraph.nodes.get(accumulatedGraph.selectedNodeId)?.name || 'Unknown'}
                       </div>
                     </div>
                   )}
