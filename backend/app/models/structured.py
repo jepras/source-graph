@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 
 
@@ -19,6 +19,30 @@ class StructuredInfluence(BaseModel):
     confidence: float = Field(description="Confidence score 0.0-1.0", ge=0.0, le=1.0)
     explanation: str = Field(description="How this influenced the main item")
     source: Optional[str] = Field(None, description="Source of information")
+
+    @validator("name", pre=True)
+    def validate_name(cls, v):
+        if v is None:
+            raise ValueError("name cannot be None")
+        return str(v).strip()
+
+    @validator("creator_name", pre=True)
+    def validate_creator_name(cls, v):
+        if v is None:
+            return None
+        return str(v).strip()
+
+    @validator("category", pre=True)
+    def validate_category(cls, v):
+        if v is None:
+            return "Uncategorized"
+        return str(v).strip()
+
+    @validator("explanation", pre=True)
+    def validate_explanation(cls, v):
+        if v is None:
+            return "No explanation provided"
+        return str(v).strip()
 
 
 class StructuredOutput(BaseModel):

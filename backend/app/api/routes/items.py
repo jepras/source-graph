@@ -35,3 +35,74 @@ async def get_item_influences(item_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{item_id}/expansion-counts")
+async def get_expansion_counts(item_id: str):
+    """Get counts for potential graph expansions"""
+    try:
+        counts = graph_service.get_expansion_counts(item_id)
+        return counts
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{item_id}/influences-outgoing")
+async def get_outgoing_influences(item_id: str):
+    """Get what this item influences (outgoing relationships)"""
+    try:
+        influences = graph_service.get_what_item_influences(item_id)
+        return {
+            "item_id": item_id,
+            "outgoing_influences": [
+                {
+                    "from_item": inf.from_item.dict(),
+                    "to_item": inf.to_item.dict(),
+                    "confidence": inf.confidence,
+                    "influence_type": inf.influence_type,
+                    "explanation": inf.explanation,
+                    "category": inf.category,
+                }
+                for inf in influences
+            ],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{item_id}/expanded-graph")
+async def get_expanded_graph(
+    item_id: str,
+    include_incoming: bool = True,
+    include_outgoing: bool = True,
+    max_depth: int = 2,
+):
+    """Get expanded graph with multiple layers"""
+    try:
+        graph_data = graph_service.get_expanded_graph(
+            center_item_id=item_id,
+            include_incoming=include_incoming,
+            include_outgoing=include_outgoing,
+            max_depth=max_depth,
+        )
+        return graph_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{item_id}/test-expansion")
+async def test_expansion(item_id: str):
+    """Simple test endpoint for expansion functionality"""
+    try:
+        # Just return basic info about the item
+        item = graph_service.get_item_by_id(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        return {
+            "item_id": item_id,
+            "item_name": item.name,
+            "status": "expansion_test_working",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")

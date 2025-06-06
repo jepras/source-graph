@@ -76,6 +76,29 @@ export interface StructureRequest {
   main_item_creator?: string;  // Updated to match backend
 }
 
+export interface ExpansionCounts {
+  incoming_influences: number;
+  outgoing_influences: number;
+}
+
+export interface ExpandedGraph {
+  nodes: Array<{
+    item: Item;
+    creators: Creator[];
+    is_center: boolean;
+  }>;
+  relationships: Array<{
+    from_id: string;
+    to_id: string;
+    confidence: number;
+    influence_type: string;
+    explanation: string;
+    category: string;
+    source?: string;
+  }>;
+  center_item_id: string;
+}
+
 const API_BASE = 'http://localhost:8000/api';
 
 export const api = {
@@ -141,5 +164,120 @@ export const api = {
     const response = await fetch(`${API_BASE}/ai/health`);
     if (!response.ok) throw new Error('AI health check failed');
     return response.json();
+  },
+
+  getItemPreview: async (itemId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE}/influences/preview/${itemId}`);
+    if (!response.ok) throw new Error('Failed to get preview');
+    return response.json();
+  },
+
+  forceSaveAsNew: async (structuredData: StructuredOutput): Promise<{ success: boolean; item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/influences/force-save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(structuredData),
+    });
+    if (!response.ok) throw new Error('Failed to force save');
+    return response.json();
+  },
+
+  mergeWithExisting: async (existingItemId: string, newData: StructuredOutput): Promise<{ success: boolean; item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/influences/merge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        existing_item_id: existingItemId,
+        new_data: newData
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to merge');
+    return response.json();
+  },
+
+  getExpansionCounts: async (itemId: string): Promise<ExpansionCounts> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}/expansion-counts`);
+    if (!response.ok) throw new Error('Failed to get expansion counts');
+    return response.json();
+  },
+
+  getOutgoingInfluences: async (itemId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}/influences-outgoing`);
+    if (!response.ok) throw new Error('Failed to get outgoing influences');
+    return response.json();
+  },
+
+  getExpandedGraph: async (
+    itemId: string, 
+    includeIncoming: boolean = true, 
+    includeOutgoing: boolean = true,
+    maxDepth: number = 2
+  ): Promise<ExpandedGraph> => {
+    const params = new URLSearchParams({
+      include_incoming: includeIncoming.toString(),
+      include_outgoing: includeOutgoing.toString(),
+      max_depth: maxDepth.toString()
+    });
+    const response = await fetch(`${API_BASE}/items/${itemId}/expanded-graph?${params}`);
+    if (!response.ok) throw new Error('Failed to get expanded graph');
+    return response.json();
+  },
+};
+
+// Add this AFTER your existing api object (after the closing brace and semicolon)
+
+// Convert expanded graph format to the GraphResponse format that your visualization expects
+export const convertExpandedGraphToGraphResponse = (expandedGraph: ExpandedGraph): GraphResponse => {
+  // Find the center item
+  const centerNode = expandedGraph.nodes.find(node => node.is_center);
+  if (!centerNode) {
+    throw new Error('No center item found in expanded graph');
   }
+
+  // Convert relationships to InfluenceRelation format
+  const influences: InfluenceRelation[] = expandedGraph.relationships.map(rel => {
+    const fromNode = expandedGraph.nodes.find(node => node.item.id === rel.from_id);
+    const toNode = expandedGraph.nodes.find(node => node.item.id === rel.to_id);
+    
+    if (!fromNode || !toNode) {
+      throw new Error(`Invalid relationship: missing nodes for ${rel.from_id} -> ${rel.to_id}`);
+    }
+
+    return {
+      from_item: fromNode.item,
+      to_item: toNode.item,
+      confidence: rel.confidence,
+      influence_type: rel.influence_type,
+      explanation: rel.explanation,
+      category: rel.category,
+      source: rel.source
+    };
+  });
+
+  // Get all creators from all nodes (remove duplicates)
+  const allCreators: Creator[] = [];
+  const creatorIds = new Set<string>();
+  
+  expandedGraph.nodes.forEach(node => {
+    node.creators.forEach(creator => {
+      if (!creatorIds.has(creator.id)) {
+        allCreators.push(creator);
+        creatorIds.add(creator.id);
+      }
+    });
+  });
+
+  // Get unique categories
+  const categories = [...new Set(expandedGraph.relationships.map(rel => rel.category).filter(cat => cat))];
+
+  return {
+    main_item: centerNode.item,
+    influences,
+    categories,
+    creators: allCreators
+  };
 };

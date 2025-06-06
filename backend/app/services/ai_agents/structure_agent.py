@@ -52,6 +52,10 @@ Convert influence descriptions into valid JSON format with this exact structure:
 }}
 
 IMPORTANT RULES:
+- Use null (not quoted) for missing values
+- Years must be numbers (1999) or null, never text like "1980s"
+- All string values must be quoted
+- No trailing commas
 - Return ONLY valid JSON, no other text
 - AUTO-DETECT main_item_type - don't ask user (song/movie/innovation/book/technique/etc)
 - Use creator_name and creator_type instead of artist (more flexible)
@@ -100,8 +104,40 @@ Return only valid JSON following the exact structure specified. Auto-detect the 
                 print(f"Extracted JSON:\n{json_str}")
 
                 data = json.loads(json_str)
-                print(f"Parsed data: {data}")
-                print(f"Number of influences found: {len(data.get('influences', []))}")
+                # Add validation:
+                print(f"Validating parsed data...")
+
+                # Clean up any invalid influence names
+                if "influences" in data:
+                    cleaned_influences = []
+                    for i, inf in enumerate(data["influences"]):
+                        if "name" in inf:
+                            name = inf["name"]
+                            # Check for invalid names
+                            if isinstance(name, (int, float)) or name in [
+                                None,
+                                "null",
+                                "Infinity",
+                                "-Infinity",
+                            ]:
+                                print(f"Skipping invalid influence name: {name}")
+                                continue
+                            # Convert to string and validate
+                            name_str = str(name).strip()
+                            if not name_str or len(name_str) < 2:
+                                print(f"Skipping too short influence name: {name_str}")
+                                continue
+                            inf["name"] = name_str
+                            cleaned_influences.append(
+                                inf
+                            )  # MOVED: Only append if name is valid
+                        else:
+                            print(f"Skipping influence {i + 1}: no name field")
+
+                    data["influences"] = cleaned_influences
+                    print(
+                        f"Cleaned influences: {len(cleaned_influences)} out of {len(data.get('influences', []))}"
+                    )
 
                 result = StructuredOutput(**data)
                 print(f"Final StructuredOutput influences: {len(result.influences)}")

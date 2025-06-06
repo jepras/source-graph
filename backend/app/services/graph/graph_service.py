@@ -11,6 +11,573 @@ class GraphService:
     def __init__(self):
         neo4j_db.connect()
 
+    def get_what_item_influences(self, item_id: str) -> List[InfluenceRelation]:
+        """Get what this item influences (outgoing influences)"""
+        with neo4j_db.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (main:Item {id: $item_id})-[r:INFLUENCES]->(influenced:Item)
+                OPTIONAL MATCH (influenced)-[:CREATED_BY]->(creator:Creator)
+                RETURN influenced, r, creator
+                ORDER BY influenced.year DESC
+                """,
+                {"item_id": item_id},
+            )
+
+            main_item = self.get_item_by_id(item_id)
+            influences = []
+
+            for record in result:
+                influenced_node = record["influenced"]
+                relation = record["r"]
+                creator_node = record.get("creator")
+
+                influenced_item = Item(
+                    id=influenced_node["id"],
+                    name=influenced_node["name"],
+                    auto_detected_type=influenced_node.get("auto_detected_type"),
+                    year=influenced_node.get("year"),
+                    description=influenced_node.get("description"),
+                    confidence_score=influenced_node.get("confidence_score"),
+                    verification_status=influenced_node.get(
+                        "verification_status", "ai_generated"
+                    ),
+                )
+
+                # Note: reversed relationship for "what this influences"
+                influence_relation = InfluenceRelation(
+                    from_item=main_item,
+                    to_item=influenced_item,
+                    confidence=relation["confidence"],
+                    influence_type=relation["influence_type"],
+                    explanation=relation["explanation"],
+                    category=relation["category"],
+                    source=relation.get("source"),
+                )
+                influences.append(influence_relation)
+
+            return influences
+
+    def get_expansion_counts(self, item_id: str) -> Dict[str, int]:
+        """Get counts for potential expansions (incoming and outgoing influences)"""
+        with neo4j_db.driver.session() as session:
+            # Count what influences this item (incoming)
+            incoming_result = session.run(
+                "MATCH (:Item)-[:INFLUENCES]->(i:Item {id: $item_id}) RETURN count(*) as count",
+                {"item_id": item_id},
+            )
+            incoming_count = incoming_result.single()["count"]
+
+            # Count what this item influences (outgoing)
+            outgoing_result = session.run(
+                "MATCH (i:Item {id: $item_id})-[:INFLUENCES]->(:Item) RETURN count(*) as count",
+                {"item_id": item_id},
+            )
+            outgoing_count = outgoing_result.single()["count"]
+
+            return {
+                "incoming_influences": incoming_count,
+                "outgoing_influences": outgoing_count,
+            }
+
+    def get_expanded_graph(
+        self,
+        center_item_id: str,
+        include_incoming: bool = True,
+        include_outgoing: bool = True,
+        max_depth: int = 2,
+    ) -> Dict:
+        """Get expanded graph with multiple layers of influences"""
+
+        print(f"=== EXPANDED GRAPH DEBUG ===")
+        print(f"Center item ID: {center_item_id}")
+        print(f"Include incoming: {include_incoming}")
+        print(f"Include outgoing: {include_outgoing}")
+        print(f"Max depth: {max_depth}")
+
+        try:
+            with neo4j_db.driver.session() as session:
+                # Step 1: Get center item
+                print("Step 1: Getting center item...")
+
+                center_result = session.run(
+                    "MATCH (center:Item {id: $center_id}) RETURN center",
+                    {"center_id": center_item_id},
+                )
+                center_record = center_result.single()
+
+                if not center_record:
+                    print(f"ERROR: Center item {center_item_id} not found")
+                    return {"nodes": [], "relationships": []}
+
+                center_node = center_record["center"]
+                print(f"Center item found: {center_node['name']}")
+
+                # Step 2: Collect all nodes and relationships
+                all_nodes = []
+                all_relationships = []
+
+                # Add center item
+                center_item = Item(
+                    id=center_node["id"],
+                    name=center_node["name"],
+                    auto_detected_type=center_node.get("auto_detected_type"),
+                    year=center_node.get("year"),
+                    description=center_node.get("description"),
+                    confidence_score=center_node.get("confidence_score"),
+                    verification_status=center_node.get(
+                        "verification_status", "ai_generated"
+                    ),
+                )
+
+                all_nodes.append(
+                    {"item": center_item, "creators": [], "is_center": True}
+                )
+
+                # Step 3: Get outgoing influences if requested
+                if include_outgoing:
+                    print("Step 3: Getting outgoing influences...")
+
+                    outgoing_result = session.run(
+                        """
+                        MATCH (center:Item {id: $center_id})-[r:INFLUENCES]->(influenced:Item)
+                        OPTIONAL MATCH (influenced)-[:CREATED_BY]->(creator:Creator)
+                        RETURN influenced, r, collect(creator) as creators
+                        """,
+                        {"center_id": center_item_id},
+                    )
+
+                    outgoing_count = 0
+                    for record in outgoing_result:
+                        outgoing_count += 1
+                        influenced_node = record["influenced"]
+                        relationship = record["r"]
+                        creators = record["creators"]
+
+                        print(f"  Outgoing {outgoing_count}: {influenced_node['name']}")
+
+                        # Add influenced item to nodes
+                        influenced_item = Item(
+                            id=influenced_node["id"],
+                            name=influenced_node["name"],
+                            auto_detected_type=influenced_node.get(
+                                "auto_detected_type"
+                            ),
+                            year=influenced_node.get("year"),
+                            description=influenced_node.get("description"),
+                            confidence_score=influenced_node.get("confidence_score"),
+                            verification_status=influenced_node.get(
+                                "verification_status", "ai_generated"
+                            ),
+                        )
+
+                        influenced_creators = [
+                            Creator(id=c["id"], name=c["name"], type=c["type"])
+                            for c in creators
+                            if c
+                        ]
+
+                        all_nodes.append(
+                            {
+                                "item": influenced_item,
+                                "creators": influenced_creators,
+                                "is_center": False,
+                            }
+                        )
+
+                        # Add relationship
+                        all_relationships.append(
+                            {
+                                "from_id": center_item_id,
+                                "to_id": influenced_node["id"],
+                                "confidence": relationship["confidence"],
+                                "influence_type": relationship["influence_type"],
+                                "explanation": relationship["explanation"],
+                                "category": relationship["category"],
+                                "source": relationship.get("source"),
+                            }
+                        )
+
+                    print(f"Found {outgoing_count} outgoing influences")
+
+                # Step 4: Get incoming influences if requested
+                if include_incoming:
+                    print("Step 4: Getting incoming influences...")
+
+                    incoming_result = session.run(
+                        """
+                        MATCH (influence:Item)-[r:INFLUENCES]->(center:Item {id: $center_id})
+                        OPTIONAL MATCH (influence)-[:CREATED_BY]->(creator:Creator)
+                        RETURN influence, r, collect(creator) as creators
+                        """,
+                        {"center_id": center_item_id},
+                    )
+
+                    incoming_count = 0
+                    for record in incoming_result:
+                        incoming_count += 1
+                        influence_node = record["influence"]
+                        relationship = record["r"]
+                        creators = record["creators"]
+
+                        print(f"  Incoming {incoming_count}: {influence_node['name']}")
+
+                        # Check if this node is already added (avoid duplicates)
+                        existing_node = next(
+                            (
+                                node
+                                for node in all_nodes
+                                if node["item"].id == influence_node["id"]
+                            ),
+                            None,
+                        )
+
+                        if not existing_node:
+                            # Add influence item to nodes
+                            influence_item = Item(
+                                id=influence_node["id"],
+                                name=influence_node["name"],
+                                auto_detected_type=influence_node.get(
+                                    "auto_detected_type"
+                                ),
+                                year=influence_node.get("year"),
+                                description=influence_node.get("description"),
+                                confidence_score=influence_node.get("confidence_score"),
+                                verification_status=influence_node.get(
+                                    "verification_status", "ai_generated"
+                                ),
+                            )
+
+                            influence_creators = [
+                                Creator(id=c["id"], name=c["name"], type=c["type"])
+                                for c in creators
+                                if c
+                            ]
+
+                            all_nodes.append(
+                                {
+                                    "item": influence_item,
+                                    "creators": influence_creators,
+                                    "is_center": False,
+                                }
+                            )
+
+                        # Add relationship
+                        all_relationships.append(
+                            {
+                                "from_id": influence_node["id"],
+                                "to_id": center_item_id,
+                                "confidence": relationship["confidence"],
+                                "influence_type": relationship["influence_type"],
+                                "explanation": relationship["explanation"],
+                                "category": relationship["category"],
+                                "source": relationship.get("source"),
+                            }
+                        )
+
+                    print(f"Found {incoming_count} incoming influences")
+
+                # Step 5: Get center item creators
+                print("Step 5: Getting center item creators...")
+                creator_result = session.run(
+                    """
+                    MATCH (center:Item {id: $center_id})-[:CREATED_BY]->(creator:Creator)
+                    RETURN creator
+                    """,
+                    {"center_id": center_item_id},
+                )
+
+                center_creators = []
+                for record in creator_result:
+                    creator_node = record["creator"]
+                    creator = Creator(
+                        id=creator_node["id"],
+                        name=creator_node["name"],
+                        type=creator_node["type"],
+                    )
+                    center_creators.append(creator)
+
+                # Update center item with creators
+                all_nodes[0]["creators"] = center_creators
+
+                print(f"=== EXPANDED GRAPH COMPLETE ===")
+                print(f"Total nodes: {len(all_nodes)}")
+                print(f"Total relationships: {len(all_relationships)}")
+
+                return {
+                    "nodes": all_nodes,
+                    "relationships": all_relationships,
+                    "center_item_id": center_item_id,
+                }
+
+        except Exception as e:
+            print(f"Error in get_expanded_graph: {e}")
+            import traceback
+
+            traceback.print_exc()
+            raise
+
+    def find_similar_items(self, name: str, creator_name: str = None) -> List[Dict]:
+        """Find existing items that might be the same as what user wants to create"""
+        with neo4j_db.driver.session() as session:
+            # Loose matching using CONTAINS and fuzzy logic
+            fuzzy_query = """
+            MATCH (i:Item) 
+            OPTIONAL MATCH (i)-[:CREATED_BY]->(c:Creator)
+            WITH i, collect(c.name) as creators,
+                // Calculate similarity score
+                CASE 
+                    WHEN toLower(i.name) = toLower($name) THEN 100
+                    WHEN toLower(i.name) CONTAINS toLower($name) THEN 80
+                    WHEN toLower($name) CONTAINS toLower(i.name) THEN 70
+                    ELSE 50
+                END as name_score
+            WHERE name_score >= 50
+            OR any(creator IN creators WHERE toLower(creator) CONTAINS toLower($creator_name))
+            RETURN i, creators, name_score
+            ORDER BY name_score DESC
+            LIMIT 5
+            """
+
+            results = session.run(
+                fuzzy_query, {"name": name, "creator_name": creator_name or ""}
+            )
+
+            similar_items = []
+
+            for record in results:
+                node = record["i"]
+                creators = record["creators"]
+                score = record["name_score"]
+
+                # Get existing influences count
+                influence_count = session.run(
+                    "MATCH (:Item)-[:INFLUENCES]->(i:Item {id: $id}) RETURN count(*) as count",
+                    {"id": node["id"]},
+                ).single()["count"]
+
+                item_data = {
+                    "id": node["id"],
+                    "name": node["name"],
+                    "auto_detected_type": node.get("auto_detected_type"),
+                    "year": node.get("year"),
+                    "description": node.get("description"),
+                    "confidence_score": node.get("confidence_score"),
+                    "verification_status": node.get("verification_status"),
+                    "creators": [c for c in creators if c],
+                    "existing_influences_count": influence_count,
+                    "similarity_score": score,
+                }
+                similar_items.append(item_data)
+
+            return similar_items
+
+    def get_item_preview(self, item_id: str) -> Dict:
+        """Get existing item data for merge preview"""
+        try:
+            graph_data = self.get_influences(item_id)
+
+            return {
+                "main_item": {
+                    "id": graph_data.main_item.id,
+                    "name": graph_data.main_item.name,
+                    "auto_detected_type": graph_data.main_item.auto_detected_type,
+                    "year": graph_data.main_item.year,
+                    "description": graph_data.main_item.description,
+                    "verification_status": graph_data.main_item.verification_status,
+                },
+                "creators": [
+                    {"name": creator.name, "type": creator.type}
+                    for creator in graph_data.creators
+                ],
+                "existing_influences": [
+                    {
+                        "name": inf.from_item.name,
+                        "category": inf.category,
+                        "confidence": inf.confidence,
+                        "explanation": inf.explanation,
+                        "creator": getattr(inf.from_item, "creator", None),
+                    }
+                    for inf in graph_data.influences
+                ],
+                "categories": graph_data.categories,
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    def add_influences_to_existing(
+        self, existing_item_id: str, new_data: StructuredOutput
+    ) -> str:
+        """Add new influences to an existing item"""
+
+        print(f"=== MERGE DEBUG ===")
+        print(f"Existing item ID: {existing_item_id}")
+        print(f"New data main item: {new_data.main_item}")
+        print(f"Number of new influences: {len(new_data.influences)}")
+
+        try:
+            # Get existing item
+            existing_item = self.get_item_by_id(existing_item_id)
+            if not existing_item:
+                raise ValueError(f"Existing item {existing_item_id} not found")
+
+            print(f"Found existing item: {existing_item.name}")
+
+            # Update main item creator if new one provided and none exists
+            if new_data.main_item_creator:
+                print(f"Checking creators for: {new_data.main_item_creator}")
+
+                with neo4j_db.driver.session() as session:
+                    existing_creators = session.run(
+                        "MATCH (i:Item {id: $id})-[:CREATED_BY]->(c:Creator) RETURN count(c) as count",
+                        {"id": existing_item_id},
+                    ).single()["count"]
+
+                    print(f"Existing creators count: {existing_creators}")
+
+                    if existing_creators == 0:
+                        print(f"Adding creator: {new_data.main_item_creator}")
+                        creator = self.create_creator(
+                            name=new_data.main_item_creator,
+                            creator_type=new_data.main_item_creator_type or "person",
+                        )
+                        self.link_creator_to_item(
+                            existing_item_id, creator.id, "primary_creator"
+                        )
+
+            # Add new influences (avoid duplicates)
+            new_influences_added = 0
+
+            for i, influence in enumerate(new_data.influences):
+                # Safely convert influence name to string and validate
+                influence_name = (
+                    str(influence.name).strip()
+                    if influence.name is not None
+                    else f"Unknown Influence {i + 1}"
+                )
+
+                print(
+                    f"Processing influence {i + 1}: '{influence_name}' (type: {type(influence.name)})"
+                )
+
+                # Skip if name is empty or invalid
+                if not influence_name or influence_name.lower() in ["none", "null", ""]:
+                    print(f"Skipping invalid influence name: {influence_name}")
+                    continue
+
+                # FIXED: Check for duplicates using Python instead of Cypher
+                with neo4j_db.driver.session() as session:
+                    try:
+                        # Get all influence names for this item (safely)
+                        influences_result = session.run(
+                            """
+                            MATCH (inf:Item)-[r:INFLUENCES]->(main:Item {id: $main_id})
+                            WHERE inf.name IS NOT NULL AND toString(inf.name) IS NOT NULL
+                            RETURN toString(inf.name) as influence_name
+                            """,
+                            {"main_id": existing_item_id},
+                        )
+
+                        # Check for duplicates in Python
+                        existing_names = []
+                        for record in influences_result:
+                            try:
+                                name = record["influence_name"]
+                                if name and isinstance(name, str):
+                                    existing_names.append(name.lower())
+                            except Exception as e:
+                                print(f"Skipping corrupted influence record: {e}")
+                                continue
+
+                        is_duplicate = influence_name.lower() in existing_names
+                        existing_influence = 1 if is_duplicate else 0
+
+                        print(f"Existing influences: {existing_names}")
+                        print(f"Is '{influence_name}' a duplicate? {is_duplicate}")
+
+                    except Exception as e:
+                        print(f"Error checking duplicates, assuming no duplicates: {e}")
+                        existing_influence = (
+                            0  # Default to not duplicate if query fails
+                        )
+
+                    if existing_influence == 0:
+                        print(f"Creating new influence: {influence_name}")
+
+                        # Create new influence with cleaned data
+                        influence_item = self.create_item(
+                            name=influence_name,
+                            description=f"Influence on {existing_item.name} (merged)",
+                            auto_detected_type=influence.type,
+                            year=influence.year,
+                            confidence_score=influence.confidence,
+                        )
+
+                        print(f"Created influence item: {influence_item.id}")
+
+                        # Create influence creator if provided
+                        if influence.creator_name:
+                            creator_name = str(influence.creator_name).strip()
+                            if creator_name and creator_name.lower() not in [
+                                "none",
+                                "null",
+                                "",
+                            ]:
+                                print(f"Creating influence creator: {creator_name}")
+                                influence_creator = self.create_creator(
+                                    name=creator_name,
+                                    creator_type=influence.creator_type or "person",
+                                )
+                                self.link_creator_to_item(
+                                    influence_item.id,
+                                    influence_creator.id,
+                                    "primary_creator",
+                                )
+
+                        # Create influence relationship with cleaned explanation
+                        explanation = (
+                            str(influence.explanation).strip()
+                            if influence.explanation
+                            else "No explanation provided"
+                        )
+                        category = (
+                            str(influence.category).strip()
+                            if influence.category
+                            else "Uncategorized"
+                        )
+
+                        print(
+                            f"Creating influence relationship: {influence_item.id} -> {existing_item_id}"
+                        )
+                        self.create_influence_relationship(
+                            from_item_id=influence_item.id,
+                            to_item_id=existing_item_id,
+                            confidence=influence.confidence,
+                            influence_type=influence.influence_type,
+                            explanation=explanation,
+                            category=category,
+                            source=influence.source,
+                            year_of_influence=influence.year,
+                        )
+
+                        # Ensure category exists
+                        self.ensure_category_exists(category)
+                        new_influences_added += 1
+                        print(f"Successfully added influence: {influence_name}")
+                    else:
+                        print(f"Skipping duplicate influence: {influence_name}")
+
+            print(f"=== MERGE COMPLETE ===")
+            print(f"Added {new_influences_added} new influences to existing item")
+            return existing_item_id
+
+        except Exception as e:
+            print(f"Error in add_influences_to_existing: {e}")
+            import traceback
+
+            traceback.print_exc()
+            raise
+
     def generate_id(self, name: str, item_type: str = None) -> str:
         """Generate consistent ID for items"""
         # Clean name for ID
