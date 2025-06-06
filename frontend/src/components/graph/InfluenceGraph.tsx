@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
-import { positionNewNodes, findConnectedNodes, positionNodesChronologically } from '../../utils/graphUtils';
+import { positionNewNodes, findConnectedNodes, positionNodesChronologically, positionNodesCategorically, extractCategories } from '../../utils/graphUtils';
 
 
 interface InfluenceGraphProps {
@@ -9,13 +9,17 @@ interface InfluenceGraphProps {
   onNodeClick?: (itemId: string) => void;
   isChronologicalOrder?: boolean; // Add this prop
   onChronologicalToggle?: (enabled: boolean) => void;
+  isCategoricalLayout?: boolean; // Add this
+  onCategoricalToggle?: (enabled: boolean) => void; // Add this
 }
 
 export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({ 
   accumulatedGraph, 
   onNodeClick,
   isChronologicalOrder = false, // Default to false
-  onChronologicalToggle
+  onChronologicalToggle,
+  isCategoricalLayout = false,
+  onCategoricalToggle
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -106,6 +110,13 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     }
   };
 
+  // Add handler for categorical toggle
+  const handleCategoricalToggle = () => {
+    if (onCategoricalToggle) {
+      onCategoricalToggle(!isCategoricalLayout);
+    }
+  };
+
   useEffect(() => {
     if (accumulatedGraph.nodes.size === 0 || !svgRef.current) return;
 
@@ -127,9 +138,11 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const unpositionedNodes = nodes.filter(n => !n.x || !n.y);
     const positionedNodes = nodes.filter(n => n.x && n.y);
 
-    // In your useEffect positioning logic
-    if (isChronologicalOrder) {
-      // Chronological mode: reposition all nodes
+    if (isCategoricalLayout) {
+      // Categorical mode: arrange by categories (and chronologically within categories if both are on)
+      positionNodesCategorically(nodes, width, height, isChronologicalOrder);
+    } else if (isChronologicalOrder) {
+      // Chronological mode only: reposition all nodes
       positionNodesChronologically(nodes, width, height);
     } else {
       // Normal mode: use existing positioning logic
@@ -137,8 +150,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         // First time: initial layout
         initialLayout(nodes, width, height);
       } else if (unpositionedNodes.length > 0) {
-        // New nodes: position near connected nodes, but respect chronological mode
-        positionNewNodes(positionedNodes, unpositionedNodes, links, width, height, isChronologicalOrder);
+        // New nodes: position near connected nodes
+        positionNewNodes(positionedNodes, unpositionedNodes, links, width, height);
       }
     }
     // Add zoom behavior
@@ -237,6 +250,42 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .style("fill", "#9ca3af")
       .text(d => d.year?.toString() || "");
 
+      // Add category labels if in categorical mode
+    if (isCategoricalLayout) {
+      const categories = extractCategories(nodes);
+      let currentX = 80;
+      const totalNodes = nodes.length;
+      
+      categories.forEach(({ type, count }) => {
+        const proportion = count / totalNodes;
+        const columnWidth = Math.max(150, (width - 160) * proportion);
+        
+        // Add category label
+        graphGroup.append("text")
+          .attr("x", currentX + columnWidth/2)
+          .attr("y", 30)
+          .attr("text-anchor", "middle")
+          .style("font-size", "14px")
+          .style("font-weight", "bold")
+          .style("fill", "#374151")
+          .text(`${type} (${count})`);
+        
+        // Add column separator line
+        if (currentX > 80) {
+          graphGroup.append("line")
+            .attr("x1", currentX)
+            .attr("y1", 50)
+            .attr("x2", currentX)
+            .attr("y2", height - 50)
+            .attr("stroke", "#e5e7eb")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "5,5");
+        }
+        
+        currentX += columnWidth;
+      });
+    }
+
     // Auto-fit view if many new nodes were added
     if (currentNodeCount > previousNodeCount + 2) {
       setTimeout(() => {
@@ -246,23 +295,35 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
     setPreviousNodeCount(currentNodeCount);
 
-  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount, isChronologicalOrder]);
+  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount, isChronologicalOrder, isCategoricalLayout]);
 
   return (
     <div className="relative w-full h-full">
       {/* Controls */}
       <div className="absolute top-4 right-4 z-10 flex space-x-2">
         <button
-      onClick={handleChronologicalToggle}
-      className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
-        isChronologicalOrder 
-          ? 'bg-blue-500 text-white hover:bg-blue-600' 
-          : 'bg-white hover:bg-gray-50'
-      }`}
-      title="Toggle chronological ordering (newest to oldest)"
-    >
-      📅 Chronological
-    </button>
+          onClick={handleCategoricalToggle}
+          className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
+            isCategoricalLayout 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
+              : 'bg-white hover:bg-gray-50'
+          }`}
+          title="Toggle categorical layout (group by type)"
+        >
+          📊 Categories
+        </button>
+        
+        <button
+          onClick={handleChronologicalToggle}
+          className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
+            isChronologicalOrder 
+              ? 'bg-blue-500 text-white hover:bg-blue-600' 
+              : 'bg-white hover:bg-gray-50'
+          }`}
+          title="Toggle chronological ordering (newest to oldest)"
+        >
+          📅 Chronological
+        </button>
         
         <button
           onClick={handleFitToView}

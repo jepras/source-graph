@@ -14,6 +14,8 @@ function App() {
   const [graphLoading, setGraphLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isChronologicalOrder, setIsChronologicalOrder] = useState(false);
+  const [isCategoricalLayout, setIsCategoricalLayout] = useState(false);
+
 
 
   // Replace graphData with accumulated graph
@@ -228,6 +230,8 @@ function App() {
                     onNodeClick={handleNodeClick}
                     isChronologicalOrder={isChronologicalOrder}
                     onChronologicalToggle={setIsChronologicalOrder}
+                    isCategoricalLayout={isCategoricalLayout}
+                    onCategoricalToggle={setIsCategoricalLayout}
                   />
                 ) : (
                   <div className="flex justify-center items-center h-full text-gray-500">

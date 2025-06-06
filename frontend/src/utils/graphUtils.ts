@@ -395,3 +395,100 @@ export const positionNodesChronologically = (
     node.y = yPosition;
   });
 };
+
+// Add this function to frontend/src/utils/graphUtils.ts
+
+export const positionNodesCategorically = (
+  nodes: GraphNode[], 
+  width: number, 
+  height: number,
+  chronological: boolean = false
+) => {
+  // Group nodes by auto_detected_type
+  const categories = new Map<string, GraphNode[]>();
+  
+  nodes.forEach(node => {
+    const type = node.type || 'unknown';
+    if (!categories.has(type)) {
+      categories.set(type, []);
+    }
+    categories.get(type)!.push(node);
+  });
+
+  // Sort categories by node count (descending)
+  const sortedCategories = Array.from(categories.entries())
+    .sort((a, b) => b[1].length - a[1].length);
+
+  const padding = 80;
+  const availableWidth = width - (2 * padding);
+  const availableHeight = height - (2 * padding);
+
+  // Calculate column widths based on node count
+  const totalNodes = nodes.length;
+  let currentX = padding;
+
+  sortedCategories.forEach(([categoryType, categoryNodes], categoryIndex) => {
+    // Calculate column width based on proportion of nodes
+    const proportion = categoryNodes.length / totalNodes;
+    const minColumnWidth = 150; // Minimum column width
+    const columnWidth = Math.max(minColumnWidth, availableWidth * proportion);
+
+    // Position nodes within this category column
+    if (chronological && categoryNodes.some(n => n.year)) {
+      // Chronological within category
+      const nodesWithYears = categoryNodes.filter(n => n.year !== undefined);
+      const nodesWithoutYears = categoryNodes.filter(n => n.year === undefined);
+      
+      // Sort by year (newest first)
+      nodesWithYears.sort((a, b) => (b.year || 0) - (a.year || 0));
+      
+      // Position nodes with years chronologically
+      nodesWithYears.forEach((node, index) => {
+        const yPosition = padding + (index / Math.max(nodesWithYears.length - 1, 1)) * (availableHeight * 0.8);
+        const xOffset = (Math.random() - 0.5) * (columnWidth * 0.6); // Some horizontal variation
+        
+        node.x = Math.max(currentX + 20, Math.min(currentX + columnWidth - 20, currentX + columnWidth/2 + xOffset));
+        node.y = yPosition;
+      });
+      
+      // Position nodes without years at bottom of column
+      nodesWithoutYears.forEach((node, index) => {
+        const yPosition = height - padding - 50;
+        const spacing = columnWidth / Math.max(nodesWithoutYears.length + 1, 2);
+        
+        node.x = currentX + (index + 1) * spacing;
+        node.y = yPosition;
+      });
+    } else {
+      // Non-chronological: distribute evenly in column
+      categoryNodes.forEach((node, index) => {
+        const yPosition = padding + (index / Math.max(categoryNodes.length - 1, 1)) * availableHeight;
+        const xOffset = (Math.random() - 0.5) * (columnWidth * 0.4); // Some horizontal variation
+        
+        node.x = Math.max(currentX + 20, Math.min(currentX + columnWidth - 20, currentX + columnWidth/2 + xOffset));
+        node.y = yPosition;
+      });
+    }
+
+    // Move to next column
+    currentX += columnWidth;
+  });
+
+  // Handle empty categories if needed (you mentioned showing empty columns on the right)
+  // For now, we only show categories that have nodes
+};
+
+// Add category information extraction
+export const extractCategories = (nodes: GraphNode[]) => {
+  const categories = new Map<string, number>();
+  
+  nodes.forEach(node => {
+    const type = node.type || 'unknown';
+    categories.set(type, (categories.get(type) || 0) + 1);
+  });
+
+  // Sort by count (descending)
+  return Array.from(categories.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => ({ type, count }));
+};
