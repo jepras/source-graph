@@ -44,6 +44,7 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({
       try {
         // Load item details
         const item = await api.getItem(selectedItemId);
+        console.log('API getItem response:', item); // ADD THIS LINE
         setItemDetails(item);
 
         // Load incoming influences (what influenced this item)
@@ -144,6 +145,14 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({
           </p>
         )}
       </div>
+
+      {/* ADD THIS TEMPORARY DEBUG SECTION */}
+      {itemDetails && (
+        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <strong>DEBUG:</strong>
+          <pre>{JSON.stringify(itemDetails, null, 2)}</pre>
+        </div>
+      )}
 
       {/* Incoming Influences Section */}
       <div className="mb-4">

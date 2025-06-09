@@ -4,6 +4,8 @@ import { InfluenceGraph } from './components/graph/InfluenceGraph';
 import { AIResearchPanel } from './components/AIResearchPanel';
 import { GraphExpansionControls } from './components/GraphExpansionControls';
 import { ItemDetailsPanel } from './components/ItemDetailsPanel';
+import { ResizablePanels } from './components/ResizablePanels';
+import { ResizableGraphLayout } from './components/ResizableGraphLayout';
 import { api, convertExpandedGraphToGraphResponse } from './services/api';
 import { extractNodesAndRelationships, mergeExpandedGraphData, checkGraphOverlap } from './utils/graphUtils';
 import type { Item } from './services/api';
@@ -16,8 +18,6 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isChronologicalOrder, setIsChronologicalOrder] = useState(false);
   const [isCategoricalLayout, setIsCategoricalLayout] = useState(false);
-
-
 
   // Replace graphData with accumulated graph
   const [accumulatedGraph, setAccumulatedGraph] = useState<AccumulatedGraph>({
@@ -198,112 +198,119 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="h-[calc(100vh-120px)] flex">
-        {/* Left Sidebar - AI Research Panel (20%) */}
-        <div className="w-1/5 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              🔍 Search & Research
-            </h2>
-            
-            {/* Search Existing Items */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Existing Items
-              </label>
-              <SearchBar
-                onItemSelect={handleItemSelect}
-                onSearch={handleSearch}
-                searchResults={searchResults}
-                loading={searchLoading}
-              />
-            </div>
-          </div>
-
-          {/* AI Research Panel */}
-          <div className="flex-1 overflow-y-auto">
-            <AIResearchPanel onItemSaved={handleNewItemSaved} />
-          </div>
-        </div>
-
-        {/* Right Side - Graph Area (80%) */}
-        <div className="flex-1 flex flex-col bg-gray-50">
-          {/* Error Display */}
-          {error && (
-            <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Graph Container with Expansion Controls */}
-          <div className="flex-1 p-4">
-            <div className="bg-white rounded-lg shadow h-full flex">
-              {/* Main Graph Area */}
-              <div className="flex-1 relative">
-                {graphLoading ? (
-                  <div className="flex justify-center items-center h-full">
-                    <div className="text-gray-500">Loading graph...</div>
-                  </div>
-                ) : accumulatedGraph.nodes.size > 0 ? (
-                  <InfluenceGraph
-                    accumulatedGraph={accumulatedGraph}
-                    onNodeClick={handleNodeClick}
-                    isChronologicalOrder={isChronologicalOrder}
-                    onChronologicalToggle={setIsChronologicalOrder}
-                    isCategoricalLayout={isCategoricalLayout}
-                    onCategoricalToggle={setIsCategoricalLayout}
-                  />
-                ) : (
-                  <div className="flex justify-center items-center h-full text-gray-500">
-                    <div className="text-center">
-                      <div className="text-6xl mb-4">🌐</div>
-                      <h3 className="text-lg font-medium mb-2">Ready to Explore</h3>
-                      <p className="text-sm">
-                        Search for an existing item or research a new one to start building the influence graph
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Expansion Controls Sidebar */}
-              {accumulatedGraph.nodes.size > 0 && (
-                <div className="w-80 border-l border-gray-200 p-4 overflow-y-auto">
-                  <GraphExpansionControls
-                    selectedItemId={accumulatedGraph.selectedNodeId}
-                    onExpand={handleExpansion}
-                    loading={graphLoading}
-                  />
-                  
-                  {/* Graph Info */}
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                      Graph Info
-                    </h4>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div>Nodes: {accumulatedGraph.nodes.size}</div>
-                      <div>Connections: {accumulatedGraph.relationships.size}</div>
-                      <div>Expanded: {accumulatedGraph.expandedNodeIds.size}</div>
-                    </div>
-                    
-                    <button
-                      onClick={handleClearGraph}
-                      className="mt-3 w-full px-3 py-2 text-sm bg-red-50 border border-red-200 text-red-700 rounded hover:bg-red-100"
-                    >
-                      🗑️ Clear Graph
-                    </button>
-                  </div>
-
-                  {/* Item Details Panel */}
-                  <ItemDetailsPanel
-                    selectedItemId={accumulatedGraph.selectedNodeId}
-                    onNodeClick={handleNodeClick}
+      <main className="h-[calc(100vh-120px)]">
+        <ResizablePanels
+          leftPanel={
+            <>
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  🔍 Search & Research
+                </h2>
+                
+                {/* Search Existing Items */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search Existing Items
+                  </label>
+                  <SearchBar
+                    onItemSelect={handleItemSelect}
+                    onSearch={handleSearch}
+                    searchResults={searchResults}
+                    loading={searchLoading}
                   />
                 </div>
+              </div>
+
+              {/* AI Research Panel */}
+              <div className="flex-1 overflow-y-auto">
+                <AIResearchPanel onItemSaved={handleNewItemSaved} />
+              </div>
+            </>
+          }
+          rightPanel={
+            <>
+              {/* Error Display */}
+              {error && (
+                <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-600">{error}</p>
+                </div>
               )}
-            </div>
-          </div>
-        </div>
+
+              {/* Graph Container */}
+              <div className="flex-1 p-4">
+                <div className="bg-white rounded-lg shadow h-full">
+                  {accumulatedGraph.nodes.size > 0 ? (
+                    <ResizableGraphLayout
+                      graphPanel={
+                        graphLoading ? (
+                          <div className="flex justify-center items-center h-full">
+                            <div className="text-gray-500">Loading graph...</div>
+                          </div>
+                        ) : (
+                          <InfluenceGraph
+                            accumulatedGraph={accumulatedGraph}
+                            onNodeClick={handleNodeClick}
+                            isChronologicalOrder={isChronologicalOrder}
+                            onChronologicalToggle={setIsChronologicalOrder}
+                            isCategoricalLayout={isCategoricalLayout}
+                            onCategoricalToggle={setIsCategoricalLayout}
+                          />
+                        )
+                      }
+                      expansionPanel={
+                        <>
+                          <GraphExpansionControls
+                            selectedItemId={accumulatedGraph.selectedNodeId}
+                            onExpand={handleExpansion}
+                            loading={graphLoading}
+                          />
+                          
+                          {/* Graph Info */}
+                          <div className="mt-6 pt-4 border-t border-gray-200">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                              Graph Info
+                            </h4>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>Nodes: {accumulatedGraph.nodes.size}</div>
+                              <div>Connections: {accumulatedGraph.relationships.size}</div>
+                              <div>Expanded: {accumulatedGraph.expandedNodeIds.size}</div>
+                            </div>
+                            
+                            <button
+                              onClick={handleClearGraph}
+                              className="mt-3 w-full px-3 py-2 text-sm bg-red-50 border border-red-200 text-red-700 rounded hover:bg-red-100"
+                            >
+                              🗑️ Clear Graph
+                            </button>
+                          </div>
+
+                          {/* Item Details Panel */}
+                          <ItemDetailsPanel
+                            selectedItemId={accumulatedGraph.selectedNodeId}
+                            onNodeClick={handleNodeClick}
+                          />
+                        </>
+                      }
+                    />
+                  ) : (
+                    <div className="flex justify-center items-center h-full text-gray-500">
+                      <div className="text-center">
+                        <div className="text-6xl mb-4">🌐</div>
+                        <h3 className="text-lg font-medium mb-2">Ready to Explore</h3>
+                        <p className="text-sm">
+                          Search for an existing item or research a new one to start building the influence graph
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          }
+          minLeftWidth={250}
+          maxLeftWidth={600}
+          defaultLeftWidth={350}
+        />
       </main>
     </div>
   );
