@@ -33,14 +33,14 @@ Convert influence descriptions into valid JSON format with this exact structure:
   "main_item_type": "song/movie/book/technique/innovation/etc",
   "main_item_creator": "creator name or null",
   "main_item_creator_type": "person/organization/collective or null",
-  "main_item_year": year_number_or_null,
+  "main_item_year": year_number,
   "influences": [
     {{
       "name": "influence name",
       "type": "song/movie/book/technique/person/event/etc",
       "creator_name": "creator name or null",
       "creator_type": "person/organization/collective or null",
-      "year": year_number_or_null,
+      "year": year_number,
       "category": "Audio Samples & Music/Literary Techniques/etc",
       "influence_type": "audio_sample/literary_technique/personal_experience/cinematic_influence/musical_technique/cultural_context/technological/other",
       "confidence": 0.85,
@@ -51,9 +51,12 @@ Convert influence descriptions into valid JSON format with this exact structure:
   "categories": ["Audio Samples & Music", "Literary Techniques"]
 }}
 
-IMPORTANT RULES:
+IMPORTANT RULES FOR YEARS (CRITICAL!):
+- Years must be numbers (1999) or null. Years must never be referred to as strings like "1980s", time periods like 1937-1949 or decades/centuries like 5th-6th century. 
+- If an item doesn't have a year, add a best guess. 
+
+OTHER IMPORTANT RULES:
 - Use null (not quoted) for missing values
-- Years must be numbers (1999) or null, never text like "1980s". All inputs have a year integer value, so use that.
 - All string values must be quoted
 - No trailing commas
 - Return ONLY valid JSON, no other text

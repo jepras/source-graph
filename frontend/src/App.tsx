@@ -3,6 +3,7 @@ import { SearchBar } from './components/SearchBar';
 import { InfluenceGraph } from './components/graph/InfluenceGraph';
 import { AIResearchPanel } from './components/AIResearchPanel';
 import { GraphExpansionControls } from './components/GraphExpansionControls';
+import { ItemDetailsPanel } from './components/ItemDetailsPanel';
 import { api, convertExpandedGraphToGraphResponse } from './services/api';
 import { extractNodesAndRelationships, mergeExpandedGraphData } from './utils/graphUtils';
 import type { Item } from './services/api';
@@ -274,17 +275,11 @@ function App() {
                     </button>
                   </div>
 
-                  {/* Selected Item Info */}
-                  {accumulatedGraph.selectedNodeId && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                        Selected Item
-                      </h4>
-                      <div className="text-sm text-gray-600">
-                        {accumulatedGraph.nodes.get(accumulatedGraph.selectedNodeId)?.name || 'Unknown'}
-                      </div>
-                    </div>
-                  )}
+                  {/* Item Details Panel */}
+                  <ItemDetailsPanel
+                    selectedItemId={accumulatedGraph.selectedNodeId}
+                    onNodeClick={handleNodeClick}
+                  />
                 </div>
               )}
             </div>

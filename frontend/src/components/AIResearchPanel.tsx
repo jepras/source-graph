@@ -21,7 +21,7 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
   const [conflictData, setConflictData] = useState<any>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStructuredExpanded, setIsStructuredExpanded] = useState(false);
-
+  
 
 
 
@@ -60,21 +60,42 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
 
   const handleStructure = async () => {
     if (!result || !result.success) return;
-
+  
     setStructureLoading(true);
     setError(null);
-
+  
     try {
       const request: StructureRequest = {
         influences_text: result.influences_text,
         main_item: result.item_name,
         main_item_creator: result.artist
       };
-
+  
       const structuredData = await api.structureInfluences(request);
       setStructuredResult(structuredData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to structure influences');
+      console.error('Structure error:', err);
+      
+      // Provide specific error messages based on the error
+      let userMessage = 'Failed to structure influences. ';
+      
+      if (err instanceof Error) {
+        const errorMsg = err.message.toLowerCase();
+        
+        if (errorMsg.includes('year')) {
+          userMessage += 'All influences must have years. Please research items with clear dates.';
+        } else if (errorMsg.includes('server error') || errorMsg.includes('500')) {
+          userMessage += 'Server processing error. Try researching a different item or simplify the research text.';
+        } else if (errorMsg.includes('json') || errorMsg.includes('format')) {
+          userMessage += 'Data formatting error. Please try again with a different item.';
+        } else {
+          userMessage += err.message;
+        }
+      } else {
+        userMessage += 'Please try again or contact support if the problem persists.';
+      }
+      
+      setError(userMessage);
     } finally {
       setStructureLoading(false);
     }
@@ -207,7 +228,23 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
       {/* Error Display */}
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <h4 className="text-sm font-medium text-red-800">Processing Failed</h4>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
+              <div className="mt-2">
+                <button
+                  onClick={() => setError(null)}
+                  className="text-xs text-red-600 hover:text-red-800 underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
