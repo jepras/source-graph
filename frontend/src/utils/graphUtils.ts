@@ -427,56 +427,124 @@ export const positionNodesCategorically = (
   const totalNodes = nodes.length;
   let currentX = padding;
 
-  sortedCategories.forEach(([categoryType, categoryNodes], categoryIndex) => {
-    // Calculate column width based on proportion of nodes
-    const proportion = categoryNodes.length / totalNodes;
-    const minColumnWidth = 150; // Minimum column width
-    const columnWidth = Math.max(minColumnWidth, availableWidth * proportion);
-
-    // Position nodes within this category column
-    if (chronological && categoryNodes.some(n => n.year)) {
-      // Chronological within category
-      const nodesWithYears = categoryNodes.filter(n => n.year !== undefined);
-      const nodesWithoutYears = categoryNodes.filter(n => n.year === undefined);
+  if (chronological) {
+    // GLOBAL CHRONOLOGICAL POSITIONING WITH COLLISION AVOIDANCE
+    const nodesWithYears = nodes.filter(n => n.year !== undefined);
+    const nodesWithoutYears = nodes.filter(n => n.year === undefined);
+    
+    if (nodesWithYears.length > 0) {
+      const minYear = Math.min(...nodesWithYears.map(n => n.year!));
+      const maxYear = Math.max(...nodesWithYears.map(n => n.year!));
+      const yearRange = Math.max(maxYear - minYear, 1);
       
-      // Sort by year (newest first)
-      nodesWithYears.sort((a, b) => (b.year || 0) - (a.year || 0));
+      const NODE_HEIGHT = 60; // Minimum vertical space per node
+      const COLUMN_PADDING = 20;
       
-      // Position nodes with years chronologically
-      nodesWithYears.forEach((node, index) => {
-        const yPosition = padding + (index / Math.max(nodesWithYears.length - 1, 1)) * (availableHeight * 0.8);
-        const xOffset = (Math.random() - 0.5) * (columnWidth * 0.6); // Some horizontal variation
+      // Position each category column
+      sortedCategories.forEach(([categoryType, categoryNodes]) => {
+        const proportion = categoryNodes.length / totalNodes;
+        const minColumnWidth = 150;
+        const columnWidth = Math.max(minColumnWidth, availableWidth * proportion);
         
-        node.x = Math.max(currentX + 20, Math.min(currentX + columnWidth - 20, currentX + columnWidth/2 + xOffset));
-        node.y = yPosition;
-      });
-      
-      // Position nodes without years at bottom of column
-      nodesWithoutYears.forEach((node, index) => {
-        const yPosition = height - padding - 50;
-        const spacing = columnWidth / Math.max(nodesWithoutYears.length + 1, 2);
+        // Sort nodes in this category by year (newest first)
+        const sortedNodes = categoryNodes
+          .filter(n => n.year !== undefined)
+          .sort((a, b) => (b.year || 0) - (a.year || 0));
         
-        node.x = currentX + (index + 1) * spacing;
-        node.y = yPosition;
+        const nodesWithoutYearInCategory = categoryNodes.filter(n => n.year === undefined);
+        
+        // Track occupied Y positions in this column to avoid overlaps
+        const occupiedPositions: { y: number; nodeId: string }[] = [];
+        
+        // Position nodes with years
+        sortedNodes.forEach((node, index) => {
+          // Calculate ideal Y position based on year
+          const yearProgress = (maxYear - node.year!) / yearRange;
+          let idealY = padding + (yearProgress * availableHeight * 0.8);
+          
+          // Find actual Y position that doesn't overlap
+          let actualY = idealY;
+          let attempts = 0;
+          
+          while (attempts < 50) {
+            const hasOverlap = occupiedPositions.some(pos => 
+              Math.abs(pos.y - actualY) < NODE_HEIGHT
+            );
+            
+            if (!hasOverlap) {
+              break; // Found a good position
+            }
+            
+            // Try positions around the ideal Y
+            if (attempts % 2 === 0) {
+              actualY = idealY + (Math.ceil(attempts / 2) * NODE_HEIGHT);
+            } else {
+              actualY = idealY - (Math.ceil(attempts / 2) * NODE_HEIGHT);
+            }
+            
+            attempts++;
+          }
+          
+          // Ensure position is within bounds
+          actualY = Math.max(padding, Math.min(height - padding - 50, actualY));
+          
+          // Position the node
+          const xOffset = (Math.random() - 0.5) * (columnWidth * 0.3); // Less horizontal variation
+          node.x = Math.max(currentX + COLUMN_PADDING, Math.min(currentX + columnWidth - COLUMN_PADDING, currentX + columnWidth/2 + xOffset));
+          node.y = actualY;
+          
+          // Record this position as occupied
+          occupiedPositions.push({ y: actualY, nodeId: node.id });
+          
+          console.log(`Positioned ${node.name} (${node.year}) at y=${actualY} (ideal was ${idealY})`);
+        });
+        
+        // Position nodes without years at bottom
+        nodesWithoutYearInCategory.forEach((node, index) => {
+          const xOffset = (Math.random() - 0.5) * (columnWidth * 0.3);
+          node.x = Math.max(currentX + COLUMN_PADDING, Math.min(currentX + columnWidth - COLUMN_PADDING, currentX + columnWidth/2 + xOffset));
+          node.y = height - padding - 50 - (index * NODE_HEIGHT);
+        });
+        
+        currentX += columnWidth;
       });
     } else {
-      // Non-chronological: distribute evenly in column
-      categoryNodes.forEach((node, index) => {
-        const yPosition = padding + (index / Math.max(categoryNodes.length - 1, 1)) * availableHeight;
-        const xOffset = (Math.random() - 0.5) * (columnWidth * 0.4); // Some horizontal variation
-        
-        node.x = Math.max(currentX + 20, Math.min(currentX + columnWidth - 20, currentX + columnWidth/2 + xOffset));
-        node.y = yPosition;
-      });
+      positionNodesCategoricallyNonChronological(sortedCategories, currentX, availableWidth, availableHeight, totalNodes, padding, height);
     }
+  }
+};
 
-    // Move to next column
+// Helper function for non-chronological positioning
+const positionNodesCategoricallyNonChronological = (
+  sortedCategories: [string, GraphNode[]][],
+  startX: number,
+  availableWidth: number,
+  availableHeight: number,
+  totalNodes: number,
+  padding: number,
+  height: number
+) => {
+  let currentX = startX;
+  
+  sortedCategories.forEach(([categoryType, categoryNodes]) => {
+    const proportion = categoryNodes.length / totalNodes;
+    const minColumnWidth = 150;
+    const columnWidth = Math.max(minColumnWidth, availableWidth * proportion);
+    
+    // Distribute evenly in column
+    categoryNodes.forEach((node, index) => {
+      const yPosition = padding + (index / Math.max(categoryNodes.length - 1, 1)) * availableHeight;
+      const xOffset = (Math.random() - 0.5) * (columnWidth * 0.4);
+      
+      node.x = Math.max(currentX + 20, Math.min(currentX + columnWidth - 20, currentX + columnWidth/2 + xOffset));
+      node.y = yPosition;
+    });
+    
     currentX += columnWidth;
   });
-
-  // Handle empty categories if needed (you mentioned showing empty columns on the right)
-  // For now, we only show categories that have nodes
 };
+
+
 
 // Add category information extraction
 export const extractCategories = (nodes: GraphNode[]) => {
