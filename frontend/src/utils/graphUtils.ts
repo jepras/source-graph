@@ -492,3 +492,29 @@ export const extractCategories = (nodes: GraphNode[]) => {
     .sort((a, b) => b[1] - a[1])
     .map(([type, count]) => ({ type, count }));
 };
+
+// Add this function to check if new item data overlaps with existing graph
+export const checkGraphOverlap = (
+  newGraphResponse: GraphResponse,
+  existingGraph: AccumulatedGraph
+): boolean => {
+  const existingNodeIds = new Set(existingGraph.nodes.keys());
+  
+  // Check if main item already exists in graph
+  if (existingNodeIds.has(newGraphResponse.main_item.id)) {
+    return true;
+  }
+  
+  // Check if any of the new influences already exist in graph
+  const hasOverlappingInfluences = newGraphResponse.influences.some(influence => 
+    existingNodeIds.has(influence.from_item.id) || 
+    existingNodeIds.has(influence.to_item.id)
+  );
+  
+  if (hasOverlappingInfluences) {
+    return true;
+  }
+  
+  // No overlap found
+  return false;
+};

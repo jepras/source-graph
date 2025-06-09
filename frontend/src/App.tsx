@@ -5,7 +5,7 @@ import { AIResearchPanel } from './components/AIResearchPanel';
 import { GraphExpansionControls } from './components/GraphExpansionControls';
 import { ItemDetailsPanel } from './components/ItemDetailsPanel';
 import { api, convertExpandedGraphToGraphResponse } from './services/api';
-import { extractNodesAndRelationships, mergeExpandedGraphData } from './utils/graphUtils';
+import { extractNodesAndRelationships, mergeExpandedGraphData, checkGraphOverlap } from './utils/graphUtils';
 import type { Item } from './services/api';
 import type { AccumulatedGraph } from './types/graph';
 
@@ -123,14 +123,22 @@ function App() {
     // If no current graph, start with this item
     if (accumulatedGraph.nodes.size === 0) {
       handleNodeClick(itemId);
-    } else {
-      // Add this item to existing graph by loading its influences
-      try {
-        setGraphLoading(true);
-        const influences = await api.getInfluences(itemId);
-        const { nodes, relationships } = extractNodesAndRelationships(influences);
+      return;
+    }
+  
+    // Load the new item's influences to check for overlap
+    try {
+      setGraphLoading(true);
+      const newItemInfluences = await api.getInfluences(itemId);
+      
+      // Check if new item connects to existing graph
+      const hasConnections = checkGraphOverlap(newItemInfluences, accumulatedGraph);
+      
+      if (hasConnections) {
+        // MERGE: New item connects to existing graph - add to current graph
+        console.log('New item has connections - merging with existing graph');
+        const { nodes, relationships } = extractNodesAndRelationships(newItemInfluences);
         
-        // Merge with existing graph
         setAccumulatedGraph(prev => {
           const newNodes = new Map(prev.nodes);
           const newRelationships = new Map(prev.relationships);
@@ -146,12 +154,23 @@ function App() {
             expandedNodeIds: new Set([...prev.expandedNodeIds, itemId])
           };
         });
-      } catch (err) {
-        console.error('Failed to load new item influences:', err);
-        setError('Failed to load new item in graph');
-      } finally {
-        setGraphLoading(false);
+      } else {
+        // REPLACE: New item is unrelated - start fresh graph
+        console.log('New item has no connections - replacing graph');
+        const { nodes, relationships } = extractNodesAndRelationships(newItemInfluences);
+        
+        setAccumulatedGraph({
+          nodes,
+          relationships,
+          selectedNodeId: itemId,
+          expandedNodeIds: new Set([itemId])
+        });
       }
+    } catch (err) {
+      console.error('Failed to load new item influences:', err);
+      setError('Failed to load new item in graph');
+    } finally {
+      setGraphLoading(false);
     }
   };
 

@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Union
 from app.services.ai_agents.base_agent import BaseAgent
 from app.models.structured import StructuredOutput
 
@@ -9,12 +9,66 @@ class StructureAgent(BaseAgent):
     def __init__(self):
         super().__init__(temperature=0.1)
 
+    @staticmethod
+    def convert_year_to_int(year_value) -> Optional[int]:
+        """Convert year string or number to integer"""
+        if year_value is None or year_value == "null":
+            return None
+
+        if isinstance(year_value, int):
+            return year_value
+
+        if isinstance(year_value, str):
+            year_str = year_value.lower().strip()
+
+            # Handle decade formats
+            if year_str.endswith("s"):
+                # "1950s" -> 1950, "1960s" -> 1960
+                try:
+                    decade = int(year_str[:-1])
+                    return decade
+                except ValueError:
+                    pass
+
+            # Handle early/mid/late formats
+            if "early" in year_str:
+                # Extract year from "early 1960s" -> 1960
+                try:
+                    year_match = year_str.replace("early", "").replace("s", "").strip()
+                    return int(year_match)
+                except ValueError:
+                    pass
+
+            if "mid" in year_str:
+                # Extract year from "mid 1960s" -> 1965
+                try:
+                    decade = int(year_str.replace("mid", "").replace("s", "").strip())
+                    return decade + 5
+                except ValueError:
+                    pass
+
+            if "late" in year_str:
+                # Extract year from "late 1960s" -> 1968
+                try:
+                    decade = int(year_str.replace("late", "").replace("s", "").strip())
+                    return decade + 8
+                except ValueError:
+                    pass
+
+            # Try direct conversion
+            try:
+                return int(year_str)
+            except ValueError:
+                pass
+
+        return None
+
     async def structure_influences(
         self,
         influences_text: str,
         main_item: str,
         main_item_creator: str = None,
-    ) -> StructuredOutput:  # ADDED: main_item_creator parameter
+    ) -> StructuredOutput:
         """Convert free text influences into structured data"""
 
         # DEBUG: Print input
@@ -23,7 +77,6 @@ class StructureAgent(BaseAgent):
         print(f"Input text preview: {influences_text[:200]}...")
         print(f"Main item: {main_item} by {main_item_creator}")
 
-        # FIXED: Escape all curly braces in the JSON structure so LangChain doesn't think they're variables
         system_message = """You are an expert at extracting structured influence data from text.
 
 Convert influence descriptions into valid JSON format with this exact structure:
@@ -42,7 +95,7 @@ Convert influence descriptions into valid JSON format with this exact structure:
       "creator_type": "person/organization/collective or null",
       "year": year_number,
       "category": "Audio Samples & Music/Literary Techniques/etc",
-      "influence_type": "audio_sample/literary_technique/personal_experience/cinematic_influence/musical_technique/cultural_context/technological/other",
+      "influence_type": "audio_sample/literary_technique/personal_experience/cinematic_influence/musical_technique/cultural_context/technological",
       "confidence": 0.85,
       "explanation": "brief explanation of how this influenced the main item",
       "source": "source info or null"
@@ -51,29 +104,40 @@ Convert influence descriptions into valid JSON format with this exact structure:
   "categories": ["Audio Samples & Music", "Literary Techniques"]
 }}
 
-IMPORTANT RULES FOR YEARS (CRITICAL!):
-- Years must be numbers (1999) or null. Years must never be referred to as strings like "1980s", time periods like 1937-1949 or decades/centuries like 5th-6th century. 
-- If the main item doesn't have a year, add a best guess. 
-- If an influence doesn't have a year, add a best guess. 
+CRITICAL YEAR REQUIREMENTS (MOST IMPORTANT):
+- Years must ALWAYS be integers (1999) or null, NEVER strings
+- For "1950s" use: 1950
+- For "early 1960s" use: 1960
+- For "mid 1960s" use: 1965
+- For "late 1960s" use: 1968
+- For "1960s" use: 1960
+- NEVER return strings like "1950s" or "1960s" - always convert to integers
+- If you cannot determine a year, use null (not quoted)
 
-OTHER IMPORTANT RULES:
+EXAMPLES OF CORRECT YEARS:
+✅ "year": 1950 (for "1950s")
+✅ "year": 1960 (for "1960s" or "early 1960s")
+✅ "year": null (if unknown)
+❌ "year": "1950s" (WRONG - never use strings)
+❌ "year": "1960s" (WRONG - never use strings)
+
+OTHER RULES:
 - Use null (not quoted) for missing values
 - All string values must be quoted
 - No trailing commas
 - Return ONLY valid JSON, no other text
-- AUTO-DETECT main_item_type - don't ask user (song/movie/innovation/book/technique/etc)
-- Use creator_name and creator_type instead of artist (more flexible)
-- Creator types: person (individuals), organization (companies/studios), collective (movements/traditions)
-- Create categories freely - we'll clean up duplicates later when we have 20+
-- Use confidence scores 0.3-0.9 (0.7-0.9 for well-documented, 0.5-0.7 for likely, 0.3-0.5 for speculative)
-- Extract 3-7 influences from the text if they exist
-- The input has an explanation of how this influenced the main item. Be specific in explanations - HOW did this influence the main item?
-- Never use "other" in category. Always try to put a category to it.
+- AUTO-DETECT main_item_type
+- Use creator_name and creator_type instead of artist
+- Creator types: person, organization, collective
+- Use confidence scores 0.3-0.9
+- Extract 3-7 influences from the text
+- Be specific in explanations - HOW did this influence the main item?
+- Never use "other" in category
 
-CATEGORY EXAMPLES (create new ones as needed):
+CATEGORY EXAMPLES:
 - Audio Samples & Music
 - Literary Techniques
-- Personal Experiences  
+- Personal Experiences
 - Cinematic Influences
 - Musical Production Techniques
 - Cultural Context
@@ -88,10 +152,10 @@ CATEGORY EXAMPLES (create new ones as needed):
 INFLUENCES TEXT:
 {influences_text}
 
-Return only valid JSON following the exact structure specified. Auto-detect the type and creator information from the context."""
+Return only valid JSON following the exact structure specified. Auto-detect the type and creator information from the context. Remember: ALL YEARS MUST BE INTEGERS, NOT STRINGS."""
 
         prompt = self.create_prompt(system_message, human_message)
-        response = None  # Initialize response variable
+        response = None
 
         try:
             response = await self.invoke(prompt, {})
@@ -108,10 +172,14 @@ Return only valid JSON following the exact structure specified. Auto-detect the 
                 print(f"Extracted JSON:\n{json_str}")
 
                 data = json.loads(json_str)
-                # Add validation:
                 print(f"Validating parsed data...")
 
-                # Clean up any invalid influence names
+                # Convert main item year
+                data["main_item_year"] = self.convert_year_to_int(
+                    data.get("main_item_year")
+                )
+
+                # Clean up influences
                 if "influences" in data:
                     cleaned_influences = []
                     for i, inf in enumerate(data["influences"]):
@@ -126,22 +194,30 @@ Return only valid JSON following the exact structure specified. Auto-detect the 
                             ]:
                                 print(f"Skipping invalid influence name: {name}")
                                 continue
+
                             # Convert to string and validate
                             name_str = str(name).strip()
                             if not name_str or len(name_str) < 2:
                                 print(f"Skipping too short influence name: {name_str}")
                                 continue
+
                             inf["name"] = name_str
-                            cleaned_influences.append(
-                                inf
-                            )  # MOVED: Only append if name is valid
+
+                            # CONVERT YEAR TO INTEGER
+                            converted_year = self.convert_year_to_int(inf.get("year"))
+                            inf["year"] = converted_year
+
+                            if converted_year is None:
+                                print(
+                                    f"Warning: Could not convert year for influence '{inf['name']}': {inf.get('year')}"
+                                )
+
+                            cleaned_influences.append(inf)
                         else:
                             print(f"Skipping influence {i + 1}: no name field")
 
                     data["influences"] = cleaned_influences
-                    print(
-                        f"Cleaned influences: {len(cleaned_influences)} out of {len(data.get('influences', []))}"
-                    )
+                    print(f"Cleaned influences: {len(cleaned_influences)}")
 
                 result = StructuredOutput(**data)
                 print(f"Final StructuredOutput influences: {len(result.influences)}")
@@ -154,15 +230,17 @@ Return only valid JSON following the exact structure specified. Auto-detect the 
 
         except Exception as e:
             print(f"Structure parsing error: {e}")
-            if response:  # Only print response if it exists
+            if response:
                 print(f"Response that failed to parse: {response}")
             else:
                 print("No response received from LLM")
+
             # Return empty structure as fallback
             return StructuredOutput(
                 main_item=main_item,
-                main_item_type=main_item_type,
-                main_item_artist=main_item_artist,
+                main_item_type="unknown",
+                main_item_creator=main_item_creator,
+                main_item_creator_type=None,
                 main_item_year=None,
                 influences=[],
                 categories=[],

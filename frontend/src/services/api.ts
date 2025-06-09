@@ -137,15 +137,49 @@ export const api = {
   },
 
   structureInfluences: async (request: StructureRequest): Promise<StructuredOutput> => {
-    const response = await fetch(`${API_BASE}/ai/structure`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-    if (!response.ok) throw new Error('AI structure failed');
-    return response.json();
+    try {
+      const response = await fetch(`${API_BASE}/ai/structure`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+  
+      if (!response.ok) {
+        // Try to get detailed error from backend
+        let errorMessage = `Structure failed (${response.status})`;
+        
+        try {
+          const errorData = await response.json();
+          console.error('Backend error details:', errorData); // Add this for debugging
+          
+          if (errorData.detail) {
+            errorMessage = `Structure failed: ${errorData.detail}`;
+          } else if (errorData.message) {
+            errorMessage = `Structure failed: ${errorData.message}`;
+          }
+        } catch {
+          // If we can't parse error response, use generic message based on status
+          if (response.status === 500) {
+            errorMessage = 'Server error while structuring influences. This could be due to invalid data format, AI processing timeout, or missing required fields.';
+          } else if (response.status === 422) {
+            errorMessage = 'Invalid request data format. Check that all required fields are present.';
+          } else if (response.status === 400) {
+            errorMessage = 'Bad request - the research text may be malformed or too complex.';
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+  
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error; // Re-throw with original message
+      }
+      throw new Error('Failed to structure influences - network or parsing error');
+    }
   },
 
   saveStructuredInfluences: async (structuredData: StructuredOutput): Promise<{ item_id: string }> => {

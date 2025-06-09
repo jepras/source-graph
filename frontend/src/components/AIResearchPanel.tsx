@@ -294,46 +294,6 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         </div>
       )}
 
-      {/* Research Results */}
-      {result && result.success && (
-        <div className="space-y-3">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="text-sm font-semibold text-gray-800">
-                🎯 "{result.item_name}"
-              </h4>
-              
-              <button
-                onClick={handleStructure}
-                disabled={structureLoading}
-                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-              >
-                {structureLoading ? 'Processing...' : 'Structure'}
-              </button>
-            </div>
-            
-            <div className="text-xs text-gray-600">
-              {isExpanded ? (
-                <div className="whitespace-pre-wrap">
-                  {result.influences_text}
-                </div>
-              ) : (
-                <div>
-                  {result.influences_text.substring(0, 200)}...
-                </div>
-              )}
-            </div>
-            
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
-            >
-              {isExpanded ? 'Show Less' : 'Show More'}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Structured Results */}
       {structuredResult && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -417,6 +377,48 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
           )}
         </div>
       )}
+
+      {/* Research Results */}
+      {result && result.success && (
+        <div className="space-y-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="text-sm font-semibold text-gray-800">
+                🎯 "{result.item_name}"
+              </h4>
+              
+              <button
+                onClick={handleStructure}
+                disabled={structureLoading}
+                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {structureLoading ? 'Processing...' : 'Structure'}
+              </button>
+            </div>
+            
+            <div className="text-xs text-gray-600">
+              {isExpanded ? (
+                <div className="whitespace-pre-wrap">
+                  {result.influences_text}
+                </div>
+              ) : (
+                <div>
+                  {result.influences_text.substring(0, 200)}...
+                </div>
+              )}
+            </div>
+            
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-2 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+            >
+              {isExpanded ? 'Show Less' : 'Show More'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      
 
       {/* Empty State */}
       {!result && !loading && !error && (
