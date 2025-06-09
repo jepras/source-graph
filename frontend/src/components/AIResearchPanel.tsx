@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import type { ResearchRequest, ResearchResponse, StructureRequest, StructuredOutput } from '../services/api';
 import { ConflictResolution } from './ConflictResolution';
-
+import { YearValidation } from './YearValidation';
 
 interface AIResearchPanelProps {
   onItemSaved: (itemId: string) => void;
@@ -21,9 +21,7 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
   const [conflictData, setConflictData] = useState<any>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStructuredExpanded, setIsStructuredExpanded] = useState(false);
-  
-
-
+  const [yearValidationData, setYearValidationData] = useState<StructuredOutput | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,15 +99,13 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
     }
   };
 
-  // Update handleSave
-  const handleSave = async () => {
-    if (!structuredResult) return;
-  
+  // Extract the actual save logic to a separate function
+  const saveStructuredData = async (dataToSave: StructuredOutput) => {
     setSaveLoading(true);
     setError(null);
-  
+
     try {
-      const saveResponse = await api.saveStructuredInfluences(structuredResult);
+      const saveResponse = await api.saveStructuredInfluences(dataToSave);
       
       if (saveResponse.requires_review) {
         // Show conflict resolution UI
@@ -118,6 +114,7 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         // Normal save success
         setSavedItemId(saveResponse.item_id);
         onItemSaved(saveResponse.item_id);
+        setYearValidationData(null); // Clear year validation
       }
       
     } catch (err) {
@@ -125,6 +122,43 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
     } finally {
       setSaveLoading(false);
     }
+  };
+
+  // Updated handleSave with year validation check
+  const handleSave = async () => {
+    if (!structuredResult) return;
+
+    // Check if any items are missing years
+    const missingYears = [];
+    
+    if (!structuredResult.main_item_year) {
+      missingYears.push('main item');
+    }
+    
+    const influencesWithoutYears = structuredResult.influences.filter(inf => !inf.year);
+    if (influencesWithoutYears.length > 0) {
+      missingYears.push(`${influencesWithoutYears.length} influence(s)`);
+    }
+
+    if (missingYears.length > 0) {
+      // Show year validation instead of saving directly
+      setYearValidationData(structuredResult);
+      return;
+    }
+
+    // If all years are present, save directly
+    await saveStructuredData(structuredResult);
+  };
+
+  // Add handlers for year validation
+  const handleYearValidationResolve = async (updatedData: StructuredOutput) => {
+    setYearValidationData(null);
+    setStructuredResult(updatedData); // Update the structured result with years
+    await saveStructuredData(updatedData);
+  };
+
+  const handleYearValidationCancel = () => {
+    setYearValidationData(null);
   };
 
   const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string) => {
@@ -158,6 +192,8 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
     setStructuredResult(null);
     setSavedItemId(null);
     setError(null);
+    setYearValidationData(null);
+    setConflictData(null);
   };
 
   return (
@@ -258,6 +294,7 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         </div>
       )}
 
+      {/* Research Results */}
       {result && result.success && (
         <div className="space-y-3">
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -299,81 +336,87 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
 
       {/* Structured Results */}
       {structuredResult && (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <h4 className="text-sm font-semibold text-blue-800 mb-2">
-          📊 Structured Data
-        </h4>
-        
-        <div className="text-xs space-y-1 mb-3">
-          <div><strong>Item:</strong> {structuredResult.main_item}</div>
-          <div><strong>Influences:</strong> {structuredResult.influences.length}</div>
-          <div><strong>Categories:</strong> {structuredResult.categories.join(', ')}</div>
-        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <h4 className="text-sm font-semibold text-blue-800 mb-2">
+            📊 Structured Data
+          </h4>
+          
+          <div className="text-xs space-y-1 mb-3">
+            <div><strong>Item:</strong> {structuredResult.main_item}</div>
+            <div><strong>Influences:</strong> {structuredResult.influences.length}</div>
+            <div><strong>Categories:</strong> {structuredResult.categories.join(', ')}</div>
+          </div>
 
-        {/* Expandable structured data details */}
-        <div className="text-xs text-gray-700 mb-3">
-          {isStructuredExpanded ? (
-            <div className="space-y-2">
-              <div>
-                <strong>All Influences:</strong>
-                <ul className="mt-1 space-y-1 ml-2">
-                  {structuredResult.influences.map((influence, index) => (
-                    <li key={index} className="text-xs">
-                      • <strong>{influence.name}</strong> ({influence.year}) - {influence.influence_type}
-                      {influence.explanation && (
-                        <div className="text-gray-600 ml-2 mt-1">{influence.explanation}</div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              {structuredResult.main_item_data && (
+          {/* Expandable structured data details */}
+          <div className="text-xs text-gray-700 mb-3">
+            {isStructuredExpanded ? (
+              <div className="space-y-2">
                 <div>
-                  <strong>Main Item Details:</strong>
-                  <div className="ml-2 mt-1">
-                    <div>Type: {structuredResult.main_item_data.type}</div>
-                    <div>Year: {structuredResult.main_item_data.year}</div>
-                    {structuredResult.main_item_data.description && (
-                      <div>Description: {structuredResult.main_item_data.description}</div>
-                    )}
-                  </div>
+                  <strong>All Influences:</strong>
+                  <ul className="mt-1 space-y-1 ml-2">
+                    {structuredResult.influences.map((influence, index) => (
+                      <li key={index} className="text-xs">
+                        • <strong>{influence.name}</strong> ({influence.year || 'No year'}) - {influence.influence_type}
+                        {influence.explanation && (
+                          <div className="text-gray-600 ml-2 mt-1">{influence.explanation}</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              )}
-            </div>
+                
+                {structuredResult.main_item_data && (
+                  <div>
+                    <strong>Main Item Details:</strong>
+                    <div className="ml-2 mt-1">
+                      <div>Type: {structuredResult.main_item_data.type}</div>
+                      <div>Year: {structuredResult.main_item_data.year || 'No year'}</div>
+                      {structuredResult.main_item_data.description && (
+                        <div>Description: {structuredResult.main_item_data.description}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-600">
+                Click "Show Details" to see all influences and structured data
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsStructuredExpanded(!isStructuredExpanded)}
+            className="mb-3 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+          >
+            {isStructuredExpanded ? 'Hide Details' : 'Show Details'}
+          </button>
+
+          {/* Year Validation, Conflict Resolution, or Save Button */}
+          {yearValidationData ? (
+            <YearValidation
+              structuredData={yearValidationData}
+              onResolve={handleYearValidationResolve}
+              onCancel={handleYearValidationCancel}
+            />
+          ) : conflictData ? (
+            <ConflictResolution
+              similarItems={conflictData.similar_items}
+              newData={conflictData.new_data}
+              onResolve={handleConflictResolve}
+              onCancel={() => setConflictData(null)}
+            />
           ) : (
-            <div className="text-gray-600">
-              Click "Show Details" to see all influences and structured data
-            </div>
+            <button 
+              onClick={handleSave}
+              disabled={saveLoading || savedItemId !== null}
+              className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saveLoading ? 'Checking for conflicts...' : savedItemId ? '✅ Saved' : '💾 Save to Graph'}
+            </button>
           )}
         </div>
-
-        <button
-          onClick={() => setIsStructuredExpanded(!isStructuredExpanded)}
-          className="mb-3 text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
-        >
-          {isStructuredExpanded ? 'Hide Details' : 'Show Details'}
-        </button>
-
-        {/* Conflict Resolution or Save Button */}
-        {conflictData ? (
-          <ConflictResolution
-            similarItems={conflictData.similar_items}
-            newData={conflictData.new_data}
-            onResolve={handleConflictResolve}
-            onCancel={() => setConflictData(null)}
-          />
-        ) : (
-          <button 
-            onClick={handleSave}
-            disabled={saveLoading || savedItemId !== null}
-            className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saveLoading ? 'Checking for conflicts...' : savedItemId ? '✅ Saved' : '💾 Save to Graph'}
-          </button>
-        )}
-      </div>
-    )}
+      )}
 
       {/* Empty State */}
       {!result && !loading && !error && (

@@ -53,7 +53,8 @@ Convert influence descriptions into valid JSON format with this exact structure:
 
 IMPORTANT RULES FOR YEARS (CRITICAL!):
 - Years must be numbers (1999) or null. Years must never be referred to as strings like "1980s", time periods like 1937-1949 or decades/centuries like 5th-6th century. 
-- If an item doesn't have a year, add a best guess. 
+- If the main item doesn't have a year, add a best guess. 
+- If an influence doesn't have a year, add a best guess. 
 
 OTHER IMPORTANT RULES:
 - Use null (not quoted) for missing values

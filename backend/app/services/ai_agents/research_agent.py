@@ -18,10 +18,10 @@ class ResearchAgent(BaseAgent):
         CRITICAL REQUIREMENT: Every single item and influence MUST have a specific year. Exact years only, not decades or anything. This is absolutely mandatory.
         It can be difficult to get an exact year for every thing, but do a best guess for things in any case. This also includes things that might last over a longer time period or are otherwise difficult to pinpoint a specific year to. 
         
-        If there is something you cannot determine even an approximate year for an influence, include that in the end of the response under a headline called Ommitted Items.
+        If there is something you cannot determine even an approximate year for an influence, include that in the end of the response under a headline called Ommitted Items. 
         
         Structure of output:
-        - Short description of what the item researched is. Use one line maximum. This description must include a best guess of the year of this item. 
+        - Short description of what the main item researched is. Use one line maximum. This description must include a best guess of the year of this item. 
         - A numbered list of influences, ranking from highest influence to lowest. 
 
         Look for ANY type of influence, including but not limited to:
@@ -49,6 +49,7 @@ class ResearchAgent(BaseAgent):
         
         Example:
         'The Beatles' were a British rock band that revolutionized the music industry and left a lasting impact on popular culture worldwide.
+        - Year used for indexing: 1960
         
         1. **Rock and Roll Music**
         Explanation: The Beatles were heavily influenced by American rock and roll artists such as Elvis Presley, Chuck Berry, and Little Richard. They incorporated elements of rock and roll into their music, helping to shape their energetic and dynamic sound.
