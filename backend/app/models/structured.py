@@ -64,6 +64,7 @@ class StructuredOutput(BaseModel):
         None, description="person/organization"
     )
     main_item_year: Optional[int] = None
+    main_item_description: Optional[str] = None  # ADD this if missing
     influences: List[StructuredInfluence]
     categories: List[str]  # All unique categories found
 

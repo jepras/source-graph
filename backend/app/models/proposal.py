@@ -60,6 +60,8 @@ class ProposalResponse(BaseModel):
     item_name: str
     item_type: Optional[str]
     artist: Optional[str]
+    item_description: Optional[str] = None  # NEW: Add this line
+    item_year: Optional[int] = None  # NEW: Add this line
     macro_influences: List[InfluenceProposal] = Field(
         description="Major foundational influences"
     )
@@ -100,4 +102,5 @@ class AcceptProposalsRequest(BaseModel):
     item_type: Optional[str] = None
     artist: Optional[str] = None
     item_year: Optional[int] = None
+    item_description: Optional[str] = None  # Make sure this line exists
     accepted_proposals: List[InfluenceProposal]

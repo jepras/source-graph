@@ -121,6 +121,8 @@ export interface ProposalResponse {
   item_name: string;
   item_type?: string;
   artist?: string;
+  item_description?: string;  // ADD this line
+  item_year?: number;         // ADD this line
   macro_influences: InfluenceProposal[];
   micro_influences: InfluenceProposal[];
   nano_influences: InfluenceProposal[];
@@ -145,6 +147,7 @@ export interface AcceptProposalsRequest {
   item_type?: string;
   artist?: string;
   item_year?: number;
+  item_description?: string;  // ADD this line
   accepted_proposals: InfluenceProposal[];
 }
 

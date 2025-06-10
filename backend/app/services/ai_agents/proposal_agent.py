@@ -45,6 +45,7 @@ class ProposalAgent(BaseAgent):
     - Specific personal experiences or moments
 
     CRITICAL REQUIREMENTS:
+    - It is important that you also research what year the main_item is from. It needs to be included in the JSON.
     - Each influence MUST have a specific year (integer only, never strings)
     - Provide influences across diverse categories (don't repeat categories)
     - Each influence needs: name, year, category, scope, explanation, confidence
@@ -58,6 +59,7 @@ class ProposalAgent(BaseAgent):
     "main_item_type": "auto-detected type",
     "main_item_year": year_integer,
     "main_item_creator": "creator name",
+    "main_item_description": "brief one-line description of the main item",
     "proposals": [
         {{
         "name": "influence name",
@@ -112,6 +114,8 @@ class ProposalAgent(BaseAgent):
                 item_name=item_name,
                 item_type=item_type,
                 artist=artist,
+                item_description=None,  # NEW: Add this line
+                item_year=None,  # NEW: Add this line
                 macro_influences=[],
                 micro_influences=[],
                 nano_influences=[],
@@ -258,6 +262,10 @@ class ProposalAgent(BaseAgent):
                 item_name=item_name,
                 item_type=item_type or data.get("main_item_type"),
                 artist=artist or data.get("main_item_creator"),
+                item_description=data.get(
+                    "main_item_description"
+                ),  # NEW: Add this line
+                item_year=data.get("main_item_year"),  # NEW: Add this line
                 macro_influences=macro_influences,
                 micro_influences=micro_influences,
                 nano_influences=nano_influences,
@@ -302,6 +310,8 @@ class ProposalAgent(BaseAgent):
                 item_name=item_name,
                 item_type=item_type,
                 artist=artist,
+                item_description=None,  # NEW: Add this line
+                item_year=None,  # NEW: Add this line
                 macro_influences=[],
                 micro_influences=[],
                 nano_influences=[],

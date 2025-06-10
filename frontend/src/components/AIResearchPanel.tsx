@@ -285,9 +285,17 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         item_name: proposals.item_name,
         item_type: proposals.item_type,
         artist: proposals.artist,
-        item_year: new Date().getFullYear(),
+        item_year: proposals.item_year,         // ✅ Use AI's year
+        item_description: proposals.item_description, // ✅ Use AI's description
         accepted_proposals: selectedObjects.map(p => ({ ...p, accepted: true }))
       };
+
+      // ADD THIS DEBUG BLOCK
+      console.log('=== FRONTEND SAVE DEBUG ===');
+      console.log('Request object:', request);
+      console.log('proposals.item_year:', proposals.item_year);
+      console.log('proposals.item_description:', proposals.item_description);
+      console.log('=== END DEBUG ===');
   
       const result = await proposalApi.acceptProposals(request);
       
@@ -481,9 +489,27 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
       {researchMode === 'proposals' && proposals && proposals.success && (
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2">
+          <div className="mb-3">
+            <h4 className="text-sm font-semibold text-blue-800 mb-1">
               🎯 Influence Proposals for "{proposals.item_name}"
             </h4>
+            
+            {/* Add this new section for description and year */}
+            <div className="text-xs text-blue-700 space-y-1">
+              {proposals.item_year && (
+                <div><strong>Year:</strong> {proposals.item_year}</div>
+              )}
+              {proposals.item_description && (
+                <div><strong>Description:</strong> {proposals.item_description}</div>
+              )}
+              {proposals.artist && (
+                <div><strong>Artist:</strong> {proposals.artist}</div>
+              )}
+              {proposals.item_type && (
+                <div><strong>Type:</strong> {proposals.item_type}</div>
+              )}
+            </div>
+          </div>
             
             <div className="text-xs space-y-1 mb-3">
               <div><strong>Total Proposals:</strong> {proposals.total_proposals}</div>

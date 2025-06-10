@@ -748,9 +748,16 @@ class GraphService:
     def save_structured_influences(self, structured_data: StructuredOutput) -> str:
         """Save complete structured influence data to database with scope support"""
 
+        print(f"=== SAVE DEBUG ===")
+        print(f"Saving main_item: {structured_data.main_item}")
+        print(f"Saving main_item_description: {structured_data.main_item_description}")
+        print(f"Saving main_item_year: {structured_data.main_item_year}")
+        print(f"=== END SAVE DEBUG ===")
+
         # 1. Create or get main item
         main_item = self.create_item(
             name=structured_data.main_item,
+            description=structured_data.main_item_description,  # ADD this line
             auto_detected_type=structured_data.main_item_type,
             year=structured_data.main_item_year,
         )
@@ -798,6 +805,8 @@ class GraphService:
             # Ensure category exists
             self.ensure_category_exists(influence.category)
 
+        print(f"Created item with ID: {main_item.id}")
+
         return main_item.id
 
     def get_item_by_id(self, item_id: str) -> Optional[Item]:
@@ -809,6 +818,13 @@ class GraphService:
             record = result.single()
             if record:
                 node = record["i"]
+
+                print(f"=== GET ITEM DEBUG ===")
+                print(f"Retrieved item: {node['name']}")
+                print(f"Raw description from DB: {node.get('description')}")
+                print(f"Raw year from DB: {node.get('year')}")
+                print(f"All properties: {dict(node)}")
+                print(f"=== END GET ITEM DEBUG ===")
                 return Item(
                     id=node["id"],
                     name=node["name"],

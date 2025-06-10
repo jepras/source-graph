@@ -133,6 +133,15 @@ async def get_more_proposals(request: MoreProposalsRequest):
 async def accept_proposals(request: AcceptProposalsRequest):
     """Save accepted proposals to the database"""
     try:
+        print(f"=== ACCEPT PROPOSALS DEBUG ===")
+        print(f"Request item_name: {request.item_name}")
+        print(f"Request item_year: {request.item_year}")
+        print(
+            f"Request item_description: {getattr(request, 'item_description', 'FIELD_MISSING')}"
+        )
+        print(f"Request item_type: {request.item_type}")
+        print(f"Request artist: {request.artist}")
+
         if not request.accepted_proposals:
             raise HTTPException(
                 status_code=400, detail="No proposals provided to accept"
@@ -164,8 +173,15 @@ async def accept_proposals(request: AcceptProposalsRequest):
             main_item_creator=request.artist,
             main_item_creator_type="person" if request.artist else None,
             main_item_year=request.item_year,
+            main_item_description=request.item_description,  # ADD this line
             influences=structured_influences,
             categories=list(set([inf.category for inf in structured_influences])),
+        )
+
+        print(f"=== STRUCTURED DATA CREATED ===")
+        print(f"structured_data.main_item_year: {structured_data.main_item_year}")
+        print(
+            f"structured_data.main_item_description: {structured_data.main_item_description}"
         )
 
         # Save to database using existing graph service
