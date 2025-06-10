@@ -13,6 +13,10 @@ class StructuredInfluence(BaseModel):
     )
     year: Optional[int] = Field(None, description="Year of creation")
     category: str = Field(description="Category - LLM creates freely")
+    scope: str = Field(
+        description="Influence scope: 'macro' (major foundational influences), 'micro' (specific techniques/elements), or 'nano' (tiny details)",
+        default="macro",
+    )
     influence_type: str = Field(
         description="How it influenced (sample/technique/inspiration/etc)"
     )
@@ -37,6 +41,13 @@ class StructuredInfluence(BaseModel):
         if v is None:
             return "Uncategorized"
         return str(v).strip()
+
+    @validator("scope")
+    def validate_scope(cls, v):
+        valid_scopes = ["macro", "micro", "nano"]
+        if v not in valid_scopes:
+            raise ValueError(f"scope must be one of {valid_scopes}")
+        return v
 
     @validator("explanation", pre=True)
     def validate_explanation(cls, v):

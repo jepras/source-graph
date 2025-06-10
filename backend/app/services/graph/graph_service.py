@@ -698,10 +698,13 @@ class GraphService:
         influence_type: str,
         explanation: str,
         category: str,
+        scope: str = "macro",  # Add scope parameter with default
         source: str = None,
         year_of_influence: int = None,
     ):
-        """Create influence relationship between items"""
+        """Create influence relationship between items with scope support"""
+        print(f"DEBUG: Creating relationship with scope: {scope}")  # Add this line
+
         with neo4j_db.driver.session() as session:
             session.run(
                 """
@@ -712,6 +715,7 @@ class GraphService:
                     r.influence_type = $influence_type,
                     r.explanation = $explanation,
                     r.category = $category,
+                    r.scope = $scope,
                     r.source = $source,
                     r.year_of_influence = $year_of_influence,
                     r.created_at = datetime()
@@ -723,6 +727,7 @@ class GraphService:
                     "influence_type": influence_type,
                     "explanation": explanation,
                     "category": category,
+                    "scope": scope,
                     "source": source,
                     "year_of_influence": year_of_influence,
                 },
@@ -741,7 +746,7 @@ class GraphService:
             )
 
     def save_structured_influences(self, structured_data: StructuredOutput) -> str:
-        """Save complete structured influence data to database"""
+        """Save complete structured influence data to database with scope support"""
 
         # 1. Create or get main item
         main_item = self.create_item(
@@ -758,7 +763,7 @@ class GraphService:
             )
             self.link_creator_to_item(main_item.id, creator.id, "primary_creator")
 
-        # 3. Process each influence
+        # 3. Process each influence with scope
         for influence in structured_data.influences:
             # Create influence item
             influence_item = self.create_item(
@@ -777,7 +782,7 @@ class GraphService:
                     influence_item.id, influence_creator.id, "primary_creator"
                 )
 
-            # Create influence relationship
+            # Create influence relationship with scope
             self.create_influence_relationship(
                 from_item_id=influence_item.id,
                 to_item_id=main_item.id,
@@ -785,6 +790,7 @@ class GraphService:
                 influence_type=influence.influence_type,
                 explanation=influence.explanation,
                 category=influence.category,
+                scope=influence.scope,  # Now includes scope
                 source=influence.source,
                 year_of_influence=influence.year,
             )
@@ -814,24 +820,49 @@ class GraphService:
                 )
         return None
 
-    def get_influences(self, item_id: str) -> GraphResponse:
-        """Get item and its influences"""
+    def get_influences(self, item_id: str, scopes: List[str] = None) -> GraphResponse:
+        """Get item and its influences with optional scope filtering"""
         with neo4j_db.driver.session() as session:
             # Get main item
             main_item = self.get_item_by_id(item_id)
             if not main_item:
                 raise ValueError(f"Item {item_id} not found")
 
-            # Get influences with creators
-            result = session.run(
+            # Get influences with creators and optional scope filtering
+            if scopes:
+                # Build the IN clause manually since Neo4j driver has issues with list parameters
+                scope_values = "', '".join(scopes)
+                query = f"""
+                MATCH (influence:Item)-[r:INFLUENCES]->(main:Item {{id: $item_id}})
+                WHERE r.scope IN ['{scope_values}']
+                OPTIONAL MATCH (influence)-[:CREATED_BY]->(creator:Creator)
+                RETURN influence, r, creator
+                ORDER BY influence.year ASC
                 """
+
+                # Category query with same filter
+                category_query = f"""
+                MATCH (influence:Item)-[r:INFLUENCES]->(:Item {{id: $item_id}})
+                WHERE r.scope IN ['{scope_values}']
+                RETURN DISTINCT r.category as category
+                """
+            else:
+                query = """
                 MATCH (influence:Item)-[r:INFLUENCES]->(main:Item {id: $item_id})
                 OPTIONAL MATCH (influence)-[:CREATED_BY]->(creator:Creator)
                 RETURN influence, r, creator
                 ORDER BY influence.year ASC
-                """,
-                {"item_id": item_id},
-            )
+                """
+
+                # Category query without filter
+                category_query = """
+                MATCH (influence:Item)-[r:INFLUENCES]->(:Item {id: $item_id})
+                RETURN DISTINCT r.category as category
+                """
+
+            params = {"item_id": item_id}
+
+            result = session.run(query, params)
 
             influences = []
             for record in result:
@@ -852,7 +883,7 @@ class GraphService:
                     ),
                 )
 
-                # Build influence relationship
+                # Build influence relationship with scope
                 influence_relation = InfluenceRelation(
                     from_item=influence_item,
                     to_item=main_item,
@@ -860,20 +891,24 @@ class GraphService:
                     influence_type=relation["influence_type"],
                     explanation=relation["explanation"],
                     category=relation["category"],
+                    scope=relation.get("scope"),  # Will be None for existing data
                     source=relation.get("source"),
                 )
                 influences.append(influence_relation)
 
-            # Get categories
-            result = session.run(
-                """
-                MATCH (influence:Item)-[:INFLUENCES]->(:Item {id: $item_id})
-                MATCH (influence)-[r:INFLUENCES]->(:Item {id: $item_id})
-                RETURN DISTINCT r.category as category
-                """,
-                {"item_id": item_id},
-            )
+            # Get categories (with same scope filter)
+            result = session.run(category_query, params)
             categories = [record["category"] for record in result if record["category"]]
+
+            # Get available scopes (all scopes for this item, regardless of filter)
+            scope_query = """
+            MATCH (influence:Item)-[r:INFLUENCES]->(:Item {id: $item_id})
+            WHERE r.scope IS NOT NULL
+            RETURN DISTINCT r.scope as scope
+            """
+
+            result = session.run(scope_query, {"item_id": item_id})
+            available_scopes = [record["scope"] for record in result if record["scope"]]
 
             # Get creators
             result = session.run(
@@ -898,6 +933,7 @@ class GraphService:
                 influences=influences,
                 categories=categories,
                 creators=creators,
+                scopes=available_scopes,
             )
 
     def search_items(self, query: str) -> List[Item]:

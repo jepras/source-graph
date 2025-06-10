@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
 from app.models.item import Item, GraphResponse
 from app.services.graph.graph_service import graph_service
 
@@ -26,15 +26,36 @@ async def get_item(item_id: str):
 
 
 @router.get("/{item_id}/influences", response_model=GraphResponse)
-async def get_item_influences(item_id: str):
-    """Get item with its influences"""
+async def get_item_influences(
+    item_id: str,
+    scopes: Optional[List[str]] = Query(
+        None, description="Filter by scopes: macro, micro, nano"
+    ),
+):
+    """Get item with its influences, optionally filtered by scope"""
     try:
-        graph_data = graph_service.get_influences(item_id)
+        # Validate scopes if provided
+        if scopes:
+            valid_scopes = {"macro", "micro", "nano"}
+            invalid_scopes = set(scopes) - valid_scopes
+            if invalid_scopes:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid scopes: {list(invalid_scopes)}. Valid scopes: {list(valid_scopes)}",
+                )
+
+        graph_data = graph_service.get_influences(item_id, scopes=scopes)
         return graph_data
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Example usage in URL:
+# GET /api/items/{item_id}/influences                    # All influences
+# GET /api/items/{item_id}/influences?scopes=macro       # Only macro influences
+# GET /api/items/{item_id}/influences?scopes=macro&scopes=micro  # Macro and micro
 
 
 @router.get("/{item_id}/expansion-counts")

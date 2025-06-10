@@ -32,6 +32,9 @@ class InfluenceRelation(BaseModel):
     influence_type: str
     explanation: str
     category: str  # Let LLM create freely
+    scope: Optional[str] = (
+        None  # macro/micro/nano - Optional for backward compatibility
+    )
     source: Optional[str] = None
     year_of_influence: Optional[int] = None
 
@@ -41,3 +44,4 @@ class GraphResponse(BaseModel):
     influences: List[InfluenceRelation]
     categories: List[str]
     creators: List[Creator]
+    scopes: Optional[List[str]] = None  # Add available scopes for filtering
