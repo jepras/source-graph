@@ -99,6 +99,55 @@ export interface ExpandedGraph {
   center_item_id: string;
 }
 
+export interface InfluenceProposal {
+  name: string;
+  type?: string;
+  creator_name?: string;
+  creator_type?: string;
+  year?: number;
+  category: string;
+  scope: string;
+  influence_type: string;
+  confidence: number;
+  explanation: string;
+  source?: string;
+  accepted: boolean;
+  parent_id?: string;
+  children: InfluenceProposal[];
+  is_expanded: boolean;
+}
+
+export interface ProposalResponse {
+  item_name: string;
+  item_type?: string;
+  artist?: string;
+  macro_influences: InfluenceProposal[];
+  micro_influences: InfluenceProposal[];
+  nano_influences: InfluenceProposal[];
+  all_categories: string[];
+  total_proposals: number;
+  success: boolean;
+  error_message?: string;
+}
+
+export interface MoreProposalsRequest {
+  item_name: string;
+  item_type?: string;
+  artist?: string;
+  scope: string;
+  category: string;
+  count: number;
+  existing_influences: string[];
+}
+
+export interface AcceptProposalsRequest {
+  item_name: string;
+  item_type?: string;
+  artist?: string;
+  item_year?: number;
+  accepted_proposals: InfluenceProposal[];
+}
+
 const API_BASE = 'http://localhost:8000/api';
 
 export const api = {
@@ -314,4 +363,63 @@ export const convertExpandedGraphToGraphResponse = (expandedGraph: ExpandedGraph
     categories,
     creators: allCreators
   };
+};
+
+export const proposalApi = {
+  generateProposals: async (request: { item_name: string; artist?: string; item_type?: string }): Promise<ProposalResponse> => {
+    const response = await fetch(`${API_BASE}/ai/propose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to generate proposals');
+    return response.json();
+  },
+
+  getMoreProposals: async (request: MoreProposalsRequest): Promise<{proposals: InfluenceProposal[]; count: number}> => {
+    const response = await fetch(`${API_BASE}/ai/propose/more`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to get more proposals');
+    return response.json();
+  },
+
+  acceptProposals: async (request: AcceptProposalsRequest): Promise<{success: boolean; item_id: string; accepted_count: number}> => {
+    const response = await fetch(`${API_BASE}/ai/proposals/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to accept proposals');
+    return response.json();
+  },
+
+  getSpecifics: async (
+    influenceName: string,
+    influenceExplanation: string,
+    mainItemName: string,
+    mainItemArtist: string = ""
+  ): Promise<InfluenceProposal[]> => {
+    const response = await fetch(`${API_BASE}/ai/specifics`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        influence_name: influenceName,
+        influence_explanation: influenceExplanation,
+        main_item_name: mainItemName,
+        main_item_artist: mainItemArtist,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get specifics');
+    }
+
+    return response.json();
+  },
+
 };

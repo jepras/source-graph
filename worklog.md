@@ -7,3 +7,38 @@ Open questions
 
 Bugs found
 - We need to be able to insert years before 0.
+- In proposal system; new items usually don't have year. Also we need to add "add years" and conflict resolution to that. 
+
+
+
+# What did i learn from coding this with AI
+1.
+Longest debugging session about filtering on an API endpoint. It ended up saying something was weird because 2 queries didn't add up, but the queries weren't exactly the same. One had an Optional param about categories that i tried to remove, and then it worked. It tried leading me down all sorts of issues with neo4j. "Known" issues. Database caching. It could have gotten ugly. 
+
+2. 
+Ask Claude what to include in new chats for maximising context. 
+
+3.
+It would be fun to see if i can one shot this application at the end with everything i know now.
+
+4. 
+It didn't always learn from mistakes. Escaping curly brackets in langchain was an issue every time it had to create the same type of agent. 
+
+5. 
+As a junior learning to program all i did was using boilerplate templates following tutorials, trying to add to them using stack overflow and few things i learned from courses. 
+Now I'm going through full stack development 100x faster. I actually get to see the edge cases that are causing troubles in real life programming (and not in small learning development). I get to reason about what impact my database schema has, the consequences of doing things in one way versus another, adding observability to programs, etc. I could maybe do one of these projects a year, now i can do one a month - at least. 
+
+
+# What interesting influence links could be
+1. 
+How The Streets have influenced music
+- Influences danish artists like Suspekt making Proletar. Probably in other countries as well.
+- Even in 2025 we see it in Little Simz's new album.
+
+2.
+Imagine someone making a search query: Find all nano influences Kendrick Lamar has used and then it just explodes with hundres of small interesting things where he captures small bits from. Shows how everything is made up of everything before (remixed in new ways). 
+
+3. Adding new influences to new items (let's say a new Little Simz album) could make the system into something that is up to date with latest things - different than most LLMs. This can only happen if we can update it with latest, or get community to add to new items. 
+
+4. 
+How nature influences tech? Everything?
