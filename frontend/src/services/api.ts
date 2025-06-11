@@ -151,6 +151,28 @@ export interface AcceptProposalsRequest {
   accepted_proposals: InfluenceProposal[];
 }
 
+export interface UnifiedQuestionRequest {
+  item_name: string;
+  item_type?: string;
+  artist?: string;
+  item_year?: number;
+  item_description?: string;
+  question: string;
+  target_influence_name?: string;
+  target_influence_explanation?: string;
+}
+
+export interface UnifiedQuestionResponse {
+  item_name: string;
+  question: string;
+  question_type: string;
+  target_influence_name?: string;
+  new_influences: InfluenceProposal[];
+  answer_explanation: string;
+  success: boolean;
+  error_message?: string;
+}
+
 const API_BASE = 'http://localhost:8000/api';
 
 export const api = {
@@ -399,29 +421,13 @@ export const proposalApi = {
     return response.json();
   },
 
-  getSpecifics: async (
-    influenceName: string,
-    influenceExplanation: string,
-    mainItemName: string,
-    mainItemArtist: string = ""
-  ): Promise<InfluenceProposal[]> => {
-    const response = await fetch(`${API_BASE}/ai/specifics`, {
+  askQuestion: async (request: UnifiedQuestionRequest): Promise<UnifiedQuestionResponse> => {
+    const response = await fetch(`${API_BASE}/ai/question`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        influence_name: influenceName,
-        influence_explanation: influenceExplanation,
-        main_item_name: mainItemName,
-        main_item_artist: mainItemArtist,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to get specifics');
-    }
-
+    if (!response.ok) throw new Error('Failed to process question');
     return response.json();
   },
 

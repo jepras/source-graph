@@ -7,7 +7,9 @@ import type {
   StructuredOutput,
   ProposalResponse, 
   MoreProposalsRequest, 
-  AcceptProposalsRequest 
+  AcceptProposalsRequest,
+  UnifiedQuestionRequest,    
+  UnifiedQuestionResponse 
 } from '../services/api';
 import { ConflictResolution } from './ConflictResolution';
 import { YearValidation } from './YearValidation';
@@ -35,6 +37,18 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
   const [yearValidationData, setYearValidationData] = useState<StructuredOutput | null>(null);
   const [loadingSpecifics, setLoadingSpecifics] = useState<Record<string, boolean>>({});
   const [expandedProposals, setExpandedProposals] = useState<Record<string, any>>({});
+  
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [questionLoading, setQuestionLoading] = useState(false);
+  const [questionResponse, setQuestionResponse] = useState<UnifiedQuestionResponse | null>(null);
+
+  const [mainItemQuestionText, setMainItemQuestionText] = useState('');
+  const [mainItemQuestionLoading, setMainItemQuestionLoading] = useState(false);
+  const [mainItemQuestionResponse, setMainItemQuestionResponse] = useState<UnifiedQuestionResponse | null>(null);
+  const [influenceQuestions, setInfluenceQuestions] = useState<Record<string, string>>({});
+  const [influenceQuestionLoading, setInfluenceQuestionLoading] = useState<Record<string, boolean>>({});
+  const [influenceQuestionResponses, setInfluenceQuestionResponses] = useState<Record<string, UnifiedQuestionResponse>>({});
 
   // New state for proposal system
   const [researchMode, setResearchMode] = useState<ResearchMode>('traditional');
@@ -271,8 +285,23 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         }
       });
   
-      // Combine original proposals and specifics
-      const allAvailableProposals = [...allProposals, ...allSpecifics];
+      // Get all question responses (main item and individual influences)
+      const allQuestionInfluences: any[] = [];
+      
+      // Add main item question influences
+      if (mainItemQuestionResponse?.new_influences) {
+        allQuestionInfluences.push(...mainItemQuestionResponse.new_influences);
+      }
+      
+      // Add individual influence question influences
+      Object.values(influenceQuestionResponses).forEach((response: any) => {
+        if (response?.new_influences) {
+          allQuestionInfluences.push(...response.new_influences);
+        }
+      });
+  
+      // Combine all available proposals
+      const allAvailableProposals = [...allProposals, ...allSpecifics, ...allQuestionInfluences];
   
       // Filter for only selected proposals
       const selectedObjects = allAvailableProposals.filter(proposal => 
@@ -285,17 +314,10 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         item_name: proposals.item_name,
         item_type: proposals.item_type,
         artist: proposals.artist,
-        item_year: proposals.item_year,         // ✅ Use AI's year
-        item_description: proposals.item_description, // ✅ Use AI's description
+        item_year: proposals.item_year,
+        item_description: proposals.item_description,
         accepted_proposals: selectedObjects.map(p => ({ ...p, accepted: true }))
       };
-
-      // ADD THIS DEBUG BLOCK
-      console.log('=== FRONTEND SAVE DEBUG ===');
-      console.log('Request object:', request);
-      console.log('proposals.item_year:', proposals.item_year);
-      console.log('proposals.item_description:', proposals.item_description);
-      console.log('=== END DEBUG ===');
   
       const result = await proposalApi.acceptProposals(request);
       
@@ -303,6 +325,9 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
         setSavedItemId(result.item_id);
         onItemSaved(result.item_id);
         setSelectedProposals(new Set());
+        // Clear question responses after saving
+        setMainItemQuestionResponse(null);
+        setInfluenceQuestionResponses({});
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save proposals');
@@ -322,6 +347,11 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
     setConflictData(null);
     setProposals(null);
     setSelectedProposals(new Set());
+    // Clear question state
+    setMainItemQuestionText('');
+    setMainItemQuestionResponse(null);
+    setInfluenceQuestions({});
+    setInfluenceQuestionResponses({});
   };
 
   const handleGetSpecifics = async (proposal: any, scope: string) => {
@@ -331,24 +361,116 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
     setLoadingSpecifics(prev => ({ ...prev, [proposalKey]: true }));
     
     try {
-      const specifics = await proposalApi.getSpecifics(
-        proposal.name,
-        proposal.explanation,
-        proposals.item_name,
-        proposals.artist || ""
-      );
+      // NEW: Use unified question system
+      const response = await proposalApi.askQuestion({
+        item_name: proposals.item_name,
+        item_type: proposals.item_type,
+        artist: proposals.artist,
+        item_year: proposals.item_year,
+        item_description: proposals.item_description,
+        question: "Which specific sources, songs, or works influenced this technique?",
+        target_influence_name: proposal.name,
+        target_influence_explanation: proposal.explanation,
+      });
       
-      // Store the specifics for this proposal
-      setExpandedProposals(prev => ({
-        ...prev,
-        [proposalKey]: specifics
-      }));
+      if (response.success) {
+        // Store the specifics (same as before)
+        setExpandedProposals(prev => ({
+          ...prev,
+          [proposalKey]: response.new_influences
+        }));
+      } else {
+        alert('Failed to get specifics: ' + response.error_message);
+      }
       
     } catch (error) {
       console.error('Error getting specifics:', error);
       alert('Failed to get specifics. Please try again.');
     } finally {
       setLoadingSpecifics(prev => ({ ...prev, [proposalKey]: false }));
+    }
+  };
+
+  const handleMainItemQuestion = async () => {
+    if (!proposals || !mainItemQuestionText.trim()) {
+      setError('Please enter a question');
+      return;
+    }
+  
+    setMainItemQuestionLoading(true);
+    setError(null);
+  
+    try {
+      const request: UnifiedQuestionRequest = {
+        item_name: proposals.item_name,
+        item_type: proposals.item_type,
+        artist: proposals.artist,
+        item_year: proposals.item_year,
+        item_description: proposals.item_description,
+        question: mainItemQuestionText.trim(),
+        // No target_influence_name = discovery mode
+      };
+  
+      const response = await proposalApi.askQuestion(request);
+      
+      if (response.success) {
+        setMainItemQuestionResponse(response);
+        setMainItemQuestionText(''); // Clear the input
+      } else {
+        setError(response.error_message || 'Failed to process question');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process question');
+    } finally {
+      setMainItemQuestionLoading(false);
+    }
+  };
+  
+  const handleInfluenceQuestion = async (proposal: any) => {
+    if (!proposals) return;
+    
+    const proposalKey = `${proposal.name}-${proposal.scope}`;
+    const questionText = influenceQuestions[proposalKey];
+    
+    if (!questionText?.trim()) {
+      setError('Please enter a question');
+      return;
+    }
+  
+    setInfluenceQuestionLoading(prev => ({ ...prev, [proposalKey]: true }));
+    setError(null);
+  
+    try {
+      const request: UnifiedQuestionRequest = {
+        item_name: proposals.item_name,
+        item_type: proposals.item_type,
+        artist: proposals.artist,
+        item_year: proposals.item_year,
+        item_description: proposals.item_description,
+        question: questionText.trim(),
+        target_influence_name: proposal.name,
+        target_influence_explanation: proposal.explanation,
+      };
+  
+      const response = await proposalApi.askQuestion(request);
+      
+      if (response.success) {
+        setInfluenceQuestionResponses(prev => ({
+          ...prev,
+          [proposalKey]: response
+        }));
+        // Clear the question input
+        setInfluenceQuestions(prev => ({
+          ...prev,
+          [proposalKey]: ''
+        }));
+      } else {
+        setError(response.error_message || 'Failed to process question');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process question');
+    } finally {
+      setInfluenceQuestionLoading(prev => ({ ...prev, [proposalKey]: false }));
     }
   };
 
@@ -511,11 +633,93 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
             </div>
           </div>
             
-            <div className="text-xs space-y-1 mb-3">
-              <div><strong>Total Proposals:</strong> {proposals.total_proposals}</div>
-              <div><strong>Selected:</strong> {selectedProposals.size}</div>
-              <div><strong>Categories:</strong> {proposals.all_categories.join(', ')}</div>
+          <div className="text-xs space-y-1 mb-3 pt-2 border-t border-blue-200">
+            <div><strong>Total Proposals:</strong> {proposals.total_proposals}</div>
+            <div><strong>Selected:</strong> {selectedProposals.size}</div>
+            <div><strong>Categories:</strong> {proposals.all_categories.join(', ')}</div>
+          </div>
+
+          {/* Inline Main Item Question */}
+          <div className="mb-3 pt-2 border-t border-blue-200">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Ask about "{proposals.item_name}":
+            </label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={mainItemQuestionText}
+                onChange={(e) => setMainItemQuestionText(e.target.value)}
+                placeholder="Can you be more specific about how this influenced it?"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleMainItemQuestion();
+                  }
+                }}
+              />
+              <button
+                onClick={handleMainItemQuestion}
+                disabled={mainItemQuestionLoading || !mainItemQuestionText.trim()}
+                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {mainItemQuestionLoading ? '...' : 'Ask'}
+              </button>
             </div>
+          </div>
+
+          {/* Main Item Question Response */}
+          {mainItemQuestionResponse && mainItemQuestionResponse.success && (
+            <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+              <h6 className="text-xs font-semibold text-green-800 mb-1">
+                ✨ New Influences Found
+              </h6>
+              <p className="text-xs text-green-600 mb-2">
+                {mainItemQuestionResponse.answer_explanation}
+              </p>
+              
+              <div className="space-y-1">
+                {mainItemQuestionResponse.new_influences.map((influence, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => toggleProposal(influence.name, influence.scope)}
+                    className={`p-2 border rounded cursor-pointer text-xs transition-colors ${
+                      isProposalSelected(influence.name, influence.scope)
+                        ? 'border-green-500 bg-green-100'
+                        : 'border-green-200 bg-white hover:border-green-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{influence.name}</div>
+                        <div className="text-gray-600">{influence.category}</div>
+                        <div className="text-gray-700 mt-1">{influence.explanation}</div>
+                        <div className="text-gray-500 mt-1">
+                          {influence.year} • {Math.round(influence.confidence * 100)}% confidence
+                        </div>
+                      </div>
+                      <div className={`w-3 h-3 rounded border-2 flex-shrink-0 ml-2 ${
+                        isProposalSelected(influence.name, influence.scope)
+                          ? 'bg-green-500 border-green-500'
+                          : 'border-green-300'
+                      }`}>
+                        {isProposalSelected(influence.name, influence.scope) && (
+                          <span className="text-white text-xs leading-none">✓</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                onClick={() => setMainItemQuestionResponse(null)}
+                className="mt-2 text-xs text-green-600 hover:text-green-800 underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
             {/* Proposal Lists */}
             {[
@@ -572,28 +776,109 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
                             </div>
                             
                             {/* Action buttons row - not clickable for selection */}
-                            <div className="flex space-x-2 mt-2 pt-2 border-t border-gray-100">
-                              <button
-                                onClick={() => handleGetSpecifics(proposal, proposal.scope)}
-                                disabled={isLoadingSpecifics || hasSpecifics}
-                                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                              >
-                                {isLoadingSpecifics ? 'Loading...' : hasSpecifics ? 'Expanded' : 'Specifics'}
-                              </button>
-                              <button
-                                disabled
-                                className="px-2 py-1 text-xs bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-                              >
-                                Question
-                              </button>
-                              <button
-                                disabled
-                                className="px-2 py-1 text-xs bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-                              >
-                                Propose
-                              </button>
+                            <div className="flex flex-col space-y-2 mt-2 pt-2 border-t border-gray-100">
+                              {/* Existing buttons row */}
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleGetSpecifics(proposal, proposal.scope)}
+                                  disabled={isLoadingSpecifics || hasSpecifics}
+                                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                >
+                                  {isLoadingSpecifics ? 'Loading...' : hasSpecifics ? 'Expanded' : 'Specifics'}
+                                </button>
+                                <button
+                                  disabled
+                                  className="px-2 py-1 text-xs bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                                >
+                                  Propose
+                                </button>
+                              </div>
+                              
+                              {/* NEW: Inline question for this influence */}
+                              <div className="flex space-x-2">
+                                <input
+                                  type="text"
+                                  value={influenceQuestions[`${proposal.name}-${proposal.scope}`] || ''}
+                                  onChange={(e) => setInfluenceQuestions(prev => ({
+                                    ...prev,
+                                    [`${proposal.name}-${proposal.scope}`]: e.target.value
+                                  }))}
+                                  placeholder={`Ask about "${proposal.name}"...`}
+                                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500 focus:border-transparent"
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleInfluenceQuestion(proposal);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => handleInfluenceQuestion(proposal)}
+                                  disabled={influenceQuestionLoading[`${proposal.name}-${proposal.scope}`] || !influenceQuestions[`${proposal.name}-${proposal.scope}`]?.trim()}
+                                  className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                >
+                                  {influenceQuestionLoading[`${proposal.name}-${proposal.scope}`] ? '...' : 'Ask'}
+                                </button>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Individual influence question response */}
+                          {influenceQuestionResponses[`${proposal.name}-${proposal.scope}`] && (
+                            <div className="ml-4 mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                              <h6 className="text-xs font-semibold text-yellow-800 mb-1">
+                                ✨ More Details Found
+                              </h6>
+                              <p className="text-xs text-yellow-600 mb-2">
+                                {influenceQuestionResponses[`${proposal.name}-${proposal.scope}`].answer_explanation}
+                              </p>
+                              
+                              <div className="space-y-1">
+                                {influenceQuestionResponses[`${proposal.name}-${proposal.scope}`].new_influences.map((influence, index) => (
+                                  <div 
+                                    key={index}
+                                    onClick={() => toggleProposal(influence.name, influence.scope)}
+                                    className={`p-2 border rounded cursor-pointer text-xs transition-colors ${
+                                      isProposalSelected(influence.name, influence.scope)
+                                        ? 'border-yellow-500 bg-yellow-100'
+                                        : 'border-yellow-200 bg-white hover:border-yellow-300'
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between mb-1">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-900">{influence.name}</div>
+                                        <div className="text-gray-600">{influence.category}</div>
+                                        <div className="text-gray-700 mt-1">{influence.explanation}</div>
+                                        <div className="text-gray-500 mt-1">
+                                          {influence.year} • {Math.round(influence.confidence * 100)}% confidence
+                                        </div>
+                                      </div>
+                                      <div className={`w-3 h-3 rounded border-2 flex-shrink-0 ml-2 ${
+                                        isProposalSelected(influence.name, influence.scope)
+                                          ? 'bg-yellow-500 border-yellow-500'
+                                          : 'border-yellow-300'
+                                      }`}>
+                                        {isProposalSelected(influence.name, influence.scope) && (
+                                          <span className="text-white text-xs leading-none">✓</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              <button
+                                onClick={() => setInfluenceQuestionResponses(prev => {
+                                  const newResponses = { ...prev };
+                                  delete newResponses[`${proposal.name}-${proposal.scope}`];
+                                  return newResponses;
+                                })}
+                                className="mt-2 text-xs text-yellow-600 hover:text-yellow-800 underline"
+                              >
+                                Dismiss
+                              </button>
+                            </div>
+                          )}
                           
                           {/* Nested specifics */}
                           {hasSpecifics && hasSpecifics.length > 0 && (
@@ -793,6 +1078,7 @@ export const AIResearchPanel: React.FC<AIResearchPanelProps> = ({ onItemSaved })
           </p>
         </div>
       )}
+      
     </div>
   );
 };

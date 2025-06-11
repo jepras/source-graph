@@ -10,6 +10,8 @@ from app.models.proposal import (
     MoreProposalsRequest,
     AcceptProposalsRequest,
     InfluenceProposal,
+    UnifiedQuestionRequest,
+    UnifiedQuestionResponse,
 )
 from app.services.ai_agents.proposal_agent import proposal_agent
 from app.services.graph.graph_service import graph_service
@@ -235,32 +237,31 @@ async def test_proposals(item_name: str, artist: str = None, item_type: str = No
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
 
 
-@router.post("/specifics", response_model=List[InfluenceProposal])
-async def get_influence_specifics(request: dict):
-    """Get specific nano-level influences for a given influence proposal"""
+@router.post("/question", response_model=UnifiedQuestionResponse)
+async def ask_question(request: UnifiedQuestionRequest):
+    """Unified endpoint for asking any question about items or influences"""
     try:
-        # Extract the influence details from request
-        influence_name = request.get("influence_name")
-        influence_explanation = request.get("influence_explanation")
-        main_item_name = request.get("main_item_name")
-        main_item_artist = request.get("main_item_artist", "")
+        print(f"=== UNIFIED QUESTION API DEBUG ===")
+        print(f"Item: {request.item_name}")
+        print(f"Question: {request.question}")
+        print(f"Target influence: {request.target_influence_name}")
+        print(f"=== END DEBUG ===")
 
-        if not all([influence_name, influence_explanation, main_item_name]):
-            raise HTTPException(
-                status_code=400,
-                detail="Missing required fields: influence_name, influence_explanation, main_item_name",
-            )
-
-        # Generate specific influences using the proposal agent
-        specifics = await proposal_agent.get_influence_specifics(
-            influence_name=influence_name,
-            influence_explanation=influence_explanation,
-            main_item_name=main_item_name,
-            main_item_artist=main_item_artist,
+        response = await proposal_agent.answer_question(
+            item_name=request.item_name,
+            question=request.question,
+            item_type=request.item_type,
+            artist=request.artist,
+            item_year=request.item_year,
+            item_description=request.item_description,
+            target_influence_name=request.target_influence_name,
+            target_influence_explanation=request.target_influence_explanation,
         )
 
-        return specifics
+        return response
 
     except Exception as e:
-        print(f"Error getting influence specifics: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in ask_question: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process question: {str(e)}"
+        )

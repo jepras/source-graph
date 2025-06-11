@@ -9,6 +9,32 @@ Bugs found
 - We need to be able to insert years before 0.
 - In proposal system; new items usually don't have year. Also we need to add "add years" and conflict resolution to that. 
 
+# Things i like
+1.
+I like this idea.. Could i restructure my app in such a way? https://monadical.com/posts/vibe-code-how-to-stay-in-control.html?utm_source=tldrnewsletter#
+The High-Level View
+
+Before scaring managers and leads with implementation details, here’s the conceptual framework:
+
+    Interface packages - Define contracts, data shapes, and the most important tests (human-written)
+    Implementation packages - Fulfill those constraints (Vibe-generated, marked as @vibe-coded in README or in files)
+    Clear dependency direction - Implementation depends on interfaces, never the reverse
+    Regeneration freedom - Any @vibe-coded package can be deleted and rewritten without fear
+
+2.
+For clustering
+
+def generate_graph_clusters(center_item, all_items, all_influences):
+    prompt = f"""
+    You have a graph with {center_item} at the center, connected to {all_items}.
+    
+    Create semantic clusters that make sense for this ENTIRE network, 
+    not just individual items.
+    
+    Consider how influences flow through the network and group related 
+    influence chains together.
+    """
+
 
 
 # What did i learn from coding this with AI
@@ -42,3 +68,6 @@ Imagine someone making a search query: Find all nano influences Kendrick Lamar h
 
 4. 
 How nature influences tech? Everything?
+
+5. 
+What everything in Zelda is influenced by. With images, etc. 

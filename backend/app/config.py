@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # LLM settings
     DEFAULT_MODEL: str = "gpt-3.5-turbo"
-    MAX_TOKENS: int = 1000
+    MAX_TOKENS: int = 4000
     TEMPERATURE: float = 0.7
 
     model_config = SettingsConfigDict(env_file=".env")

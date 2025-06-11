@@ -219,6 +219,40 @@ class ProposalAgent(BaseAgent):
             json_str = json_str.replace(",}", "}")  # Remove trailing commas before }
             json_str = json_str.replace(",]", "]")  # Remove trailing commas before ]
 
+            # Fix common year issues
+            json_str = re.sub(
+                r'"year":\s*"[^"]*"', '"year": null', json_str
+            )  # String years to null
+            json_str = re.sub(
+                r'"year":\s*18th Century', '"year": 1750', json_str
+            )  # Specific fix
+            json_str = re.sub(
+                r'"year":\s*8th Century', '"year": 800', json_str
+            )  # Specific fix
+            json_str = re.sub(
+                r'"year":\s*[a-zA-Z][^,}\]]*', '"year": null', json_str
+            )  # Any text years
+
+            # Fix trailing commas
+            json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
+
+            # Fix incomplete JSON - try to close it
+            if not json_str.rstrip().endswith("}"):
+                # Count open vs closed braces
+                open_braces = json_str.count("{")
+                close_braces = json_str.count("}")
+                open_brackets = json_str.count("[")
+                close_brackets = json_str.count("]")
+
+                # Add missing closing braces/brackets
+                missing_brackets = open_brackets - close_brackets
+                missing_braces = open_braces - close_braces
+
+                for _ in range(missing_brackets):
+                    json_str += "]"
+                for _ in range(missing_braces):
+                    json_str += "}"
+
             if json_str != original_json:
                 print(f"=== CLEANED JSON ===")
                 print(json_str)
@@ -362,70 +396,249 @@ class ProposalAgent(BaseAgent):
             print(f"Error parsing more proposals: {e}")
             return []
 
-    async def get_influence_specifics(
+    async def answer_question(
         self,
-        influence_name: str,
-        influence_explanation: str,
-        main_item_name: str,
-        main_item_artist: str = "",
-    ) -> List[InfluenceProposal]:
-        """Get specific nano-level influences for a given influence"""
+        item_name: str,
+        question: str,
+        item_type: str = None,
+        artist: str = None,
+        item_year: int = None,
+        item_description: str = None,
+        target_influence_name: str = None,
+        target_influence_explanation: str = None,
+    ) -> "UnifiedQuestionResponse":
+        """Unified method to answer any question about items or influences"""
 
-        artist_context = f" by {main_item_artist}" if main_item_artist else ""
+        # Determine question type
+        is_drill_down = target_influence_name is not None
+        question_type = "drill_down" if is_drill_down else "discovery"
 
-        system_message = """You are an expert at breaking down influences into specific nano-level details.
+        print(f"=== UNIFIED QUESTION DEBUG ===")
+        print(f"Item: {item_name}")
+        print(f"Question: {question}")
+        print(f"Question type: {question_type}")
+        if is_drill_down:
+            print(f"Target influence: {target_influence_name}")
+        print(f"=== END DEBUG ===")
 
-    Your job is to take a general influence and break it down into 3-5 SPECIFIC, NANO-LEVEL influences.
+        # Build context about the item
+        item_context = f"Item: {item_name}"
+        if artist:
+            item_context += f" by {artist}"
+        if item_year:
+            item_context += f" ({item_year})"
+        if item_type:
+            item_context += f" - {item_type}"
+        if item_description:
+            item_context += f"\nDescription: {item_description}"
 
-    Each nano influence should be:
-    - Very specific and concrete (nano scope only)
-    - A distinct aspect of the original influence
-    - More detailed than the original explanation
-    - Focus on the HOW and WHAT specifically
+        if is_drill_down:
+            # Level 2: Drill-down question about specific influence
+            system_message = """You are an expert at breaking down influences into specific, traceable sources.
+
+    When a user asks a question about a specific influence, your job is to:
+    1. Answer their question with concrete, specific examples
+    2. Return 3-5 new influence proposals that trace to actual works/sources
+    3. Focus on SPECIFIC songs, products, people, or works rather than techniques
 
     CRITICAL REQUIREMENTS:
-    - Each influence MUST have a specific year (integer only, never strings)
-    - All influences must be "nano" scope
+    - Each influence MUST have a specific year (integer only)
     - Each influence needs: name, year, category, scope, explanation, confidence
-    - Confidence scores: 0.6-0.9 (be realistic about certainty)
-    - Explanations must be very specific about the nano-level detail
+    - Scope should be "nano" for these specific breakdowns
+    - Categories should be very specific (not generic)
+    - Explanations must detail the specific connection
+    - Confidence scores: 0.6-0.9 (be realistic)
 
-    Return ONLY valid JSON array in this exact format:
-    [
-        {{{{
-            "name": "specific technique/element name",
-            "type": "song/album/technique/style/etc",
-            "creator_name": "creator if applicable or null",
-            "creator_type": "person/organization/collective or null",
-            "year": year_integer,
-            "category": "specific category",
-            "scope": "nano",
-            "influence_type": "specific_technique/direct_sample/style_adoption/etc",
-            "confidence": 0.85,
-            "explanation": "very specific explanation of this nano influence",
-            "source": "source_if_available or null"
-        }}}}
-    ]"""
+    Return ONLY valid JSON in this exact format:
+    {{
+    "answer_explanation": "explanation of how you found these specific sources",
+    "new_influences": [
+        {{
+        "name": "specific work/source name",
+        "type": "song/album/product/technique/style/etc",
+        "creator_name": "creator if applicable or null",
+        "creator_type": "person/organization/collective or null", 
+        "year": year_integer,
+        "category": "very specific category",
+        "scope": "nano",
+        "influence_type": "specific_technique/direct_sample/style_adoption/etc",
+        "confidence": 0.85,
+        "explanation": "very specific explanation of this nano influence",
+        "source": "source_if_available or null"
+        }}
+    ]
+    }}
 
-        human_message = f"""Break down this influence into specific nano-level influences:
+    Focus on finding the actual sources - which specific songs, which particular artists, which exact techniques."""
 
-    Original Influence: "{influence_name}"
-    Original Explanation: "{influence_explanation}"
-    Target Item: "{main_item_name}{artist_context}"
+            human_message = f"""Break down this influence into specific sources:
 
-    Find 3-5 specific nano-level aspects of how "{influence_name}" influenced "{main_item_name}".
+    {item_context}
 
-    Return only valid JSON array with the exact structure specified."""
+    Target Influence: "{target_influence_name}"
+    Influence Context: "{target_influence_explanation}"
+
+    User Question: "{question}"
+
+    Find 3-5 specific sources that answer this question. Look for actual songs, albums, artists, products, or techniques that contributed to this influence.
+
+    Return only valid JSON with the exact structure specified."""
+
+        else:
+            # Level 1: Discovery question about main item
+            system_message = """You are an expert at discovering specific influences based on user questions.
+
+    When a user asks a question about a creative work, your job is to:
+    1. Answer their question with specific, traceable influences
+    2. Return 2-5 new influence proposals that directly address their question
+    3. Focus on SPECIFIC works, people, or innovations rather than generic categories
+
+    CRITICAL REQUIREMENTS:
+    - Each influence MUST have a specific year (integer only)
+    - Each influence needs: name, year, category, scope, explanation, confidence
+    - Scope should be "micro" or "nano" for specific influences
+    - Categories should be descriptive and specific
+    - Explanations must detail HOW this specifically influenced the main item
+    - Confidence scores: 0.6-0.9 (be realistic)
+
+    Return ONLY valid JSON in this exact format:
+    {{
+    "answer_explanation": "explanation of how you found these influences",
+    "new_influences": [
+        {{
+        "name": "specific influence name",
+        "type": "influence type",
+        "creator_name": "creator or null",
+        "creator_type": "person/organization/collective or null",
+        "year": year_integer,
+        "category": "specific category",
+        "scope": "micro",
+        "influence_type": "how_it_influenced",
+        "confidence": 0.85,
+        "explanation": "specific explanation of influence",
+        "source": "source_if_available or null"
+        }}
+    ]
+    }}
+
+    Examples of good specific influences:
+    - "Typography class at Reed College (1971)" not "Typography"
+    - "Braun T3 radio by Dieter Rams (1958)" not "Industrial design"
+    - "Good Vibrations by Beach Boys (1966)" not "Vocal layering techniques"
+    """
+
+            human_message = f"""Question about {item_context}:
+
+    User Question: "{question}"
+
+    Find 2-5 specific influences that directly answer this question. Focus on particular works, people, places, or innovations that influenced this item.
+
+    Return only valid JSON with the exact structure specified."""
 
         prompt = self.create_prompt(system_message, human_message)
 
         try:
             response = await self.invoke(prompt, {})
-            return await self._parse_specifics_response(response, influence_name)
+            return await self._parse_unified_question_response(
+                response, item_name, question, question_type, target_influence_name
+            )
 
         except Exception as e:
-            print(f"Error getting specifics for {influence_name}: {e}")
-            return []
+            # Import here to avoid circular import
+            from app.models.proposal import UnifiedQuestionResponse
+
+            return UnifiedQuestionResponse(
+                item_name=item_name,
+                question=question,
+                question_type=question_type,
+                target_influence_name=target_influence_name,
+                new_influences=[],
+                answer_explanation=f"Error processing question: {str(e)}",
+                success=False,
+                error_message=f"Error answering question: {str(e)}",
+            )
+
+    async def _parse_unified_question_response(
+        self,
+        response: str,
+        item_name: str,
+        question: str,
+        question_type: str,
+        target_influence_name: str = None,
+    ) -> "UnifiedQuestionResponse":
+        """Parse unified question response"""
+
+        print(f"=== UNIFIED QUESTION RESPONSE DEBUG ===")
+        print(f"Question type: {question_type}")
+        print(f"Raw response length: {len(response)}")
+        print(f"Raw response: {response}")
+
+        try:
+            # Extract JSON from response
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
+            if not json_match:
+                print("ERROR: No JSON pattern found in response")
+                raise ValueError("No JSON found in response")
+
+            json_str = json_match.group()
+            print(f"Extracted JSON: {json_str}")
+
+            # Clean common JSON issues
+            original_json = json_str
+            json_str = json_str.replace(",}", "}")
+            json_str = json_str.replace(",]", "]")
+
+            if json_str != original_json:
+                print(f"Cleaned JSON: {json_str}")
+
+            data = json.loads(json_str)
+            print(f"SUCCESS: JSON parsed successfully")
+
+            # Parse new influences
+            new_influences = []
+            for influence_data in data.get("new_influences", []):
+                try:
+                    # Import here to avoid circular import
+                    from app.models.proposal import InfluenceProposal
+
+                    influence = InfluenceProposal(**influence_data)
+                    new_influences.append(influence)
+                except Exception as e:
+                    print(f"Error parsing influence: {e}")
+                    continue
+
+            print(f"Parsed {len(new_influences)} new influences")
+
+            # Import here to avoid circular import
+            from app.models.proposal import UnifiedQuestionResponse
+
+            return UnifiedQuestionResponse(
+                item_name=item_name,
+                question=question,
+                question_type=question_type,
+                target_influence_name=target_influence_name,
+                new_influences=new_influences,
+                answer_explanation=data.get(
+                    "answer_explanation", "AI found these influences"
+                ),
+                success=True,
+            )
+
+        except Exception as e:
+            print(f"Error parsing unified question response: {e}")
+            # Import here to avoid circular import
+            from app.models.proposal import UnifiedQuestionResponse
+
+            return UnifiedQuestionResponse(
+                item_name=item_name,
+                question=question,
+                question_type=question_type,
+                target_influence_name=target_influence_name,
+                new_influences=[],
+                answer_explanation="Failed to parse AI response",
+                success=False,
+                error_message=f"Parse error: {str(e)}",
+            )
 
     async def _parse_specifics_response(
         self, response: str, influence_name: str

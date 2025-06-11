@@ -104,3 +104,44 @@ class AcceptProposalsRequest(BaseModel):
     item_year: Optional[int] = None
     item_description: Optional[str] = None  # Make sure this line exists
     accepted_proposals: List[InfluenceProposal]
+
+
+class UnifiedQuestionRequest(BaseModel):
+    """Unified request for any question about items or influences"""
+
+    # Main item context (always present)
+    item_name: str = Field(description="Name of the main item")
+    item_type: Optional[str] = Field(None, description="Type of item (song/movie/etc)")
+    artist: Optional[str] = Field(None, description="Creator of the item")
+    item_year: Optional[int] = Field(None, description="Year of the item")
+    item_description: Optional[str] = Field(None, description="Description of the item")
+
+    # The user's question
+    question: str = Field(description="User's question")
+
+    # Optional: If asking about specific influence (Level 2 drill-down)
+    target_influence_name: Optional[str] = Field(
+        None, description="Name of specific influence to drill down on"
+    )
+    target_influence_explanation: Optional[str] = Field(
+        None, description="Explanation of the specific influence"
+    )
+
+
+class UnifiedQuestionResponse(BaseModel):
+    """Unified response containing new influence proposals from any question"""
+
+    item_name: str
+    question: str
+    question_type: str = Field(description="'discovery' or 'drill_down'")
+    target_influence_name: Optional[str] = Field(
+        None, description="If drill-down, the influence being explored"
+    )
+    new_influences: List[InfluenceProposal] = Field(
+        description="New influences discovered from the question"
+    )
+    answer_explanation: str = Field(
+        description="AI's explanation of how it found these influences"
+    )
+    success: bool = Field(default=True)
+    error_message: Optional[str] = Field(None)
