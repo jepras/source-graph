@@ -115,6 +115,7 @@ export interface InfluenceProposal {
   parent_id?: string;
   children: InfluenceProposal[];
   is_expanded: boolean;
+  clusters?: string[]; // NEW: Array of cluster names (max 2-3)
 }
 
 export interface ProposalResponse {
@@ -130,6 +131,7 @@ export interface ProposalResponse {
   total_proposals: number;
   success: boolean;
   error_message?: string;
+  all_clusters?: string[]; 
 }
 
 export interface MoreProposalsRequest {

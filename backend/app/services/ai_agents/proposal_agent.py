@@ -7,6 +7,11 @@ from app.models.proposal import (
     ProposalResponse,
     MoreProposalsRequest,
 )
+from app.services.ai_agents.prompts import (
+    PROPOSAL_GENERATION_PROMPT,
+    SPECIFIC_INFLUENCES_PROMPT,
+    DISCOVERY_QUESTION_PROMPT,
+)
 
 
 class ProposalAgent(BaseAgent):
@@ -21,66 +26,6 @@ class ProposalAgent(BaseAgent):
         context: str = None,
     ) -> ProposalResponse:
         """Propose influences across macro/micro/nano scope levels"""
-
-        system_message = """You are an expert at discovering influences across multiple scope levels.
-
-    Your job is to propose influences for a creative work at three different scope levels:
-
-    **MACRO (2 influences)**: Major foundational influences
-    - Genres, movements, major cultural phenomena
-    - Key historical events or periods
-    - Major technological or social changes
-    - Foundational works that established traditions
-
-    **MICRO (2 influences)**: Specific techniques and elements  
-    - Particular artistic techniques or methods
-    - Specific works that provided direct inspiration
-    - Production methods or creative processes
-    - Regional scenes or specialized communities
-
-    **NANO (2 influences)**: Tiny details and specifics
-    - Specific sounds, visual elements, or phrases
-    - Particular instruments, tools, or materials
-    - Individual costume pieces, props, or design elements
-    - Specific personal experiences or moments
-
-    CRITICAL REQUIREMENTS:
-    - It is important that you also research what year the main_item is from. It needs to be included in the JSON.
-    - Each influence MUST have a specific year (integer only, never strings)
-    - Provide influences across diverse categories (don't repeat categories)
-    - Each influence needs: name, year, category, scope, explanation, confidence
-    - Categories should be descriptive: "Audio Samples & Music", "Literary Techniques", etc.
-    - Confidence scores: 0.6-0.9 (be realistic about certainty)
-    - Explanations must be specific about HOW it influenced the main item
-
-    Return ONLY valid JSON in this exact format:
-    {{
-    "main_item": "item name",
-    "main_item_type": "auto-detected type",
-    "main_item_year": year_integer,
-    "main_item_creator": "creator name",
-    "main_item_description": "brief one-line description of the main item",
-    "proposals": [
-        {{
-        "name": "influence name",
-        "type": "influence type", 
-        "creator_name": "creator or null",
-        "creator_type": "person/organization/collective or null",
-        "year": year_integer,
-        "category": "descriptive category name",
-        "scope": "macro/micro/nano",
-        "influence_type": "how_it_influenced",
-        "confidence": 0.85,
-        "explanation": "specific explanation of influence",
-        "source": "source info or null"
-        }}
-    ]
-    }}
-
-    EXAMPLE SCOPES:
-    - MACRO: "Hip-Hop Genre" (1970) - foundational musical movement
-    - MICRO: "Detroit Rap Scene" (1980) - regional specialization  
-    - NANO: "Specific Rhyme Scheme" (1999) - tiny technical detail"""
 
         # Build the human prompt
         if artist:
@@ -100,10 +45,9 @@ class ProposalAgent(BaseAgent):
             "\n\nReturn only valid JSON with the exact structure specified."
         )
 
-        prompt = self.create_prompt(system_message, human_message)
+        prompt = self.create_prompt(PROPOSAL_GENERATION_PROMPT, human_message)
 
         try:
-            # Don't pass any template variables since we're not using them
             response = await self.invoke(prompt, {})
             return await self._parse_proposal_response(
                 response, item_name, item_type, artist
@@ -114,12 +58,13 @@ class ProposalAgent(BaseAgent):
                 item_name=item_name,
                 item_type=item_type,
                 artist=artist,
-                item_description=None,  # NEW: Add this line
-                item_year=None,  # NEW: Add this line
+                item_description=None,
+                item_year=None,
                 macro_influences=[],
                 micro_influences=[],
                 nano_influences=[],
                 all_categories=[],
+                all_clusters=[],
                 total_proposals=0,
                 success=False,
                 error_message=f"Error generating proposals: {str(e)}",
@@ -266,11 +211,17 @@ class ProposalAgent(BaseAgent):
             micro_influences = []
             nano_influences = []
             all_categories = set()
+            all_clusters = set()
 
             for proposal_data in data.get("proposals", []):
                 try:
                     proposal = InfluenceProposal(**proposal_data)
                     all_categories.add(proposal.category)
+
+                    # Add clusters to the set
+                    if hasattr(proposal, "clusters") and proposal.clusters:
+                        for cluster in proposal.clusters:
+                            all_clusters.add(cluster)
 
                     if proposal.scope == "macro":
                         macro_influences.append(proposal)
@@ -304,6 +255,7 @@ class ProposalAgent(BaseAgent):
                 micro_influences=micro_influences,
                 nano_influences=nano_influences,
                 all_categories=list(all_categories),
+                all_clusters=list(all_clusters),
                 total_proposals=total_proposals,
                 success=True,
             )
@@ -333,6 +285,7 @@ class ProposalAgent(BaseAgent):
                 micro_influences=[],
                 nano_influences=[],
                 all_categories=[],
+                all_clusters=[],
                 total_proposals=0,
                 success=False,
                 error_message="AI generated invalid JSON for this item. Try a different item or contact support.",
@@ -350,6 +303,7 @@ class ProposalAgent(BaseAgent):
                 micro_influences=[],
                 nano_influences=[],
                 all_categories=[],
+                all_clusters=[],
                 total_proposals=0,
                 success=False,
                 error_message=f"Parse error: {str(e)}",
@@ -433,44 +387,8 @@ class ProposalAgent(BaseAgent):
             item_context += f"\nDescription: {item_description}"
 
         if is_drill_down:
-            # Level 2: Drill-down question about specific influence
-            system_message = """You are an expert at breaking down influences into specific, traceable sources.
-
-    When a user asks a question about a specific influence, your job is to:
-    1. Answer their question with concrete, specific examples
-    2. Return 3-5 new influence proposals that trace to actual works/sources
-    3. Focus on SPECIFIC songs, products, people, or works rather than techniques
-
-    CRITICAL REQUIREMENTS:
-    - Each influence MUST have a specific year (integer only)
-    - Each influence needs: name, year, category, scope, explanation, confidence
-    - Scope should be "nano" for these specific breakdowns
-    - Categories should be very specific (not generic)
-    - Explanations must detail the specific connection
-    - Confidence scores: 0.6-0.9 (be realistic)
-
-    Return ONLY valid JSON in this exact format:
-    {{
-    "answer_explanation": "explanation of how you found these specific sources",
-    "new_influences": [
-        {{
-        "name": "specific work/source name",
-        "type": "song/album/product/technique/style/etc",
-        "creator_name": "creator if applicable or null",
-        "creator_type": "person/organization/collective or null", 
-        "year": year_integer,
-        "category": "very specific category",
-        "scope": "nano",
-        "influence_type": "specific_technique/direct_sample/style_adoption/etc",
-        "confidence": 0.85,
-        "explanation": "very specific explanation of this nano influence",
-        "source": "source_if_available or null"
-        }}
-    ]
-    }}
-
-    Focus on finding the actual sources - which specific songs, which particular artists, which exact techniques."""
-
+            # Use specific influences prompt
+            system_message = SPECIFIC_INFLUENCES_PROMPT
             human_message = f"""Break down this influence into specific sources:
 
     {item_context}
@@ -485,48 +403,8 @@ class ProposalAgent(BaseAgent):
     Return only valid JSON with the exact structure specified."""
 
         else:
-            # Level 1: Discovery question about main item
-            system_message = """You are an expert at discovering specific influences based on user questions.
-
-    When a user asks a question about a creative work, your job is to:
-    1. Answer their question with specific, traceable influences
-    2. Return 2-5 new influence proposals that directly address their question
-    3. Focus on SPECIFIC works, people, or innovations rather than generic categories
-
-    CRITICAL REQUIREMENTS:
-    - Each influence MUST have a specific year (integer only)
-    - Each influence needs: name, year, category, scope, explanation, confidence
-    - Scope should be "micro" or "nano" for specific influences
-    - Categories should be descriptive and specific
-    - Explanations must detail HOW this specifically influenced the main item
-    - Confidence scores: 0.6-0.9 (be realistic)
-
-    Return ONLY valid JSON in this exact format:
-    {{
-    "answer_explanation": "explanation of how you found these influences",
-    "new_influences": [
-        {{
-        "name": "specific influence name",
-        "type": "influence type",
-        "creator_name": "creator or null",
-        "creator_type": "person/organization/collective or null",
-        "year": year_integer,
-        "category": "specific category",
-        "scope": "micro",
-        "influence_type": "how_it_influenced",
-        "confidence": 0.85,
-        "explanation": "specific explanation of influence",
-        "source": "source_if_available or null"
-        }}
-    ]
-    }}
-
-    Examples of good specific influences:
-    - "Typography class at Reed College (1971)" not "Typography"
-    - "Braun T3 radio by Dieter Rams (1958)" not "Industrial design"
-    - "Good Vibrations by Beach Boys (1966)" not "Vocal layering techniques"
-    """
-
+            # Use discovery question prompt
+            system_message = DISCOVERY_QUESTION_PROMPT
             human_message = f"""Question about {item_context}:
 
     User Question: "{question}"

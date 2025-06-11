@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Item } from '../services/api';
+import type { Item } from '../../services/api';
 
 interface SearchBarProps {
   onItemSelect: (item: Item) => void;

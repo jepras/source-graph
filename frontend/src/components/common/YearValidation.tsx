@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { StructuredOutput } from '../services/api';
+import type { StructuredOutput } from '../../services/api';
 
 interface YearValidationProps {
   structuredData: StructuredOutput;

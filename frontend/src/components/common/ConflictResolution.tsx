@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { api } from '../services/api';
-import type { StructuredOutput } from '../services/api';
+import { api } from '../../services/api';
+import type { StructuredOutput } from '../../services/api';
 
 interface ConflictResolutionProps {
   similarItems: any[];

@@ -31,6 +31,7 @@ class InfluenceProposal(BaseModel):
     )
     children: List["InfluenceProposal"] = []  # Child influences (specifics)
     is_expanded: bool = False  # UI state for nested display
+    clusters: Optional[List[str]] = None
 
     def add_child(self, child_proposal: "InfluenceProposal"):
         """Add a child (specific) influence to this proposal"""
@@ -77,6 +78,7 @@ class ProposalResponse(BaseModel):
     total_proposals: int = Field(description="Total number of proposals")
     success: bool = Field(default=True)
     error_message: Optional[str] = Field(None)
+    all_clusters: Optional[List[str]] = None
 
 
 class MoreProposalsRequest(BaseModel):

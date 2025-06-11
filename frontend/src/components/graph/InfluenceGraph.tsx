@@ -11,6 +11,7 @@ interface InfluenceGraphProps {
   onChronologicalToggle?: (enabled: boolean) => void;
   isCategoricalLayout?: boolean; // Add this
   onCategoricalToggle?: (enabled: boolean) => void; // Add this
+  onClearGraph?: () => void; // Add this line
 }
 
 export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({ 
@@ -19,7 +20,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   isChronologicalOrder = false, // Default to false
   onChronologicalToggle,
   isCategoricalLayout = false,
-  onCategoricalToggle
+  onCategoricalToggle,
+  onClearGraph // Add this line
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -332,6 +334,17 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         >
           🔍 Fit to View
         </button>
+
+        {/* Add this new clear button */}
+        {onClearGraph && (
+          <button
+            onClick={onClearGraph}
+            className="px-3 py-2 bg-red-500 text-white border border-red-600 rounded shadow text-sm hover:bg-red-600"
+            title="Clear entire graph"
+          >
+            🗑️ Clear
+          </button>
+        )}
       </div>
 
       {/* Graph SVG */}

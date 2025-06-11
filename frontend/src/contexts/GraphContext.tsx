@@ -1,0 +1,229 @@
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import type { AccumulatedGraph, GraphNode, GraphLink } from '../types/graph';
+
+// Graph State Interface
+interface GraphState {
+  accumulatedGraph: AccumulatedGraph;
+  selectedNodeId: string | null;
+  isChronologicalOrder: boolean;
+  isCategoricalLayout: boolean;
+  loading: boolean;
+  error: string | null;
+}
+
+// Graph Actions
+type GraphAction = 
+  | { type: 'SET_SELECTED_NODE'; payload: string | null }
+  | { type: 'SET_CHRONOLOGICAL_ORDER'; payload: boolean }
+  | { type: 'SET_CATEGORICAL_LAYOUT'; payload: boolean }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'ADD_NODES'; payload: GraphNode[] }
+  | { type: 'ADD_LINKS'; payload: GraphLink[] }
+  | { type: 'SET_GRAPH'; payload: AccumulatedGraph }
+  | { type: 'CLEAR_GRAPH' }
+  | { type: 'UPDATE_NODE'; payload: { nodeId: string; updates: Partial<GraphNode> } };
+
+// Initial State
+const initialState: GraphState = {
+  accumulatedGraph: {
+    nodes: new Map(),
+    relationships: new Map(),
+    selectedNodeId: null,
+    expandedNodeIds: new Set()
+  },
+  selectedNodeId: null,
+  isChronologicalOrder: false,
+  isCategoricalLayout: false,
+  loading: false,
+  error: null
+};
+
+// Reducer
+function graphReducer(state: GraphState, action: GraphAction): GraphState {
+  switch (action.type) {
+    case 'SET_SELECTED_NODE':
+      return {
+        ...state,
+        selectedNodeId: action.payload,
+        accumulatedGraph: {
+          ...state.accumulatedGraph,
+          selectedNodeId: action.payload
+        }
+      };
+    
+    case 'SET_CHRONOLOGICAL_ORDER':
+      return {
+        ...state,
+        isChronologicalOrder: action.payload
+      };
+    
+    case 'SET_CATEGORICAL_LAYOUT':
+      return {
+        ...state,
+        isCategoricalLayout: action.payload
+      };
+    
+    case 'SET_LOADING':
+      return {
+        ...state,
+        loading: action.payload
+      };
+    
+    case 'SET_ERROR':
+      return {
+        ...state,
+        error: action.payload,
+        loading: false
+      };
+    
+    case 'ADD_NODES':
+      const newNodes = new Map(state.accumulatedGraph.nodes);
+      action.payload.forEach(node => {
+        newNodes.set(node.id, node);
+      });
+      return {
+        ...state,
+        accumulatedGraph: {
+          ...state.accumulatedGraph,
+          nodes: newNodes
+        }
+      };
+    
+    case 'ADD_LINKS':
+      const newRelationships = new Map(state.accumulatedGraph.relationships);
+      action.payload.forEach(link => {
+        const linkId = `${link.source}-${link.target}`;
+        newRelationships.set(linkId, link);
+      });
+      return {
+        ...state,
+        accumulatedGraph: {
+          ...state.accumulatedGraph,
+          relationships: newRelationships
+        }
+      };
+    
+    case 'SET_GRAPH':
+      return {
+        ...state,
+        accumulatedGraph: action.payload,
+        selectedNodeId: action.payload.selectedNodeId
+      };
+    
+    case 'CLEAR_GRAPH':
+      return {
+        ...state,
+        accumulatedGraph: {
+          nodes: new Map(),
+          relationships: new Map(),
+          selectedNodeId: null,
+          expandedNodeIds: new Set()
+        },
+        selectedNodeId: null,
+        error: null
+      };
+    
+    case 'UPDATE_NODE':
+      const updatedNodes = new Map(state.accumulatedGraph.nodes);
+      const existingNode = updatedNodes.get(action.payload.nodeId);
+      if (existingNode) {
+        updatedNodes.set(action.payload.nodeId, {
+          ...existingNode,
+          ...action.payload.updates
+        });
+      }
+      return {
+        ...state,
+        accumulatedGraph: {
+          ...state.accumulatedGraph,
+          nodes: updatedNodes
+        }
+      };
+    
+    default:
+      return state;
+  }
+}
+
+// Context
+interface GraphContextType {
+  state: GraphState;
+  dispatch: React.Dispatch<GraphAction>;
+  // Helper functions
+  selectNode: (nodeId: string | null) => void;
+  toggleChronologicalOrder: () => void;
+  toggleCategoricalLayout: () => void;
+  addNodesAndLinks: (nodes: GraphNode[], links: GraphLink[]) => void;
+  clearGraph: () => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+const GraphContext = createContext<GraphContextType | undefined>(undefined);
+
+// Provider Component
+interface GraphProviderProps {
+  children: ReactNode;
+}
+
+export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
+  const [state, dispatch] = useReducer(graphReducer, initialState);
+
+  // Helper functions
+  const selectNode = (nodeId: string | null) => {
+    dispatch({ type: 'SET_SELECTED_NODE', payload: nodeId });
+  };
+
+  const toggleChronologicalOrder = () => {
+    dispatch({ type: 'SET_CHRONOLOGICAL_ORDER', payload: !state.isChronologicalOrder });
+  };
+
+  const toggleCategoricalLayout = () => {
+    dispatch({ type: 'SET_CATEGORICAL_LAYOUT', payload: !state.isCategoricalLayout });
+  };
+
+  const addNodesAndLinks = (nodes: GraphNode[], links: GraphLink[]) => {
+    dispatch({ type: 'ADD_NODES', payload: nodes });
+    dispatch({ type: 'ADD_LINKS', payload: links });
+  };
+
+  const clearGraph = () => {
+    dispatch({ type: 'CLEAR_GRAPH' });
+  };
+
+  const setLoading = (loading: boolean) => {
+    dispatch({ type: 'SET_LOADING', payload: loading });
+  };
+
+  const setError = (error: string | null) => {
+    dispatch({ type: 'SET_ERROR', payload: error });
+  };
+
+  const value: GraphContextType = {
+    state,
+    dispatch,
+    selectNode,
+    toggleChronologicalOrder,
+    toggleCategoricalLayout,
+    addNodesAndLinks,
+    clearGraph,
+    setLoading,
+    setError
+  };
+
+  return (
+    <GraphContext.Provider value={value}>
+      {children}
+    </GraphContext.Provider>
+  );
+};
+
+// Custom Hook
+export const useGraph = () => {
+  const context = useContext(GraphContext);
+  if (context === undefined) {
+    throw new Error('useGraph must be used within a GraphProvider');
+  }
+  return context;
+};
