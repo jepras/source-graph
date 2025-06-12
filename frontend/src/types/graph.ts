@@ -7,6 +7,7 @@ export interface GraphNode {
     y?: number;
     category: 'main' | 'influence';
     isSelected?: boolean;
+    clusters?: string[]; // NEW: Add this line
   }
   
   export interface GraphLink {

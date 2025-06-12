@@ -4,6 +4,7 @@ Ask AI to:
 Open questions
 - Should category be more like tags? So items can have multiple tags at a given time? 
 - How do we add similarity between items? For example, Abbey Road is made by The Beatles, but wouldn't show in "influenced by".
+- When new items are added to the graph, how should the cluster categories then be defined? From early main item to next main item? 
 
 Bugs found
 - We need to be able to insert years before 0.

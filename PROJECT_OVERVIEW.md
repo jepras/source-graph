@@ -131,8 +131,13 @@ src/
 │ ├── research/ # AI research interface
 │ └── common/ # Reusable UI components
 ├── contexts/ # React context providers
+├── hooks/ # Custom React hooks
+│ ├── useGraphOperations.ts # Graph loading and expansion logic
+│ └── useProposals.ts # AI proposal management
 ├── services/ # API client and utilities
-└── types/ # TypeScript type definitions
+├── types/ # TypeScript type definitions
+└── utils/ # Utility functions
+  └── graphUtils.ts # Graph data processing and positioning
 
 
 ## 🚀 Current Status
@@ -229,25 +234,6 @@ NEO4J_PASSWORD=your_password
 - Identify key influencers and innovations
 - Create thematic exhibitions and collections
 
-## 🔮 Future Vision
-
-### Short Term (Next 3 Months)
-- Enhanced clustering and filtering
-- MCP integration for rich media
-- Community verification system
-- Mobile-responsive design
-
-### Medium Term (6-12 Months)
-- Background AI agents for continuous discovery
-- Advanced visualization features
-- Export/import capabilities
-- API for third-party integrations
-
-### Long Term (1+ Years)
-- Autonomous influence discovery
-- Multi-language support
-- Advanced analytics and insights
-- Enterprise features for organizations
 
 ## 🤝 Contributing
 

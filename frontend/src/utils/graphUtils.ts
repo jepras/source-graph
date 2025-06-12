@@ -11,22 +11,55 @@ export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
     name: graphResponse.main_item.name,
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
-    category: 'main'
+    category: 'main',
+    clusters: [] // Main items don't have clusters
   });
 
   // Add influence items and relationships
-  graphResponse.influences.forEach(influence => {
+  graphResponse.influences.forEach((influence, index) => {
     const influenceId = influence.from_item.id;
     const relationshipId = `${influenceId}->${graphResponse.main_item.id}`;
 
     // Add influence node (if not already exists)
     if (!nodes.has(influenceId)) {
+      // Try to use actual cluster data from API first
+      let clusters: string[] = [];
+      
+      if (influence.clusters && influence.clusters.length > 0) {
+        // Use real cluster data from API
+        clusters = influence.clusters;
+        console.log(`🎯 Using API clusters for ${influence.from_item.name}:`, clusters);
+      } else {
+        // Fallback: Generate meaningful test clusters based on category
+        if (influence.category?.toLowerCase().includes('musical')) {
+          if (influence.category.toLowerCase().includes('technique') || 
+              influence.category.toLowerCase().includes('element')) {
+            clusters = ['Musical Composition'];
+          } else if (influence.category.toLowerCase().includes('tradition') || 
+                     influence.category.toLowerCase().includes('movement')) {
+            clusters = ['Musical Foundation'];
+          } else {
+            clusters = ['Musical Composition'];
+          }
+        } else if (influence.category?.toLowerCase().includes('visual') || 
+                   influence.category?.toLowerCase().includes('cultural')) {
+          clusters = ['Cultural Context'];
+        } else if (influence.category?.toLowerCase().includes('song')) {
+          clusters = ['Musical Composition'];
+        } else {
+          // Use category name as cluster if nothing else matches
+          clusters = [influence.category || `Cluster ${index % 3 + 1}`];
+        }
+        console.log(`🧪 Generated test clusters for ${influence.from_item.name} (${influence.category}):`, clusters);
+      }
+
       nodes.set(influenceId, {
         id: influenceId,
         name: influence.from_item.name,
         type: influence.from_item.auto_detected_type || 'unknown',
         year: influence.from_item.year,
-        category: 'influence'
+        category: 'influence',
+        clusters: clusters
       });
     }
 
@@ -39,6 +72,13 @@ export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
       explanation: influence.explanation,
       category: influence.category
     });
+  });
+
+  console.log('📊 Final node clusters mapping:');
+  nodes.forEach((node, id) => {
+    if (node.category === 'influence') {
+      console.log(`  ${node.name}: ${node.clusters?.join(', ') || 'no clusters'}`);
+    }
   });
 
   return { nodes, relationships };
@@ -63,7 +103,8 @@ export const mergeExpandedGraphData = (
       year: nodeData.item.year,
       category: existingNode?.category || 'influence', // Preserve existing category
       x: existingNode?.x, // Preserve existing position
-      y: existingNode?.y
+      y: existingNode?.y,
+      clusters: nodeData.clusters || existingNode?.clusters || [] // NEW: Preserve or add clusters
     });
   });
 

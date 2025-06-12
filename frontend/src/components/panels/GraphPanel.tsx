@@ -3,7 +3,14 @@ import { InfluenceGraph } from '../graph/InfluenceGraph';
 import { useGraph } from '../../contexts/GraphContext';
 
 export const GraphPanel: React.FC = () => {
-  const { state, selectNode, toggleChronologicalOrder, toggleCategoricalLayout, clearGraph } = useGraph();
+  const { 
+    state, 
+    selectNode, 
+    toggleChronologicalOrder, 
+    toggleCategoricalLayout, 
+    toggleClustering, // NEW: Add clustering toggle
+    clearGraph 
+  } = useGraph();
 
   const handleNodeClick = (itemId: string) => {
     selectNode(itemId);
@@ -38,6 +45,8 @@ export const GraphPanel: React.FC = () => {
             onChronologicalToggle={toggleChronologicalOrder}
             isCategoricalLayout={state.isCategoricalLayout}
             onCategoricalToggle={toggleCategoricalLayout}
+            isClusteringEnabled={state.isClusteringEnabled} // NEW: Pass clustering state
+            onClusteringToggle={toggleClustering} // NEW: Pass clustering toggle
             onClearGraph={clearGraph}
           />
         ) : (

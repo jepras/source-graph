@@ -4,7 +4,9 @@ import { useGraph } from '../contexts/GraphContext';
 import { extractNodesAndRelationships } from '../utils/graphUtils';
 import type { GraphNode, GraphLink } from '../types/graph';
 
+
 export const useGraphOperations = () => {
+  const { state: graphData, dispatch: graphDispatch } = useGraph(); // ADD this line
   const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
 
   const loadItemInfluences = useCallback(async (itemId: string) => {
@@ -68,14 +70,15 @@ export const useGraphOperations = () => {
         if ('influences' in response) {
           // Incoming influences response
           response.influences.forEach(influence => {
-            // Add influence node if not already exists
+            // For incoming influences:
             if (!state.accumulatedGraph.nodes.has(influence.from_item.id)) {
               newNodes.push({
                 id: influence.from_item.id,
                 name: influence.from_item.name,
                 type: influence.from_item.auto_detected_type || 'unknown',
                 year: influence.from_item.year,
-                category: 'influence'
+                category: 'influence',
+                clusters: influence.clusters || [] // NEW: Add cluster data
               });
             }
 
@@ -96,13 +99,15 @@ export const useGraphOperations = () => {
           // Outgoing influences response
           response.outgoing_influences.forEach(influence => {
             // Add influenced node if not already exists
+            // For outgoing influences:
             if (!state.accumulatedGraph.nodes.has(influence.to_item.id)) {
               newNodes.push({
                 id: influence.to_item.id,
                 name: influence.to_item.name,
                 type: influence.to_item.auto_detected_type || 'unknown',
                 year: influence.to_item.year,
-                category: 'influence' // Note: you might want 'influenced' category
+                category: 'influence',
+                clusters: influence.clusters || [] // NEW: Add cluster data
               });
             }
 
@@ -143,9 +148,64 @@ export const useGraphOperations = () => {
     }
   }, [setError]);
 
+  const checkIfItemExistsInGraph = useCallback((itemName: string): string | null => {
+    if (!graphData?.data) return null;
+    
+    // Check main item
+    if (graphData.data.main_item.name.toLowerCase() === itemName.toLowerCase()) {
+      return graphData.data.main_item.id;
+    }
+    
+    // Check influences
+    for (const influence of graphData.data.influences) {
+      if (influence.from_item.name.toLowerCase() === itemName.toLowerCase()) {
+        return influence.from_item.id;
+      }
+    }
+    
+    return null;
+  }, [graphData]);
+
+  const loadItemWithAccumulation = useCallback(async (itemId: string, itemName: string) => {
+    try {
+      graphDispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Check if item already exists in current graph
+      const existingItemId = checkIfItemExistsInGraph(itemName);
+      const shouldPreserveLayout = existingItemId !== null;
+      
+      if (shouldPreserveLayout) {
+        console.log(`Item "${itemName}" already exists in graph, preserving layout`);
+        // Mark this node as expanded for visual indication
+        graphDispatch({ type: 'MARK_NODE_EXPANDED', payload: existingItemId });
+      }
+      
+      const response = await api.getInfluences(itemId);
+      
+      if (shouldPreserveLayout) {
+        // Accumulate with position preservation
+        graphDispatch({ 
+          type: 'ACCUMULATE_GRAPH', 
+          payload: { graphData: response, preservePositions: true }
+        });
+      } else {
+        // Normal load
+        graphDispatch({ type: 'SET_DATA', payload: response });
+      }
+      
+    } catch (err) {
+      graphDispatch({ 
+        type: 'SET_ERROR', 
+        payload: err instanceof Error ? err.message : 'Failed to load item'
+      });
+    }
+  }, [checkIfItemExistsInGraph, graphDispatch]);
+
   return {
     loadItemInfluences,
     expandNode,
-    searchAndLoadItem
+    searchAndLoadItem,
+    loadItemWithAccumulation,
+    checkIfItemExistsInGraph,
   };
 };

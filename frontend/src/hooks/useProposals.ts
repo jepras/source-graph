@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import { proposalApi } from '../services/api';
+import { proposalApi, api } from '../services/api';
 import { useResearch } from '../contexts/ResearchContext';
 import { useGraph } from '../contexts/GraphContext';
 import type { 
-  ProposalRequest, 
   AcceptProposalsRequest, 
+  AcceptProposalsResponse,
   UnifiedQuestionRequest,
   MoreProposalsRequest 
 } from '../services/api';
@@ -43,10 +43,10 @@ export const useProposals = () => {
     }
   }, [state.itemName, state.creator, dispatch]);
 
-  const acceptSelectedProposals = useCallback(async (onItemSaved?: (itemId: string) => void) => {
+  const acceptSelectedProposals = useCallback(async (): Promise<AcceptProposalsResponse | null> => {
     if (!state.proposals || state.selectedProposals.size === 0) {
       dispatch({ type: 'SET_ERROR', payload: 'Please select at least one proposal to accept' });
-      return;
+      return null;
     }
 
     dispatch({ type: 'SET_SAVE_LOADING', payload: true });
@@ -104,9 +104,16 @@ export const useProposals = () => {
 
       const result = await proposalApi.acceptProposals(request);
       
-      if (result.success) {
+      // If conflict resolution is needed, return the result to let ProposalActions handle it
+      if (result.requires_review) {
+        return result;
+      }
+      
+      // If successful, update state and clear selections
+      if (result.success && result.item_id) {
         dispatch({ type: 'SET_SAVED_ITEM_ID', payload: result.item_id });
         dispatch({ type: 'SET_SELECTED_PROPOSALS', payload: new Set() });
+        
         // Clear question responses after saving
         dispatch({ type: 'SET_MAIN_ITEM_QUESTION_RESPONSE', payload: null });
         
@@ -114,13 +121,13 @@ export const useProposals = () => {
         Object.keys(state.influenceQuestionResponses).forEach(key => {
           dispatch({ type: 'REMOVE_INFLUENCE_QUESTION_RESPONSE', payload: key });
         });
-
-        if (onItemSaved) {
-          onItemSaved(result.item_id);
-        }
       }
+      
+      return result;
+      
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err.message : 'Failed to save proposals' });
+      return null;
     } finally {
       dispatch({ type: 'SET_SAVE_LOADING', payload: false });
     }

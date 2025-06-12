@@ -133,72 +133,68 @@ async def get_more_proposals(request: MoreProposalsRequest):
 
 @router.post("/proposals/accept")
 async def accept_proposals(request: AcceptProposalsRequest):
-    """Save accepted proposals to the database"""
+    """Accept selected proposals with conflict resolution"""
     try:
-        print(f"=== ACCEPT PROPOSALS DEBUG ===")
-        print(f"Request item_name: {request.item_name}")
-        print(f"Request item_year: {request.item_year}")
-        print(
-            f"Request item_description: {getattr(request, 'item_description', 'FIELD_MISSING')}"
-        )
-        print(f"Request item_type: {request.item_type}")
-        print(f"Request artist: {request.artist}")
-
-        if not request.accepted_proposals:
-            raise HTTPException(
-                status_code=400, detail="No proposals provided to accept"
-            )
-
-        # Convert proposals to structured format for database saving
-        structured_influences = []
-
-        for proposal in request.accepted_proposals:
-            structured_influence = StructuredInfluence(
-                name=proposal.name,
-                type=proposal.type,
-                creator_name=proposal.creator_name,
-                creator_type=proposal.creator_type,
-                year=proposal.year,
-                category=proposal.category,
-                scope=proposal.scope,  # Include scope in structured data
-                influence_type=proposal.influence_type,
-                confidence=proposal.confidence,
-                explanation=proposal.explanation,
-                source=proposal.source,
-            )
-            structured_influences.append(structured_influence)
-
-        # Create structured output
+        # Convert proposals back to StructuredOutput format
         structured_data = StructuredOutput(
             main_item=request.item_name,
             main_item_type=request.item_type,
-            main_item_creator=request.artist,
-            main_item_creator_type="person" if request.artist else None,
+            main_item_creator=request.artist,  # Map artist back to creator
+            main_item_creator_type="person",  # Default
             main_item_year=request.item_year,
-            main_item_description=request.item_description,  # ADD this line
-            influences=structured_influences,
-            categories=list(set([inf.category for inf in structured_influences])),
+            main_item_description=request.item_description,
+            influences=[
+                StructuredInfluence(
+                    name=proposal.name,
+                    type=proposal.type,
+                    creator_name=proposal.creator_name,
+                    creator_type=proposal.creator_type,
+                    year=proposal.year,
+                    category=proposal.category,
+                    scope=proposal.scope,  # Important: include scope
+                    influence_type=proposal.influence_type,
+                    confidence=proposal.confidence,
+                    explanation=proposal.explanation,
+                    source=proposal.source,
+                )
+                for proposal in request.accepted_proposals
+                if proposal.accepted
+            ],
+            categories=list(
+                set([p.category for p in request.accepted_proposals if p.accepted])
+            ),
         )
 
-        print(f"=== STRUCTURED DATA CREATED ===")
-        print(f"structured_data.main_item_year: {structured_data.main_item_year}")
-        print(
-            f"structured_data.main_item_description: {structured_data.main_item_description}"
+        # Use the existing conflict resolution logic
+        similar_items = graph_service.find_similar_items(
+            name=structured_data.main_item,
+            creator_name=structured_data.main_item_creator,
         )
 
-        # Save to database using existing graph service
-        item_id = graph_service.save_structured_influences(structured_data)
+        if similar_items:
+            return {
+                "success": False,
+                "requires_review": True,
+                "similar_items": similar_items,
+                "new_data": structured_data.dict(),
+                "message": f"Found {len(similar_items)} potentially similar item(s). Please review before proceeding.",
+            }
+
+        # No conflicts, save normally
+        main_item_id = graph_service.save_structured_influences(structured_data)
 
         return {
             "success": True,
-            "item_id": item_id,
-            "accepted_count": len(request.accepted_proposals),
-            "message": f"Successfully saved {len(request.accepted_proposals)} influences",
+            "item_id": main_item_id,
+            "accepted_count": len(
+                [p for p in request.accepted_proposals if p.accepted]
+            ),
+            "message": f"Successfully saved {len([p for p in request.accepted_proposals if p.accepted])} influences",
         }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to save proposals: {str(e)}"
+            status_code=500, detail=f"Failed to accept proposals: {str(e)}"
         )
 
 

@@ -153,6 +153,18 @@ export interface AcceptProposalsRequest {
   accepted_proposals: InfluenceProposal[];
 }
 
+// Update this interface
+export interface AcceptProposalsResponse {
+  success: boolean;
+  item_id?: string;
+  accepted_count?: number;
+  message?: string;
+  // Conflict resolution fields
+  requires_review?: boolean;
+  similar_items?: any[];
+  new_data?: StructuredOutput;
+}
+
 export interface UnifiedQuestionRequest {
   item_name: string;
   item_type?: string;
@@ -413,7 +425,8 @@ export const proposalApi = {
     return response.json();
   },
 
-  acceptProposals: async (request: AcceptProposalsRequest): Promise<{success: boolean; item_id: string; accepted_count: number}> => {
+  // Update the api method
+  acceptProposals: async (request: AcceptProposalsRequest): Promise<AcceptProposalsResponse> => {
     const response = await fetch(`${API_BASE}/ai/proposals/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

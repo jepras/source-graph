@@ -7,8 +7,11 @@ interface GraphState {
   selectedNodeId: string | null;
   isChronologicalOrder: boolean;
   isCategoricalLayout: boolean;
+  isClusteringEnabled: boolean; // NEW: Add clustering toggle
   loading: boolean;
   error: string | null;
+  nodePositions: Map<string, { x: number; y: number }>; // ADD this
+  expandedNodes: Set<string>; // ADD this to track which nodes have been expanded
 }
 
 // Graph Actions
@@ -16,13 +19,18 @@ type GraphAction =
   | { type: 'SET_SELECTED_NODE'; payload: string | null }
   | { type: 'SET_CHRONOLOGICAL_ORDER'; payload: boolean }
   | { type: 'SET_CATEGORICAL_LAYOUT'; payload: boolean }
+  | { type: 'SET_CLUSTERING_ENABLED'; payload: boolean } // NEW: Add clustering action
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'ADD_NODES'; payload: GraphNode[] }
   | { type: 'ADD_LINKS'; payload: GraphLink[] }
   | { type: 'SET_GRAPH'; payload: AccumulatedGraph }
   | { type: 'CLEAR_GRAPH' }
-  | { type: 'UPDATE_NODE'; payload: { nodeId: string; updates: Partial<GraphNode> } };
+  | { type: 'UPDATE_NODE'; payload: { nodeId: string; updates: Partial<GraphNode> } }
+  | { type: 'PRESERVE_POSITIONS'; payload: Map<string, { x: number; y: number }> }
+  | { type: 'MARK_NODE_EXPANDED'; payload: string }
+  | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: GraphResponse; preservePositions: boolean } };
+
 
 // Initial State
 const initialState: GraphState = {
@@ -35,8 +43,11 @@ const initialState: GraphState = {
   selectedNodeId: null,
   isChronologicalOrder: false,
   isCategoricalLayout: false,
+  isClusteringEnabled: true, // NEW: Default clustering enabled
   loading: false,
-  error: null
+  error: null,
+  nodePositions: new Map(),
+  expandedNodes: new Set(),
 };
 
 // Reducer
@@ -62,6 +73,12 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
       return {
         ...state,
         isCategoricalLayout: action.payload
+      };
+    
+    case 'SET_CLUSTERING_ENABLED': // NEW: Handle clustering toggle
+      return {
+        ...state,
+        isClusteringEnabled: action.payload
       };
     
     case 'SET_LOADING':
@@ -141,8 +158,41 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
         }
       };
     
-    default:
-      return state;
+      case 'PRESERVE_POSITIONS':
+        return {
+          ...state,
+          nodePositions: action.payload,
+        };
+        
+      case 'MARK_NODE_EXPANDED':
+        return {
+          ...state,
+          expandedNodes: new Set([...state.expandedNodes, action.payload]),
+        };
+        
+      case 'ACCUMULATE_GRAPH':
+        if (action.payload.preservePositions) {
+          // Merge new data with existing, preserving positions
+          return {
+            ...state,
+            data: action.payload.graphData,
+            loading: false,
+            error: null,
+          };
+        } else {
+          // Normal replacement behavior
+          return {
+            ...state,
+            data: action.payload.graphData,
+            nodePositions: new Map(),
+            expandedNodes: new Set(),
+            loading: false,
+            error: null,
+          };
+        }
+        
+      default:
+        return state;
   }
 }
 
@@ -154,6 +204,7 @@ interface GraphContextType {
   selectNode: (nodeId: string | null) => void;
   toggleChronologicalOrder: () => void;
   toggleCategoricalLayout: () => void;
+  toggleClustering: () => void; // NEW: Add clustering toggle function
   addNodesAndLinks: (nodes: GraphNode[], links: GraphLink[]) => void;
   clearGraph: () => void;
   setLoading: (loading: boolean) => void;
@@ -183,6 +234,10 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_CATEGORICAL_LAYOUT', payload: !state.isCategoricalLayout });
   };
 
+  const toggleClustering = () => { // NEW: Add clustering toggle function
+    dispatch({ type: 'SET_CLUSTERING_ENABLED', payload: !state.isClusteringEnabled });
+  };
+
   const addNodesAndLinks = (nodes: GraphNode[], links: GraphLink[]) => {
     dispatch({ type: 'ADD_NODES', payload: nodes });
     dispatch({ type: 'ADD_LINKS', payload: links });
@@ -206,6 +261,7 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     selectNode,
     toggleChronologicalOrder,
     toggleCategoricalLayout,
+    toggleClustering, // NEW: Add to context value
     addNodesAndLinks,
     clearGraph,
     setLoading,
