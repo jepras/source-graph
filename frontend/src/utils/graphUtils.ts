@@ -1,20 +1,28 @@
 import type { GraphResponse } from '../services/api';
 import type { GraphNode, GraphLink, AccumulatedGraph } from '../types/graph';
 
-export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
-  console.log('🔍 RAW API RESPONSE STRUCTURE:', graphResponse);
-  
+export const extractNodesAndRelationships = (
+  graphResponse: GraphResponse,
+  existingGraph?: AccumulatedGraph  // Add this parameter
+) => {
   const nodes = new Map<string, GraphNode>();
   const relationships = new Map<string, GraphLink>();
 
-  // Add main item
+  // Check if main item already exists
+  const existingMainNode = existingGraph?.nodes.get(graphResponse.main_item.id);
+  const mainNodeCategory = existingMainNode ? existingMainNode.category : 'main';
+  const mainNodeClusters = existingMainNode?.clusters || [];
+
+  // Add main item with preserved category
   nodes.set(graphResponse.main_item.id, {
     id: graphResponse.main_item.id,
     name: graphResponse.main_item.name,
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
-    category: 'main',
-    clusters: [] // Main items don't have clusters
+    category: mainNodeCategory, // ✅ Preserve existing category
+    clusters: mainNodeClusters, // ✅ Preserve existing clusters
+    x: existingMainNode?.x, // ✅ Preserve position
+    y: existingMainNode?.y  // ✅ Preserve position
   });
 
   // Add influence items and relationships

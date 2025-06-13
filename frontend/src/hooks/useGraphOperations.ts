@@ -30,7 +30,7 @@ export const useGraphOperations = () => {
       }
   
       // Use your existing utility function to convert API response to graph format
-      const { nodes, relationships } = extractNodesAndRelationships(response);
+      const { nodes, relationships } = extractNodesAndRelationships(response, state.accumulatedGraph);
       
       // Convert Maps to arrays for the context
       const nodeArray = Array.from(nodes.values());
