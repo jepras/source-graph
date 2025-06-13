@@ -2,6 +2,8 @@ import type { GraphResponse } from '../services/api';
 import type { GraphNode, GraphLink, AccumulatedGraph } from '../types/graph';
 
 export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
+  console.log('🔍 RAW API RESPONSE STRUCTURE:', graphResponse);
+  
   const nodes = new Map<string, GraphNode>();
   const relationships = new Map<string, GraphLink>();
 
@@ -17,6 +19,9 @@ export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
 
   // Add influence items and relationships
   graphResponse.influences.forEach((influence, index) => {
+    console.log(`🔍 RAW INFLUENCE ${index}:`, influence);
+    console.log(`🔍 INFLUENCE OBJECT KEYS:`, Object.keys(influence));
+    
     const influenceId = influence.from_item.id;
     const relationshipId = `${influenceId}->${graphResponse.main_item.id}`;
 
@@ -82,6 +87,25 @@ export const extractNodesAndRelationships = (graphResponse: GraphResponse) => {
   });
 
   return { nodes, relationships };
+};
+
+export const generateClustersFromCategory = (category: string): string[] => {
+  // Use your existing logic from extractNodesAndRelationships
+  if (category?.toLowerCase().includes('musical') || category?.toLowerCase().includes('music')) {
+    return ['Music Albums'];
+  } else if (category?.toLowerCase().includes('visual') || category?.toLowerCase().includes('design')) {
+    return ['Cultural Context'];
+  } else if (category?.toLowerCase().includes('renaissance')) {
+    if (category.toLowerCase().includes('art')) return ['Renaissance Art'];
+    if (category.toLowerCase().includes('literature')) return ['Renaissance Literature'];
+    if (category.toLowerCase().includes('science')) return ['Renaissance Science'];
+    return ['Renaissance'];
+  } else if (category?.toLowerCase().includes('technological')) {
+    return ['Technological Advancements'];
+  } else if (category?.toLowerCase().includes('cultural')) {
+    return ['Cultural Context'];
+  }
+  return ['Other'];
 };
 
 export const mergeExpandedGraphData = (

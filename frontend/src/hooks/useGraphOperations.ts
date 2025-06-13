@@ -1,12 +1,11 @@
 import { useCallback } from 'react';
 import { api } from '../services/api';
 import { useGraph } from '../contexts/GraphContext';
-import { extractNodesAndRelationships } from '../utils/graphUtils';
+import { extractNodesAndRelationships, generateClustersFromCategory } from '../utils/graphUtils';
 import type { GraphNode, GraphLink } from '../types/graph';
 
-
 export const useGraphOperations = () => {
-  const { state: graphData, dispatch: graphDispatch } = useGraph(); // ADD this line
+  const { state: graphData, dispatch: graphDispatch } = useGraph();
   const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
 
   const loadItemInfluences = useCallback(async (itemId: string) => {
@@ -66,20 +65,36 @@ export const useGraphOperations = () => {
       const newNodes: GraphNode[] = [];
       const newLinks: GraphLink[] = [];
 
+      // Debug: Check the structure of responses
+      responses.forEach(response => {
+        if ('influences' in response) {
+          console.log('🔍 Full expansion influence object:', response.influences[0]);
+          response.influences.forEach(influence => {
+            console.log('🔍 Expansion influence keys:', Object.keys(influence));
+            console.log('🔍 Expansion influence category:', influence.category);
+          });
+        }
+      });
+
       responses.forEach(response => {
         if ('influences' in response) {
           // Incoming influences response
           response.influences.forEach(influence => {
             // For incoming influences:
             if (!state.accumulatedGraph.nodes.has(influence.from_item.id)) {
+              // Generate clusters from category (same logic as initial load)
+              const clusters = influence.clusters || generateClustersFromCategory(influence.category);
+              
               newNodes.push({
                 id: influence.from_item.id,
                 name: influence.from_item.name,
                 type: influence.from_item.auto_detected_type || 'unknown',
                 year: influence.from_item.year,
                 category: 'influence',
-                clusters: influence.clusters || [] // NEW: Add cluster data
+                clusters: clusters
               });
+
+              console.log(`🔧 Generated clusters for ${influence.from_item.name}: ${clusters}`);
             }
 
             // Add link
@@ -98,17 +113,21 @@ export const useGraphOperations = () => {
         } else if ('outgoing_influences' in response) {
           // Outgoing influences response
           response.outgoing_influences.forEach(influence => {
-            // Add influenced node if not already exists
             // For outgoing influences:
             if (!state.accumulatedGraph.nodes.has(influence.to_item.id)) {
+              // Generate clusters from category (same logic as initial load)
+              const clusters = influence.clusters || generateClustersFromCategory(influence.category);
+              
               newNodes.push({
                 id: influence.to_item.id,
                 name: influence.to_item.name,
                 type: influence.to_item.auto_detected_type || 'unknown',
                 year: influence.to_item.year,
                 category: 'influence',
-                clusters: influence.clusters || [] // NEW: Add cluster data
+                clusters: clusters
               });
+
+              console.log(`🔧 Generated clusters for ${influence.to_item.name}: ${clusters}`);
             }
 
             // Add link
@@ -126,6 +145,14 @@ export const useGraphOperations = () => {
           });
         }
       });
+
+      console.log('🔄 New nodes from expansion:', newNodes.map(n => ({ 
+        name: n.name, 
+        category: n.category, 
+        clusters: n.clusters,
+        x: n.x,
+        y: n.y
+      })));
 
       if (newNodes.length > 0 || newLinks.length > 0) {
         addNodesAndLinks(newNodes, newLinks);

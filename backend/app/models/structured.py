@@ -23,6 +23,7 @@ class StructuredInfluence(BaseModel):
     confidence: float = Field(description="Confidence score 0.0-1.0", ge=0.0, le=1.0)
     explanation: str = Field(description="How this influenced the main item")
     source: Optional[str] = Field(None, description="Source of information")
+    clusters: Optional[List[str]] = None  # ADD THIS LINE
 
     @validator("name", pre=True)
     def validate_name(cls, v):

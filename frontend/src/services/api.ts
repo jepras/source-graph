@@ -21,7 +21,9 @@ export interface InfluenceRelation {
   influence_type: string;
   explanation: string;
   category: string;
+  scope?: string; // Also add this field from your API
   source?: string;
+  clusters?: string[]; // Add this
 }
 
 export interface GraphResponse {

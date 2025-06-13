@@ -1,17 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
-import { positionNewNodes, findConnectedNodes, positionNodesChronologically, positionNodesCategorically, extractCategories } from '../../utils/graphUtils';
 
 interface InfluenceGraphProps {
   accumulatedGraph: AccumulatedGraph;
   onNodeClick?: (itemId: string) => void;
   isChronologicalOrder?: boolean;
   onChronologicalToggle?: (enabled: boolean) => void;
-  isCategoricalLayout?: boolean;
-  onCategoricalToggle?: (enabled: boolean) => void;
-  isClusteringEnabled?: boolean; // NEW: Add clustering prop
-  onClusteringToggle?: (enabled: boolean) => void; // NEW: Add clustering toggle
+  isClusteringEnabled?: boolean;
+  onClusteringToggle?: (enabled: boolean) => void;
   onClearGraph?: () => void;
 }
 
@@ -20,15 +17,12 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   onNodeClick,
   isChronologicalOrder = false,
   onChronologicalToggle,
-  isCategoricalLayout = false,
-  onCategoricalToggle,
-  isClusteringEnabled = true, // NEW: Default clustering enabled
-  onClusteringToggle, // NEW: Add clustering toggle
+  isClusteringEnabled = false,
+  onClusteringToggle,
   onClearGraph
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  const [previousNodeCount, setPreviousNodeCount] = useState(0);
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -47,231 +41,239 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // In the InfluenceGraph component, update the extractClusters function:
-  const extractClusters = (nodes: GraphNode[]) => {
-    const clusterSet = new Set<string>();
-    console.log('🔍 Extracting clusters from nodes:', nodes.map(n => ({ id: n.id, clusters: n.clusters })));
+  // ====== CLEAN POSITIONING LOGIC ======
+
+  // Main positioning function - 4 clear combinations
+  const positionNodes = (nodes: GraphNode[], width: number, height: number) => {
+    console.log(`🎯 Positioning ${nodes.length} nodes - Clustering: ${isClusteringEnabled}, Chronological: ${isChronologicalOrder}`);
     
-    nodes.forEach(node => {
-      if (node.clusters && Array.isArray(node.clusters)) {
-        console.log(`Node ${node.name} has clusters:`, node.clusters);
-        node.clusters.forEach(cluster => clusterSet.add(cluster));
+    console.log('🔍 Node categories:', nodes.map(n => ({ name: n.name, category: n.category, clusters: n.clusters })));
+
+    if (isClusteringEnabled) {
+      if (isChronologicalOrder) {
+        positionClusterModeChronological(nodes, width, height);
       } else {
-        console.log(`Node ${node.name} has no clusters:`, node.clusters);
+        positionClusterModeNatural(nodes, width, height);
       }
-    });
-    
-    const clusters = Array.from(clusterSet);
-    console.log('🎯 Final extracted clusters:', clusters);
-    return clusters;
+    } else {
+      if (isChronologicalOrder) {
+        positionDefaultModeChronological(nodes, width, height);
+      } else {
+        positionDefaultModeNatural(nodes, width, height);
+      }
+    }
+
+    console.log('📍 Node positions:', nodes.map(n => ({ name: n.name, x: n.x, y: n.y })));
+
   };
 
-  // Add this function right after your extractClusters function in InfluenceGraph.tsx:
-  const preserveExistingNodePositions = (nodes: GraphNode[], previousPositions: Map<string, {x: number, y: number}>) => {
-    nodes.forEach(node => {
-      const savedPosition = previousPositions.get(node.id);
-      if (savedPosition) {
-        node.x = savedPosition.x;
-        node.y = savedPosition.y;
-        console.log(`🔒 Preserved position for ${node.name} at:`, { x: node.x, y: node.y });
-      }
-    });
-  };
-
-  // NEW: Helper function to position nodes in cluster areas
-const positionNodesInClusters = (nodes: GraphNode[], width: number, height: number) => {
-  const mainNode = nodes.find(n => n.category === 'main');
-  const influenceNodes = nodes.filter(n => n.category === 'influence');
-  
-  console.log('🎯 Positioning nodes in clusters:', { 
-    total: nodes.length, 
-    influences: influenceNodes.length 
-  });
-  
-  // Position main node at top center
-  if (mainNode) {
-    mainNode.x = width / 2;
-    mainNode.y = 100;
-    console.log('📍 Main node positioned at:', { x: mainNode.x, y: mainNode.y });
-  }
-
-  if (influenceNodes.length === 0) {
-    console.log('❌ No influence nodes to cluster');
-    return;
-  }
-
-  // Extract unique clusters
-  const clusters = extractClusters(influenceNodes);
-  console.log('🏷️ Found clusters:', clusters);
-  
-  if (clusters.length === 0) {
-    console.log('❌ No clusters found, using fallback positioning');
-    // Fallback to default positioning if no clusters
-    influenceNodes.forEach((node, index) => {
-      const spacing = Math.min(120, (width - 100) / Math.max(influenceNodes.length - 1, 1));
-      node.x = 50 + index * spacing;
-      node.y = 400;
-      console.log(`📍 Fallback positioned ${node.name} at:`, { x: node.x, y: node.y });
-    });
-    return;
-  }
-
-  // Calculate cluster area dimensions
-  const clusterAreaHeight = height - 250; // Space below main node
-  const clusterAreaWidth = width - 100; // Padding on sides
-  const clustersPerRow = Math.ceil(Math.sqrt(clusters.length));
-  const clusterWidth = clusterAreaWidth / clustersPerRow;
-  const clusterHeight = clusterAreaHeight / Math.ceil(clusters.length / clustersPerRow);
-
-  console.log('📐 Cluster layout:', {
-    clustersPerRow,
-    clusterWidth,
-    clusterHeight,
-    totalClusters: clusters.length
-  });
-
-  // Position nodes within cluster areas
-  clusters.forEach((clusterName, clusterIndex) => {
-    const clusterRow = Math.floor(clusterIndex / clustersPerRow);
-    const clusterCol = clusterIndex % clustersPerRow;
-    
-    const clusterCenterX = 50 + clusterCol * clusterWidth + clusterWidth / 2;
-    const clusterCenterY = 250 + clusterRow * clusterHeight + clusterHeight / 2;
-    
-    console.log(`🎯 Cluster "${clusterName}" area:`, {
-      centerX: clusterCenterX,
-      centerY: clusterCenterY,
-      row: clusterRow,
-      col: clusterCol
-    });
-    
-    // Find nodes that belong to this cluster
-    const clusterNodes = influenceNodes.filter(node => 
-      node.clusters && node.clusters.includes(clusterName)
-    );
-    
-    console.log(`📦 Nodes in cluster "${clusterName}":`, clusterNodes.map(n => n.name));
-    
-    // Position nodes in a circle within the cluster area
-    const radius = Math.min(clusterWidth, clusterHeight) / 4;
-    clusterNodes.forEach((node, nodeIndex) => {
-      if (clusterNodes.length === 1) {
-        node.x = clusterCenterX;
-        node.y = clusterCenterY;
-      } else {
-        const angle = (nodeIndex / clusterNodes.length) * 2 * Math.PI;
-        node.x = clusterCenterX + radius * Math.cos(angle);
-        node.y = clusterCenterY + radius * Math.sin(angle);
-      }
-      console.log(`📍 Positioned ${node.name} in cluster at:`, { x: node.x, y: node.y });
-    });
-  });
-
-  // Handle nodes without clusters (position them separately)
-  const noClusterNodes = influenceNodes.filter(node => 
-    !node.clusters || node.clusters.length === 0
-  );
-  
-  if (noClusterNodes.length > 0) {
-    console.log('🔄 Positioning nodes without clusters:', noClusterNodes.map(n => n.name));
-    // Position unclustered nodes at the bottom
-    noClusterNodes.forEach((node, index) => {
-      const spacing = Math.min(120, (width - 100) / Math.max(noClusterNodes.length - 1, 1));
-      node.x = 50 + index * spacing;
-      node.y = height - 100;
-      console.log(`📍 Positioned unclustered ${node.name} at:`, { x: node.x, y: node.y });
-    });
-  }
-};
-
-  // Helper function: Initial layout for first nodes
-  const initialLayout = (nodes: GraphNode[], width: number, height: number) => {
-    const mainNode = nodes.find(n => n.category === 'main');
+  // 1. Cluster Mode + Chronological: Vertical columns, globally sorted by year
+  const positionClusterModeChronological = (nodes: GraphNode[], width: number, height: number) => {
+    // Separate main items from influences
+    const mainNodes = nodes.filter(n => n.category === 'main');
     const influenceNodes = nodes.filter(n => n.category === 'influence');
-
-    // Position main node in center
-    if (mainNode) {
-      mainNode.x = width / 2;
-      mainNode.y = height / 2;
+    
+    const clusters = extractClusters(influenceNodes); // Only get clusters from influences
+    if (clusters.length === 0) {
+      positionDefaultModeChronological(nodes, width, height);
+      return;
     }
 
-    // Position influence nodes in circle around main
-    if (influenceNodes.length > 0) {
-      const radius = Math.min(width, height) / 4;
-      influenceNodes.forEach((node, index) => {
-        const angle = (index / influenceNodes.length) * 2 * Math.PI;
-        node.x = (width / 2) + radius * Math.cos(angle);
-        node.y = (height / 2) + radius * Math.sin(angle);
-      });
-    }
-  };
+    // Position main items at the top center
+    mainNodes.forEach((node, index) => {
+      const spacing = 200; // Space between multiple main items
+      const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
+      node.x = startX + (index * spacing);
+      node.y = 60; // Fixed position at top
+    });
 
-  // Helper function: Auto-fit all nodes in view
-  const autoFitView = (svg: any, nodes: GraphNode[], width: number, height: number) => {
-    if (nodes.length === 0) return;
+    // Sort ALL influence nodes globally by year (newest first)
+    const nodesWithYears = influenceNodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
+    const nodesWithoutYears = influenceNodes.filter(n => !n.year);
 
     const padding = 80;
-    const bounds = {
-      minX: Math.min(...nodes.map(n => n.x!)) - padding,
-      maxX: Math.max(...nodes.map(n => n.x!)) + padding,
-      minY: Math.min(...nodes.map(n => n.y!)) - padding,
-      maxY: Math.max(...nodes.map(n => n.y!)) + padding
-    };
+    const topPadding = 120; // Extra space for main items
+    const availableWidth = width - (2 * padding);
+    const columnWidth = availableWidth / clusters.length;
+    const availableHeight = height - topPadding - padding;
 
-    const boundsWidth = bounds.maxX - bounds.minX;
-    const boundsHeight = bounds.maxY - bounds.minY;
+    // Assign global Y positions based on chronological order
+    nodesWithYears.forEach((node, index) => {
+      const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
+      node.y = topPadding + (yProgress * availableHeight * 0.8);
+    });
 
-    const scaleX = width / boundsWidth;
-    const scaleY = height / boundsHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
+    // Position nodes without years at bottom
+    nodesWithoutYears.forEach((node, index) => {
+      node.y = height - padding - 50 - (index * 30);
+    });
 
-    const translateX = (width - boundsWidth * scale) / 2 - bounds.minX * scale;
-    const translateY = (height - boundsHeight * scale) / 2 - bounds.minY * scale;
+    // Now position X coordinates by cluster
+    clusters.forEach((clusterName, clusterIndex) => {
+      const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
+      const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+      
+      // Group nodes in this cluster by year to handle same-year nodes
+      const yearGroups = new Map<number, GraphNode[]>();
+      clusterNodes.forEach(node => {
+        const year = node.year || -1;
+        if (!yearGroups.has(year)) yearGroups.set(year, []);
+        yearGroups.get(year)!.push(node);
+      });
 
-    svg.select("g.graph-content")
-      .transition()
-      .duration(750)
-      .attr("transform", `translate(${translateX}, ${translateY}) scale(${scale})`);
+      // Position nodes within each year group side-by-side
+      yearGroups.forEach(yearNodes => {
+        yearNodes.forEach((node, nodeIndex) => {
+          const totalInYear = yearNodes.length;
+          const nodeSpacing = Math.min(80, columnWidth * 0.8 / Math.max(totalInYear, 1));
+          const startX = clusterCenterX - ((totalInYear - 1) * nodeSpacing) / 2;
+          node.x = startX + (nodeIndex * nodeSpacing);
+        });
+      });
+    });
   };
 
-  const handleFitToView = () => {
-    if (!svgRef.current) return;
+  // 2. Cluster Mode + Natural: Vertical columns, natural spread within clusters
+  const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: number) => {
+    // Separate main items from influences
+    const mainNodes = nodes.filter(n => n.category === 'main');
+    const influenceNodes = nodes.filter(n => n.category === 'influence');
     
-    const svg = d3.select(svgRef.current);
-    const nodes = Array.from(accumulatedGraph.nodes.values());
-    
-    if (nodes.length > 0) {
-      autoFitView(svg, nodes, dimensions.width, dimensions.height);
+    const clusters = extractClusters(influenceNodes); // Only get clusters from influences
+    if (clusters.length === 0) {
+      positionDefaultModeNatural(nodes, width, height);
+      return;
     }
+
+    // Position main items at the top center
+    mainNodes.forEach((node, index) => {
+      const spacing = 200; // Space between multiple main items
+      const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
+      node.x = startX + (index * spacing);
+      node.y = 60; // Fixed position at top
+    });
+
+    const padding = 80;
+    const topPadding = 120; // Extra space for main items
+    const availableWidth = width - (2 * padding);
+    const columnWidth = availableWidth / clusters.length;
+    const availableHeight = height - topPadding - padding;
+
+    clusters.forEach((clusterName, clusterIndex) => {
+      const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
+      const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+      
+      // Distribute nodes naturally within the cluster column
+      clusterNodes.forEach((node, nodeIndex) => {
+        const yProgress = nodeIndex / Math.max(clusterNodes.length - 1, 1);
+        node.y = topPadding + (yProgress * availableHeight);
+        
+        // Add some horizontal variation within the column
+        const xVariation = (Math.random() - 0.5) * (columnWidth * 0.4);
+        node.x = clusterCenterX + xVariation;
+      });
+    });
   };
 
-  const handleChronologicalToggle = () => {
-    if (onChronologicalToggle) {
-      onChronologicalToggle(!isChronologicalOrder);
-    }
+  // 3. Default Mode + Chronological: Natural spread constrained by Y-axis chronology
+  const positionDefaultModeChronological = (nodes: GraphNode[], width: number, height: number) => {
+    const nodesWithYears = nodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
+    const nodesWithoutYears = nodes.filter(n => !n.year);
+
+    const padding = 80;
+    const availableHeight = height - (2 * padding);
+
+    // Assign Y positions based on chronology
+    nodesWithYears.forEach((node, index) => {
+      const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
+      node.y = padding + (yProgress * availableHeight * 0.8);
+    });
+
+    // Assign X positions with natural spread
+    nodesWithYears.forEach((node, index) => {
+      const xVariation = (Math.random() - 0.5) * (width * 0.6);
+      node.x = (width / 2) + xVariation;
+    });
+
+    // Position nodes without years at bottom
+    nodesWithoutYears.forEach((node, index) => {
+      node.y = height - padding - 50;
+      const spacing = Math.min(120, (width - 2 * padding) / Math.max(nodesWithoutYears.length, 1));
+      node.x = padding + (index * spacing);
+    });
   };
 
-  const handleCategoricalToggle = () => {
-    if (onCategoricalToggle) {
-      onCategoricalToggle(!isCategoricalLayout);
-    }
+  // 4. Default Mode + Natural: Smart grid/radial avoiding overlaps
+  const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: number) => {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const minDistance = 120;
+
+    nodes.forEach((node, index) => {
+      let positioned = false;
+      
+      // Try positioning in expanding circles
+      for (let radius = minDistance; radius < Math.min(width, height) / 2; radius += minDistance * 0.7) {
+        const positions = Math.max(8, Math.floor(2 * Math.PI * radius / minDistance));
+        
+        for (let i = 0; i < positions; i++) {
+          const angle = (2 * Math.PI * i) / positions + (index * 0.1); // Small offset per node
+          const x = centerX + Math.cos(angle) * radius;
+          const y = centerY + Math.sin(angle) * radius;
+          
+          // Check bounds
+          if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
+          
+          // Check for overlaps with already positioned nodes
+          const hasOverlap = nodes.slice(0, index).some(other => {
+            if (!other.x || !other.y) return false;
+            const dx = other.x - x;
+            const dy = other.y - y;
+            return Math.sqrt(dx * dx + dy * dy) < minDistance;
+          });
+          
+          if (!hasOverlap) {
+            node.x = x;
+            node.y = y;
+            positioned = true;
+            break;
+          }
+        }
+        
+        if (positioned) break;
+      }
+      
+      // Fallback positioning
+      if (!positioned) {
+        const fallbackAngle = (index / nodes.length) * 2 * Math.PI;
+        const fallbackRadius = Math.min(width, height) / 3;
+        node.x = centerX + Math.cos(fallbackAngle) * fallbackRadius;
+        node.y = centerY + Math.sin(fallbackAngle) * fallbackRadius;
+      }
+    });
   };
 
-  // NEW: Add handler for clustering toggle
-  const handleClusteringToggle = () => {
-    if (onClusteringToggle) {
-      onClusteringToggle(!isClusteringEnabled);
-    }
+
+  // Helper function to extract unique clusters
+  const extractClusters = (nodes: GraphNode[]): string[] => {
+    const clusterSet = new Set<string>();
+    nodes.forEach(node => {
+      if (node.clusters && Array.isArray(node.clusters)) {
+        node.clusters.forEach(cluster => clusterSet.add(cluster));
+      }
+    });
+    return Array.from(clusterSet);
   };
+
+  // ====== RENDERING LOGIC ======
 
   useEffect(() => {
     if (accumulatedGraph.nodes.size === 0 || !svgRef.current) return;
 
     const nodes = Array.from(accumulatedGraph.nodes.values());
     const links = Array.from(accumulatedGraph.relationships.values());
-    const currentNodeCount = nodes.length;
 
-    console.log('Rendering graph:', { nodes: currentNodeCount, links: links.length, clustering: isClusteringEnabled });
+    console.log('🎨 Rendering graph:', { nodes: nodes.length, links: links.length });
 
     // Clear previous graph
     d3.select(svgRef.current).selectAll("*").remove();
@@ -281,195 +283,24 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
 
     svg.attr("width", width).attr("height", height);
 
-    // ADD THIS: Save current positions before repositioning
-    const currentPositions = new Map<string, {x: number, y: number}>();
-    nodes.forEach(node => {
-      if (node.x !== undefined && node.y !== undefined) {
-        currentPositions.set(node.id, { x: node.x, y: node.y });
-      }
-    });
-
-    // Position nodes based on current layout settings
-    const unpositionedNodes = nodes.filter(n => !n.x || !n.y);
-    const positionedNodes = nodes.filter(n => n.x && n.y);
-
-    if (isClusteringEnabled) {
-      // NEW: Clustering mode - group by clusters
-      positionNodesInClusters(nodes, width, height);
-      // ADD THIS: Restore positions for existing nodes
-      preserveExistingNodePositions(nodes, currentPositions);
-    } else if (isCategoricalLayout) {
-      // Categorical mode: arrange by categories (and chronologically within categories if both are on)
-      positionNodesCategorically(nodes, width, height, isChronologicalOrder);
-      // ADD THIS: Restore positions for existing nodes
-      preserveExistingNodePositions(nodes, currentPositions);
-    } else if (isChronologicalOrder) {
-      // Chronological mode only: reposition all nodes
-      positionNodesChronologically(nodes, width, height);
-      // ADD THIS: Restore positions for existing nodes  
-      preserveExistingNodePositions(nodes, currentPositions);
-    } else {
-      // Normal mode: use existing positioning logic
-      if (positionedNodes.length === 0) {
-        // First time: initial layout
-        initialLayout(nodes, width, height);
-      } else if (unpositionedNodes.length > 0) {
-        // New nodes: position near connected nodes
-        positionNewNodes(positionedNodes, unpositionedNodes, links, width, height);
-      }
-    }
-
-    // Replace your current text rendering section with this combined version:
-
-    // Calculate dynamic font size based on cluster density
-    const getTextSize = (node: GraphNode) => {
-      if (!isClusteringEnabled) return "12px";
-      
-      // Count nodes in same cluster
-      const sameClusterNodes = nodes.filter(n => 
-        n.category === 'influence' && 
-        n.clusters?.some(c => node.clusters?.includes(c))
-      );
-      
-      if (sameClusterNodes.length > 4) return "10px"; // Smaller text for dense clusters
-      if (sameClusterNodes.length > 2) return "11px";
-      return "12px";
-    };
-
-    // Function to wrap text into multiple lines with truncation indicator
-    const wrapText = (text: string, maxWidth: number, fontSize: string) => {
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-      let remainingWords = [...words]; // Track remaining words
-      
-      // Estimate character width based on font size
-      const charWidth = fontSize === "10px" ? 5.5 : fontSize === "11px" ? 6 : 6.5;
-      const maxCharsPerLine = Math.floor(maxWidth / charWidth);
-      
-      // Process words for line 1
-      while (remainingWords.length > 0 && lines.length < 1) {
-        const word = remainingWords[0];
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        
-        if (testLine.length <= maxCharsPerLine) {
-          currentLine = testLine;
-          remainingWords.shift(); // Remove processed word
-        } else {
-          if (currentLine) {
-            lines.push(currentLine);
-            currentLine = '';
-          } else {
-            // Single word is too long for line, truncate it
-            lines.push(word.substring(0, maxCharsPerLine - 3) + "...");
-            remainingWords.shift();
-          }
-        }
-      }
-      
-      // Add first line if we have content
-      if (currentLine && lines.length === 0) {
-        lines.push(currentLine);
-        currentLine = '';
-      }
-      
-      // Process words for line 2 (if there are remaining words)
-      if (remainingWords.length > 0 && lines.length < 2) {
-        while (remainingWords.length > 0) {
-          const word = remainingWords[0];
-          const testLine = currentLine ? `${currentLine} ${word}` : word;
-          
-          if (testLine.length <= maxCharsPerLine - (remainingWords.length > 1 ? 3 : 0)) {
-            // Leave space for "..." if more words remain
-            currentLine = testLine;
-            remainingWords.shift();
-          } else {
-            break; // Can't fit more words
-          }
-        }
-        
-        // Add second line with "..." if needed
-        if (currentLine) {
-          if (remainingWords.length > 0) {
-            // Add "..." if there are still words left
-            if (currentLine.length <= maxCharsPerLine - 3) {
-              lines.push(currentLine + "...");
-            } else {
-              // Trim current line to make room for "..."
-              const trimmedLine = currentLine.substring(0, maxCharsPerLine - 3);
-              const lastSpaceIndex = trimmedLine.lastIndexOf(' ');
-              if (lastSpaceIndex > 0) {
-                lines.push(trimmedLine.substring(0, lastSpaceIndex) + "...");
-              } else {
-                lines.push(trimmedLine + "...");
-              }
-            }
-          } else {
-            // No more words, just add the line as is
-            lines.push(currentLine);
-          }
-        }
-      }
-      
-      return lines;
-    };
+    // ALWAYS recalculate positions (clean behavior)
+    positionNodes(nodes, width, height);
 
     // Add zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 3])
       .on("zoom", (event) => {
-        svg.select("g.graph-content")
-          .attr("transform", event.transform);
+        svg.select("g.graph-content").attr("transform", event.transform);
       });
 
     svg.call(zoom);
 
     // Create main group for all graph content
-    const graphGroup = svg.append("g")
-      .attr("class", "graph-content");
+    const graphGroup = svg.append("g").attr("class", "graph-content");
 
-    // NEW: Draw cluster areas if clustering is enabled
+    // Draw cluster areas if clustering is enabled
     if (isClusteringEnabled) {
-      const clusters = extractClusters(nodes.filter(n => n.category === 'influence'));
-      
-      if (clusters.length > 0) {
-        const clustersPerRow = Math.ceil(Math.sqrt(clusters.length));
-        const clusterAreaWidth = width - 100;
-        const clusterAreaHeight = height - 250;
-        const clusterWidth = clusterAreaWidth / clustersPerRow;
-        const clusterHeight = clusterAreaHeight / Math.ceil(clusters.length / clustersPerRow);
-
-        clusters.forEach((clusterName, clusterIndex) => {
-          const clusterRow = Math.floor(clusterIndex / clustersPerRow);
-          const clusterCol = clusterIndex % clustersPerRow;
-          
-          const clusterX = 50 + clusterCol * clusterWidth;
-          const clusterY = 250 + clusterRow * clusterHeight;
-          
-          // Draw cluster background area (subtle)
-          graphGroup.append("rect")
-            .attr("x", clusterX + 10)
-            .attr("y", clusterY + 10)
-            .attr("width", clusterWidth - 20)
-            .attr("height", clusterHeight - 20)
-            .attr("fill", "#f3f4f6")
-            .attr("stroke", "#e5e7eb")
-            .attr("stroke-width", 1)
-            .attr("stroke-dasharray", "5,5")
-            .attr("rx", 8)
-            .attr("opacity", 0.5);
-          
-          // Add cluster label
-          graphGroup.append("text")
-            .attr("x", clusterX + clusterWidth / 2)
-            .attr("y", clusterY + 30)
-            .attr("text-anchor", "middle")
-            .style("font-size", "12px")
-            .style("font-weight", "bold")
-            .style("fill", "#6b7280")
-            .text(clusterName);
-        });
-      }
+      drawClusterAreas(graphGroup, nodes, width, height);
     }
 
     // Create links
@@ -481,22 +312,10 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
       .attr("stroke", "#999")
       .attr("stroke-width", d => d.confidence * 3)
       .attr("stroke-opacity", 0.6)
-      .attr("x1", d => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        return sourceNode?.x || 0;
-      })
-      .attr("y1", d => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        return sourceNode?.y || 0;
-      })
-      .attr("x2", d => {
-        const targetNode = nodes.find(n => n.id === d.target);
-        return targetNode?.x || 0;
-      })
-      .attr("y2", d => {
-        const targetNode = nodes.find(n => n.id === d.target);
-        return targetNode?.y || 0;
-      });
+      .attr("x1", d => nodes.find(n => n.id === d.source)?.x || 0)
+      .attr("y1", d => nodes.find(n => n.id === d.source)?.y || 0)
+      .attr("x2", d => nodes.find(n => n.id === d.target)?.x || 0)
+      .attr("y2", d => nodes.find(n => n.id === d.target)?.y || 0);
 
     // Create node groups
     const nodeGroups = graphGroup.selectAll(".node")
@@ -510,51 +329,21 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
         if (onNodeClick) onNodeClick(d.id);
       });
 
-    // Add multi-line labels with better spacing
-    nodeGroups.each(function(d) {
-      const group = d3.select(this);
-      const fontSize = getTextSize(d);
-      const maxWidth = isClusteringEnabled ? 100 : 120; // Smaller width in cluster mode
-      const lines = wrapText(d.name, maxWidth, fontSize);
-      
-      // Calculate base offset with variation to reduce overlap
-      const hash = d.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-      const baseVariation = (hash % 16) - 8; // Random variation between -8 and +8
-      const baseOffset = 45 + baseVariation;
-      
-      // Calculate line height based on font size
-      const lineHeight = fontSize === "10px" ? 12 : fontSize === "11px" ? 13 : 14;
-      
-      lines.forEach((line, i) => {
-        group.append("text")
-          .attr("dy", baseOffset + (i * lineHeight))
-          .attr("text-anchor", "middle")
-          .style("font-size", fontSize)
-          .style("font-weight", "bold")
-          .style("fill", "#374151")
-          .style("text-shadow", "1px 1px 2px rgba(255,255,255,0.8)")
-          .text(line);
-      });
-    });
-
-    // Add circles with selection highlighting
+    // Add circles
     nodeGroups.append("circle")
-      .attr("r", d => d.category === 'main' ? 30 : 25)
+      .attr("r", 25)
       .attr("fill", d => d.category === 'main' ? "#3b82f6" : "#ef4444")
       .attr("stroke", d => d.id === accumulatedGraph.selectedNodeId ? "#f59e0b" : "#fff")
       .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 4 : 3);
 
-    // Add selection indicator for selected node
-    nodeGroups.filter(d => d.id === accumulatedGraph.selectedNodeId)
-      .append("circle")
-      .attr("r", d => d.category === 'main' ? 35 : 30)
-      .attr("fill", "none")
-      .attr("stroke", "#f59e0b")
-      .attr("stroke-width", 2)
-      .attr("stroke-dasharray", "5,5")
-      .style("animation", "pulse 2s infinite");
-
-    
+    // Add text labels
+    nodeGroups.append("text")
+      .attr("dy", 45)
+      .attr("text-anchor", "middle")
+      .style("font-size", "12px")
+      .style("font-weight", "bold")
+      .style("fill", "#374151")
+      .text(d => d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name);
 
     // Add year labels
     nodeGroups.filter(d => d.year)
@@ -565,100 +354,81 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
       .style("fill", "#9ca3af")
       .text(d => d.year?.toString() || "");
 
-    // Add category labels if in categorical mode (not clustering)
-    if (isCategoricalLayout && !isClusteringEnabled) {
-      const categories = extractCategories(nodes);
-      let currentX = 80;
-      const totalNodes = nodes.length;
+  }, [accumulatedGraph, dimensions, isChronologicalOrder, isClusteringEnabled]);
+
+  // Helper function to draw cluster areas
+  const drawClusterAreas = (graphGroup: any, nodes: GraphNode[], width: number, height: number) => {
+    const clusters = extractClusters(nodes);
+    const padding = 80;
+    const columnWidth = (width - 2 * padding) / clusters.length;
+
+    clusters.forEach((clusterName, index) => {
+      const x = padding + (index * columnWidth);
       
-      categories.forEach(({ type, count }) => {
-        const proportion = count / totalNodes;
-        const columnWidth = Math.max(150, (width - 160) * proportion);
-        
-        // Add category label
-        graphGroup.append("text")
-          .attr("x", currentX + columnWidth/2)
-          .attr("y", 30)
-          .attr("text-anchor", "middle")
-          .style("font-size", "14px")
-          .style("font-weight", "bold")
-          .style("fill", "#374151")
-          .text(`${type} (${count})`);
-        
-        // Add column separator line
-        if (currentX > 80) {
-          graphGroup.append("line")
-            .attr("x1", currentX)
-            .attr("y1", 50)
-            .attr("x2", currentX)
-            .attr("y2", height - 50)
-            .attr("stroke", "#e5e7eb")
-            .attr("stroke-width", 1)
-            .attr("stroke-dasharray", "5,5");
-        }
-        
-        currentX += columnWidth;
-      });
+      // Draw cluster background
+      graphGroup.append("rect")
+        .attr("x", x + 10)
+        .attr("y", padding)
+        .attr("width", columnWidth - 20)
+        .attr("height", height - 2 * padding)
+        .attr("fill", "#f3f4f6")
+        .attr("stroke", "#e5e7eb")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "5,5")
+        .attr("rx", 8)
+        .attr("opacity", 0.3);
+      
+      // Add cluster label
+      graphGroup.append("text")
+        .attr("x", x + columnWidth / 2)
+        .attr("y", padding - 20)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .style("font-weight", "bold")
+        .style("fill", "#6b7280")
+        .text(clusterName);
+    });
+  };
+
+  // Control handlers
+  const handleChronologicalToggle = () => {
+    if (onChronologicalToggle) {
+      onChronologicalToggle(!isChronologicalOrder);
     }
+  };
 
-    // Auto-fit view if many new nodes were added
-    if (currentNodeCount > previousNodeCount + 2) {
-      setTimeout(() => {
-        autoFitView(svg, nodes, width, height);
-      }, 100);
+  const handleClusteringToggle = () => {
+    if (onClusteringToggle) {
+      onClusteringToggle(!isClusteringEnabled);
     }
-
-    setPreviousNodeCount(currentNodeCount);
-
-  }, [accumulatedGraph, dimensions, onNodeClick, previousNodeCount, isChronologicalOrder, isCategoricalLayout, isClusteringEnabled]);
+  };
 
   return (
     <div className="relative w-full h-full">
-      {/* Controls */}
+      {/* Simplified Controls */}
       <div className="absolute top-4 right-4 z-10 flex space-x-2">
-        {/* NEW: Add clustering toggle button */}
         <button
           onClick={handleClusteringToggle}
           className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
             isClusteringEnabled 
-              ? 'bg-orange-500 text-white hover:bg-orange-600' 
+              ? 'bg-blue-500 text-white hover:bg-blue-600' 
               : 'bg-white hover:bg-gray-50'
           }`}
-          title="Toggle clustering view (group by semantic clusters)"
+          title="Toggle cluster layout (columns by semantic clusters)"
         >
-          🎯 Clusters
-        </button>
-        
-        <button
-          onClick={handleCategoricalToggle}
-          className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
-            isCategoricalLayout 
-              ? 'bg-green-500 text-white hover:bg-green-600' 
-              : 'bg-white hover:bg-gray-50'
-          }`}
-          title="Toggle categorical layout (group by type)"
-        >
-          📊 Categories
+          🏛️ Clusters
         </button>
         
         <button
           onClick={handleChronologicalToggle}
           className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
             isChronologicalOrder 
-              ? 'bg-blue-500 text-white hover:bg-blue-600' 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
               : 'bg-white hover:bg-gray-50'
           }`}
-          title="Toggle chronological ordering (newest to oldest)"
+          title="Toggle chronological ordering (sort by year)"
         >
           📅 Chronological
-        </button>
-        
-        <button
-          onClick={handleFitToView}
-          className="px-3 py-2 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
-          title="Fit all nodes to view"
-        >
-          🔍 Fit to View
         </button>
 
         {onClearGraph && (
@@ -681,26 +451,24 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
 
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white border border-gray-300 rounded p-3 shadow text-sm">
-        <div className="font-semibold mb-2">Legend</div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
-          <span>Main Item</span>
+        <div className="font-semibold mb-2">Layout Mode</div>
+        <div className="text-xs text-gray-600 mb-1">
+          {isClusteringEnabled ? '🏛️ Cluster Mode' : '🌐 Default Mode'}
         </div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-          <span>Influences</span>
+        <div className="text-xs text-gray-600">
+          {isChronologicalOrder ? '📅 Chronological' : '🎲 Natural'}
         </div>
-        <div className="flex items-center mb-1">
-          <div className="w-4 h-4 rounded-full border-2 border-orange-500 bg-transparent mr-2"></div>
-          <span>Selected</span>
-        </div>
-        {/* NEW: Add clustering legend */}
-        {isClusteringEnabled && (
-          <div className="flex items-center">
-            <div className="w-4 h-4 border border-gray-400 bg-gray-100 mr-2" style={{borderStyle: 'dashed'}}></div>
-            <span>Cluster Areas</span>
+        
+        <div className="mt-3 pt-2 border-t border-gray-200">
+          <div className="flex items-center mb-1">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <span className="text-xs">Main Item</span>
           </div>
-        )}
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <span className="text-xs">Influences</span>
+          </div>
+        </div>
       </div>
 
       {/* Graph Stats */}
@@ -708,24 +476,15 @@ const positionNodesInClusters = (nodes: GraphNode[], width: number, height: numb
         <div className="font-semibold">
           {accumulatedGraph.nodes.size} nodes
         </div>
-        <div className="text-gray-600">
+        <div className="text-gray-600 text-xs">
           {accumulatedGraph.relationships.size} connections
         </div>
-        {/* NEW: Show cluster count if clustering enabled */}
         {isClusteringEnabled && (
-          <div className="text-orange-600">
-            {extractClusters(Array.from(accumulatedGraph.nodes.values()).filter(n => n.category === 'influence')).length} clusters
+          <div className="text-blue-600 text-xs">
+            {extractClusters(Array.from(accumulatedGraph.nodes.values())).length} clusters
           </div>
         )}
       </div>
-
-      {/* CSS for pulse animation */}
-     <style>{`
-       @keyframes pulse {
-         0%, 100% { opacity: 1; }
-         50% { opacity: 0.5; }
-       }
-     `}</style>
-   </div>
- );
+    </div>
+  );
 };

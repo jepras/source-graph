@@ -156,6 +156,7 @@ async def accept_proposals(request: AcceptProposalsRequest):
                     confidence=proposal.confidence,
                     explanation=proposal.explanation,
                     source=proposal.source,
+                    clusters=proposal.clusters,  # ADD THIS LINE
                 )
                 for proposal in request.accepted_proposals
                 if proposal.accepted

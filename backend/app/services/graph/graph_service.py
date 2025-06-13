@@ -558,6 +558,7 @@ class GraphService:
                             category=category,
                             source=influence.source,
                             year_of_influence=influence.year,
+                            clusters=influence.clusters,
                         )
 
                         # Ensure category exists
@@ -698,40 +699,64 @@ class GraphService:
         influence_type: str,
         explanation: str,
         category: str,
-        scope: str = "macro",  # Add scope parameter with default
+        scope: str = "macro",
         source: str = None,
         year_of_influence: int = None,
+        clusters: List[str] = None,
     ):
         """Create influence relationship between items with scope support"""
-        print(f"DEBUG: Creating relationship with scope: {scope}")  # Add this line
+        print(f"=== RELATIONSHIP DEBUG ===")
+        print(f"Creating relationship with scope: {scope}")
+        print(f"Creating relationship with clusters: {clusters}")
+        print(f"Clusters type: {type(clusters)}")
+        print(f"From: {from_item_id} -> To: {to_item_id}")
+        print(f"=== END RELATIONSHIP DEBUG ===")
 
-        with neo4j_db.driver.session() as session:
-            session.run(
-                """
-                MATCH (from:Item {id: $from_id})
-                MATCH (to:Item {id: $to_id})
-                MERGE (from)-[r:INFLUENCES]->(to)
-                SET r.confidence = $confidence,
-                    r.influence_type = $influence_type,
-                    r.explanation = $explanation,
-                    r.category = $category,
-                    r.scope = $scope,
-                    r.source = $source,
-                    r.year_of_influence = $year_of_influence,
-                    r.created_at = datetime()
-                """,
-                {
-                    "from_id": from_item_id,
-                    "to_id": to_item_id,
-                    "confidence": confidence,
-                    "influence_type": influence_type,
-                    "explanation": explanation,
-                    "category": category,
-                    "scope": scope,
-                    "source": source,
-                    "year_of_influence": year_of_influence,
-                },
-            )
+        try:
+            with neo4j_db.driver.session() as session:
+                result = session.run(
+                    """
+                    MATCH (from:Item {id: $from_id})
+                    MATCH (to:Item {id: $to_id})
+                    MERGE (from)-[r:INFLUENCES]->(to)
+                    SET r.confidence = $confidence,
+                        r.influence_type = $influence_type,
+                        r.explanation = $explanation,
+                        r.category = $category,
+                        r.scope = $scope,
+                        r.source = $source,
+                        r.year_of_influence = $year_of_influence,
+                        r.clusters = $clusters,
+                        r.created_at = datetime()
+                    RETURN r.clusters as saved_clusters
+                    """,
+                    {
+                        "from_id": from_item_id,
+                        "to_id": to_item_id,
+                        "confidence": confidence,
+                        "influence_type": influence_type,
+                        "explanation": explanation,
+                        "category": category,
+                        "scope": scope,
+                        "source": source,
+                        "year_of_influence": year_of_influence,
+                        "clusters": clusters,
+                    },
+                )
+
+                # Check what was actually saved
+                saved_result = result.single()
+                if saved_result:
+                    print(
+                        f"Successfully saved clusters: {saved_result['saved_clusters']}"
+                    )
+                else:
+                    print("No result returned from save operation")
+
+        except Exception as e:
+            print(f"ERROR in create_influence_relationship: {str(e)}")
+            print(f"Error type: {type(e)}")
+            raise  # Re-raise the exception
 
     def ensure_category_exists(self, category_name: str):
         """Create category if it doesn't exist"""
@@ -800,6 +825,7 @@ class GraphService:
                 scope=influence.scope,  # Now includes scope
                 source=influence.source,
                 year_of_influence=influence.year,
+                clusters=influence.clusters,  # ADD THIS LINE
             )
 
             # Ensure category exists
@@ -852,7 +878,7 @@ class GraphService:
                 MATCH (influence:Item)-[r:INFLUENCES]->(main:Item {{id: $item_id}})
                 WHERE r.scope IN ['{scope_values}']
                 OPTIONAL MATCH (influence)-[:CREATED_BY]->(creator:Creator)
-                RETURN influence, r, creator
+                RETURN influence, r, r.clusters, creator
                 ORDER BY influence.year ASC
                 """
 
@@ -866,7 +892,7 @@ class GraphService:
                 query = """
                 MATCH (influence:Item)-[r:INFLUENCES]->(main:Item {id: $item_id})
                 OPTIONAL MATCH (influence)-[:CREATED_BY]->(creator:Creator)
-                RETURN influence, r, creator
+                RETURN influence, r, r.clusters, creator
                 ORDER BY influence.year ASC
                 """
 
@@ -885,6 +911,14 @@ class GraphService:
                 influence_node = record["influence"]
                 relation = record["r"]
                 creator_node = record.get("creator")
+
+                # ADD DETAILED DEBUG HERE:
+                print(f"=== RELATION DEBUG ===")
+                print(f"Influence: {influence_node['name']}")
+                print(f"All relation properties: {dict(relation)}")
+                print(f"Clusters specifically: {relation.get('clusters')}")
+                print(f"Clusters type: {type(relation.get('clusters'))}")
+                print(f"=== END RELATION DEBUG ===")
 
                 # Build influence item
                 influence_item = Item(
@@ -909,7 +943,13 @@ class GraphService:
                     category=relation["category"],
                     scope=relation.get("scope"),  # Will be None for existing data
                     source=relation.get("source"),
+                    clusters=relation.get("clusters", []),
                 )
+                # ADD THIS DEBUG LINE:
+                print(
+                    f"DEBUG: Item {influence_item.name} has clusters: {relation.get('clusters')}"
+                )
+
                 influences.append(influence_relation)
 
             # Get categories (with same scope filter)

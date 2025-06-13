@@ -37,6 +37,7 @@ class InfluenceRelation(BaseModel):
     )
     source: Optional[str] = None
     year_of_influence: Optional[int] = None
+    clusters: Optional[List[str]] = None
 
 
 class GraphResponse(BaseModel):
