@@ -89,17 +89,9 @@ class GraphService:
     ) -> Dict:
         """Get expanded graph with multiple layers of influences"""
 
-        print(f"=== EXPANDED GRAPH DEBUG ===")
-        print(f"Center item ID: {center_item_id}")
-        print(f"Include incoming: {include_incoming}")
-        print(f"Include outgoing: {include_outgoing}")
-        print(f"Max depth: {max_depth}")
-
         try:
             with neo4j_db.driver.session() as session:
                 # Step 1: Get center item
-                print("Step 1: Getting center item...")
-
                 center_result = session.run(
                     "MATCH (center:Item {id: $center_id}) RETURN center",
                     {"center_id": center_item_id},
@@ -107,11 +99,9 @@ class GraphService:
                 center_record = center_result.single()
 
                 if not center_record:
-                    print(f"ERROR: Center item {center_item_id} not found")
                     return {"nodes": [], "relationships": []}
 
                 center_node = center_record["center"]
-                print(f"Center item found: {center_node['name']}")
 
                 # Step 2: Collect all nodes and relationships
                 all_nodes = []
@@ -136,8 +126,6 @@ class GraphService:
 
                 # Step 3: Get outgoing influences if requested
                 if include_outgoing:
-                    print("Step 3: Getting outgoing influences...")
-
                     outgoing_result = session.run(
                         """
                         MATCH (center:Item {id: $center_id})-[r:INFLUENCES]->(influenced:Item)
@@ -153,8 +141,6 @@ class GraphService:
                         influenced_node = record["influenced"]
                         relationship = record["r"]
                         creators = record["creators"]
-
-                        print(f"  Outgoing {outgoing_count}: {influenced_node['name']}")
 
                         # Add influenced item to nodes
                         influenced_item = Item(
@@ -198,12 +184,8 @@ class GraphService:
                             }
                         )
 
-                    print(f"Found {outgoing_count} outgoing influences")
-
                 # Step 4: Get incoming influences if requested
                 if include_incoming:
-                    print("Step 4: Getting incoming influences...")
-
                     incoming_result = session.run(
                         """
                         MATCH (influence:Item)-[r:INFLUENCES]->(center:Item {id: $center_id})
@@ -219,8 +201,6 @@ class GraphService:
                         influence_node = record["influence"]
                         relationship = record["r"]
                         creators = record["creators"]
-
-                        print(f"  Incoming {incoming_count}: {influence_node['name']}")
 
                         # Check if this node is already added (avoid duplicates)
                         existing_node = next(
@@ -275,10 +255,7 @@ class GraphService:
                             }
                         )
 
-                    print(f"Found {incoming_count} incoming influences")
-
                 # Step 5: Get center item creators
-                print("Step 5: Getting center item creators...")
                 creator_result = session.run(
                     """
                     MATCH (center:Item {id: $center_id})-[:CREATED_BY]->(creator:Creator)
@@ -288,34 +265,27 @@ class GraphService:
                 )
 
                 center_creators = []
-                for record in creator_result:
-                    creator_node = record["creator"]
-                    creator = Creator(
-                        id=creator_node["id"],
-                        name=creator_node["name"],
-                        type=creator_node["type"],
+                for creator_record in creator_result:
+                    creator_node = creator_record["creator"]
+                    center_creators.append(
+                        Creator(
+                            id=creator_node["id"],
+                            name=creator_node["name"],
+                            type=creator_node["type"],
+                        )
                     )
-                    center_creators.append(creator)
 
                 # Update center item with creators
-                all_nodes[0]["creators"] = center_creators
-
-                print(f"=== EXPANDED GRAPH COMPLETE ===")
-                print(f"Total nodes: {len(all_nodes)}")
-                print(f"Total relationships: {len(all_relationships)}")
+                center_node_data = next(node for node in all_nodes if node["is_center"])
+                center_node_data["creators"] = center_creators
 
                 return {
                     "nodes": all_nodes,
                     "relationships": all_relationships,
-                    "center_item_id": center_item_id,
                 }
 
         except Exception as e:
-            print(f"Error in get_expanded_graph: {e}")
-            import traceback
-
-            traceback.print_exc()
-            raise
+            raise Exception(f"Failed to get expanded graph: {str(e)}")
 
     def find_similar_items(self, name: str, creator_name: str = None) -> List[Dict]:
         """Find existing items that might be the same as what user wants to create"""

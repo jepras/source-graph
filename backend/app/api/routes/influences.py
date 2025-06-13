@@ -71,8 +71,6 @@ async def force_save_as_new(structured_data: StructuredOutput):
 async def merge_with_existing(merge_request: dict):
     """Merge new influences with existing item"""
     try:
-        print(f"Merge request received: {merge_request}")
-
         # Validate required fields
         if "existing_item_id" not in merge_request:
             raise HTTPException(status_code=400, detail="Missing existing_item_id")
@@ -80,19 +78,15 @@ async def merge_with_existing(merge_request: dict):
             raise HTTPException(status_code=400, detail="Missing new_data")
 
         existing_item_id = merge_request["existing_item_id"]
-        print(f"Existing item ID: {existing_item_id}")
 
         # Parse new_data more safely
         try:
             new_data = StructuredOutput(**merge_request["new_data"])
-            print(f"Parsed new_data: {new_data.main_item}")
         except Exception as e:
-            print(f"Failed to parse new_data: {e}")
             raise HTTPException(status_code=400, detail=f"Invalid new_data format: {e}")
 
         # Add new influences to existing item
         result_id = graph_service.add_influences_to_existing(existing_item_id, new_data)
-        print(f"Merge completed, result ID: {result_id}")
 
         return {
             "success": True,
@@ -103,7 +97,6 @@ async def merge_with_existing(merge_request: dict):
     except HTTPException:
         raise  # Re-raise HTTP exceptions
     except Exception as e:
-        print(f"Merge error: {e}")
         import traceback
 
         traceback.print_exc()

@@ -33,22 +33,6 @@ export interface GraphResponse {
   creators: Creator[];  // Added creators
 }
 
-export interface ResearchRequest {
-  item_name: string;
-  // Removed item_type - LLM auto-detects
-  // Removed artist - now handled as creator
-  creator?: string;  // Optional creator field
-}
-
-export interface ResearchResponse {
-  item_name: string;
-  item_type: string;
-  artist?: string;  // Keep for backward compatibility with research agent
-  influences_text: string;
-  success: boolean;
-  error_message?: string;
-}
-
 export interface StructuredInfluence {
   name: string;
   type?: string;
@@ -207,22 +191,6 @@ export const api = {
   getInfluences: async (itemId: string): Promise<GraphResponse> => {
     const response = await fetch(`${API_BASE}/items/${itemId}/influences`);
     if (!response.ok) throw new Error('Influences not found');
-    return response.json();
-  },
-
-  researchInfluences: async (request: ResearchRequest): Promise<ResearchResponse> => {
-    const response = await fetch(`${API_BASE}/ai/research`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        item_name: request.item_name,
-        item_type: "unknown",  // Placeholder - LLM will auto-detect
-        artist: request.creator  // Map creator to artist for backward compatibility
-      }),
-    });
-    if (!response.ok) throw new Error('AI research failed');
     return response.json();
   },
 

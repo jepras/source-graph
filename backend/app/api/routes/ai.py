@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from typing import List  # Add this line
 from app.models.ai import ResearchRequest, ResearchResponse
 from app.models.structured import StructureRequest, StructuredOutput
-from app.services.ai_agents.research_agent import research_agent
 from app.services.ai_agents.structure_agent import structure_agent
 from app.models.proposal import (
     ProposalRequest,
@@ -18,42 +17,6 @@ from app.services.graph.graph_service import graph_service
 from app.models.structured import StructuredOutput, StructuredInfluence
 
 router = APIRouter(prefix="/ai", tags=["ai"])
-
-
-@router.post("/research", response_model=ResearchResponse)
-async def research_influences(request: ResearchRequest):
-    """Research influences for an item using AI"""
-    try:
-        # Call the research agent
-        influences_text = await research_agent.research_influences(
-            item_name=request.item_name,
-            item_type=request.item_type,
-            artist=request.artist,
-        )
-
-        # Check if there was an error
-        if influences_text.startswith("Error researching influences:"):
-            return ResearchResponse(
-                item_name=request.item_name,
-                item_type=request.item_type,
-                artist=request.artist,
-                influences_text="",
-                success=False,
-                error_message=influences_text,
-            )
-
-        return ResearchResponse(
-            item_name=request.item_name,
-            item_type=request.item_type,
-            artist=request.artist,
-            influences_text=influences_text,
-            success=True,
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to research influences: {str(e)}"
-        )
 
 
 @router.post("/structure", response_model=StructuredOutput)
@@ -72,24 +35,6 @@ async def structure_influences(request: StructureRequest):
         raise HTTPException(
             status_code=500, detail=f"Failed to structure influences: {str(e)}"
         )
-
-
-@router.get("/health")
-async def ai_health_check():
-    """Check if AI services are working"""
-    try:
-        # Simple test call
-        test_response = await research_agent.research_influences(
-            item_name="Test Song", item_type="song", artist="Test Artist"
-        )
-
-        return {
-            "status": "healthy",
-            "ai_service": "operational",
-            "test_response_length": len(test_response),
-        }
-    except Exception as e:
-        return {"status": "unhealthy", "ai_service": "error", "error": str(e)}
 
 
 @router.post("/propose", response_model=ProposalResponse)
@@ -238,12 +183,6 @@ async def test_proposals(item_name: str, artist: str = None, item_type: str = No
 async def ask_question(request: UnifiedQuestionRequest):
     """Unified endpoint for asking any question about items or influences"""
     try:
-        print(f"=== UNIFIED QUESTION API DEBUG ===")
-        print(f"Item: {request.item_name}")
-        print(f"Question: {request.question}")
-        print(f"Target influence: {request.target_influence_name}")
-        print(f"=== END DEBUG ===")
-
         response = await proposal_agent.answer_question(
             item_name=request.item_name,
             question=request.question,
@@ -258,7 +197,6 @@ async def ask_question(request: UnifiedQuestionRequest):
         return response
 
     except Exception as e:
-        print(f"Error in ask_question: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to process question: {str(e)}"
         )
