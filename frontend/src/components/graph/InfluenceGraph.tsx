@@ -73,55 +73,53 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const mainNodes = nodes.filter(n => n.category === 'main');
     const influenceNodes = nodes.filter(n => n.category === 'influence');
     
-    const clusters = extractClusters(influenceNodes); // Only get clusters from influences
+    const clusters = extractClusters(influenceNodes);
     if (clusters.length === 0) {
       positionDefaultModeChronological(nodes, width, height);
       return;
     }
-
+  
     // Position main items at the top center
     mainNodes.forEach((node, index) => {
-      const spacing = 200; // Space between multiple main items
+      const spacing = 200;
       const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
       node.x = startX + (index * spacing);
-      node.y = 60; // Fixed position at top
+      node.y = 85; // Your current main item position
     });
-
+  
     // Sort ALL influence nodes globally by year (newest first)
     const nodesWithYears = influenceNodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
     const nodesWithoutYears = influenceNodes.filter(n => !n.year);
-
+  
     const padding = 80;
-    const topPadding = 120; // Extra space for main items
+    const topPadding = 180; // CHANGED: Extra space for main items + cluster labels
     const availableWidth = width - (2 * padding);
     const columnWidth = availableWidth / clusters.length;
-    const availableHeight = height - topPadding - padding;
-
+    const availableHeight = height - topPadding - padding; // CHANGED: Use topPadding
+  
     // Assign global Y positions based on chronological order
     nodesWithYears.forEach((node, index) => {
       const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
-      node.y = topPadding + (yProgress * availableHeight * 0.8);
+      node.y = topPadding + (yProgress * availableHeight * 0.8); // CHANGED: Use topPadding
     });
-
+  
     // Position nodes without years at bottom
     nodesWithoutYears.forEach((node, index) => {
       node.y = height - padding - 50 - (index * 30);
     });
-
-    // Now position X coordinates by cluster
+  
+    // Rest of the function stays the same...
     clusters.forEach((clusterName, clusterIndex) => {
       const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
       const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
       
-      // Group nodes in this cluster by year to handle same-year nodes
       const yearGroups = new Map<number, GraphNode[]>();
       clusterNodes.forEach(node => {
         const year = node.year || -1;
         if (!yearGroups.has(year)) yearGroups.set(year, []);
         yearGroups.get(year)!.push(node);
       });
-
-      // Position nodes within each year group side-by-side
+  
       yearGroups.forEach(yearNodes => {
         yearNodes.forEach((node, nodeIndex) => {
           const totalInYear = yearNodes.length;
@@ -139,26 +137,26 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const mainNodes = nodes.filter(n => n.category === 'main');
     const influenceNodes = nodes.filter(n => n.category === 'influence');
     
-    const clusters = extractClusters(influenceNodes); // Only get clusters from influences
+    const clusters = extractClusters(influenceNodes);
     if (clusters.length === 0) {
       positionDefaultModeNatural(nodes, width, height);
       return;
     }
-
+  
     // Position main items at the top center
     mainNodes.forEach((node, index) => {
-      const spacing = 200; // Space between multiple main items
+      const spacing = 200;
       const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
       node.x = startX + (index * spacing);
-      node.y = 60; // Fixed position at top
+      node.y = 85; // Your current main item position
     });
-
+  
     const padding = 80;
-    const topPadding = 120; // Extra space for main items
+    const topPadding = 180; // CHANGED: Extra space for main items + cluster labels
     const availableWidth = width - (2 * padding);
     const columnWidth = availableWidth / clusters.length;
-    const availableHeight = height - topPadding - padding;
-
+    const availableHeight = height - topPadding - padding; // CHANGED: Use topPadding
+  
     clusters.forEach((clusterName, clusterIndex) => {
       const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
       const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
@@ -166,7 +164,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       // Distribute nodes naturally within the cluster column
       clusterNodes.forEach((node, nodeIndex) => {
         const yProgress = nodeIndex / Math.max(clusterNodes.length - 1, 1);
-        node.y = topPadding + (yProgress * availableHeight);
+        node.y = topPadding + (yProgress * availableHeight); // CHANGED: Use topPadding
         
         // Add some horizontal variation within the column
         const xVariation = (Math.random() - 0.5) * (columnWidth * 0.4);
@@ -360,33 +358,72 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   const drawClusterAreas = (graphGroup: any, nodes: GraphNode[], width: number, height: number) => {
     const clusters = extractClusters(nodes);
     const padding = 80;
+    const topPadding = 150; // NEW: Extra space for main items
     const columnWidth = (width - 2 * padding) / clusters.length;
-
+    
+    // Track label positions to avoid overlap
+    const labelPositions: { x: number; y: number; width: number; text: string }[] = [];
+  
     clusters.forEach((clusterName, index) => {
       const x = padding + (index * columnWidth);
       
-      // Draw cluster background
+      // Draw cluster background - MOVED DOWN
       graphGroup.append("rect")
         .attr("x", x + 10)
-        .attr("y", padding)
+        .attr("y", topPadding) // Changed from 'padding' to 'topPadding'
         .attr("width", columnWidth - 20)
-        .attr("height", height - 2 * padding)
+        .attr("height", height - topPadding - padding) // Adjusted height
         .attr("fill", "#f3f4f6")
-        .attr("stroke", "#e5e7eb")
-        .attr("stroke-width", 1)
+        .attr("stroke", "#9ca3af")
+        .attr("stroke-width", 2)
         .attr("stroke-dasharray", "5,5")
         .attr("rx", 8)
-        .attr("opacity", 0.3);
+        .attr("opacity", 0.8);
+      
+      // Calculate label position - MOVED DOWN
+      const idealX = x + columnWidth / 2;
+      let finalX = idealX;
+      let finalY = topPadding - 20; // Changed from 'padding - 20' to 'topPadding - 20'
+      
+      // Rest of your overlap detection logic stays the same...
+      const textWidth = clusterName.length * 8;
+      
+      let attempts = 0;
+      while (attempts < 10) {
+        const hasOverlap = labelPositions.some(pos => {
+          const xOverlap = Math.abs(pos.x - finalX) < (pos.width + textWidth) / 2;
+          const yOverlap = Math.abs(pos.y - finalY) < 20;
+          return xOverlap && yOverlap;
+        });
+        
+        if (!hasOverlap) break;
+        
+        if (attempts % 2 === 0) {
+          finalY -= 25;
+        } else {
+          finalX += (attempts % 4 === 1 ? 20 : -20);
+        }
+        
+        attempts++;
+      }
       
       // Add cluster label
       graphGroup.append("text")
-        .attr("x", x + columnWidth / 2)
-        .attr("y", padding - 20)
+        .attr("x", finalX)
+        .attr("y", finalY)
         .attr("text-anchor", "middle")
-        .style("font-size", "12px")
+        .style("font-size", "14px")
         .style("font-weight", "bold")
-        .style("fill", "#6b7280")
+        .style("fill", "#374151")
+        .style("text-shadow", "2px 2px 4px rgba(255,255,255,0.8)")
         .text(clusterName);
+      
+      labelPositions.push({
+        x: finalX,
+        y: finalY,
+        width: textWidth,
+        text: clusterName
+      });
     });
   };
 

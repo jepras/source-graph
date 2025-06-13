@@ -55,6 +55,20 @@ It didn't always learn from mistakes. Escaping curly brackets in langchain was a
 As a junior learning to program all i did was using boilerplate templates following tutorials, trying to add to them using stack overflow and few things i learned from courses. 
 Now I'm going through full stack development 100x faster. I actually get to see the edge cases that are causing troubles in real life programming (and not in small learning development). I get to reason about what impact my database schema has, the consequences of doing things in one way versus another, adding observability to programs, etc. I could maybe do one of these projects a year, now i can do one a month - at least. 
 
+6.
+If I don't understand my codebase, then the AI will make mistakes.
+
+7.
+I don't see how I would learn this much from learning to develop everything myself. When i learned programming 6 years ago i only created very simple to do app ish type things. Now I'm attempting to make full stack production ready stuff. Learning to iterate, not just write functions.
+
+In the future there might be programmers ones who understand computer science and those who don't?
+
+8. 
+I don't know how to write any db queries without AI. Why is that important? 
+
+9. 
+Could /save & /force-save become 1 if using a recursive statement? That shows i'm actually learning to use the things from boot.dev
+
 
 # What interesting influence links could be
 1. 

@@ -102,6 +102,7 @@ export const useProposals = () => {
         accepted_proposals: selectedObjects.map(p => ({ ...p, accepted: true }))
       };
 
+      // Call API
       const result = await proposalApi.acceptProposals(request);
       
       // If conflict resolution is needed, return the result to let ProposalActions handle it
