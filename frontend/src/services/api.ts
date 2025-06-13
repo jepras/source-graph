@@ -1,7 +1,11 @@
+// ============================================================================
+// SECTION 1: CORE DATA TYPES
+// ============================================================================
+
 export interface Item {
   id: string;
   name: string;
-  auto_detected_type?: string;  // Changed from 'type' to 'auto_detected_type'
+  auto_detected_type?: string;
   year?: number;
   description?: string;
   confidence_score?: number;
@@ -11,7 +15,7 @@ export interface Item {
 export interface Creator {
   id: string;
   name: string;
-  type: string;  // person/organization/collective
+  type: string;
 }
 
 export interface InfluenceRelation {
@@ -21,17 +25,21 @@ export interface InfluenceRelation {
   influence_type: string;
   explanation: string;
   category: string;
-  scope?: string; // Also add this field from your API
+  scope?: string;
   source?: string;
-  clusters?: string[]; // Add this
+  clusters?: string[];
 }
 
 export interface GraphResponse {
   main_item: Item;
   influences: InfluenceRelation[];
   categories: string[];
-  creators: Creator[];  // Added creators
+  creators: Creator[];
 }
+
+// ============================================================================
+// SECTION 2: STRUCTURED DATA TYPES
+// ============================================================================
 
 export interface StructuredInfluence {
   name: string;
@@ -59,8 +67,12 @@ export interface StructuredOutput {
 export interface StructureRequest {
   influences_text: string;
   main_item: string;
-  main_item_creator?: string;  // Updated to match backend
+  main_item_creator?: string;
 }
+
+// ============================================================================
+// SECTION 3: GRAPH EXPANSION TYPES
+// ============================================================================
 
 export interface ExpansionCounts {
   incoming_influences: number;
@@ -85,6 +97,10 @@ export interface ExpandedGraph {
   center_item_id: string;
 }
 
+// ============================================================================
+// SECTION 4: AI PROPOSAL TYPES
+// ============================================================================
+
 export interface InfluenceProposal {
   name: string;
   type?: string;
@@ -101,15 +117,15 @@ export interface InfluenceProposal {
   parent_id?: string;
   children: InfluenceProposal[];
   is_expanded: boolean;
-  clusters?: string[]; // NEW: Array of cluster names (max 2-3)
+  clusters?: string[];
 }
 
 export interface ProposalResponse {
   item_name: string;
   item_type?: string;
   artist?: string;
-  item_description?: string;  // ADD this line
-  item_year?: number;         // ADD this line
+  item_description?: string;
+  item_year?: number;
   macro_influences: InfluenceProposal[];
   micro_influences: InfluenceProposal[];
   nano_influences: InfluenceProposal[];
@@ -117,7 +133,7 @@ export interface ProposalResponse {
   total_proposals: number;
   success: boolean;
   error_message?: string;
-  all_clusters?: string[]; 
+  all_clusters?: string[];
 }
 
 export interface MoreProposalsRequest {
@@ -135,21 +151,23 @@ export interface AcceptProposalsRequest {
   item_type?: string;
   artist?: string;
   item_year?: number;
-  item_description?: string;  // ADD this line
+  item_description?: string;
   accepted_proposals: InfluenceProposal[];
 }
 
-// Update this interface
 export interface AcceptProposalsResponse {
   success: boolean;
   item_id?: string;
   accepted_count?: number;
   message?: string;
-  // Conflict resolution fields
   requires_review?: boolean;
   similar_items?: any[];
   new_data?: StructuredOutput;
 }
+
+// ============================================================================
+// SECTION 5: QUESTION & ANSWER TYPES
+// ============================================================================
 
 export interface UnifiedQuestionRequest {
   item_name: string;
@@ -173,7 +191,15 @@ export interface UnifiedQuestionResponse {
   error_message?: string;
 }
 
+// ============================================================================
+// SECTION 6: CONFIGURATION
+// ============================================================================
+
 const API_BASE = 'http://localhost:8000/api';
+
+// ============================================================================
+// SECTION 7: CORE API OPERATIONS
+// ============================================================================
 
 export const api = {
   searchItems: async (query: string): Promise<Item[]> => {
@@ -194,6 +220,46 @@ export const api = {
     return response.json();
   },
 
+  getExpansionCounts: async (itemId: string): Promise<ExpansionCounts> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}/expansion-counts`);
+    if (!response.ok) throw new Error('Failed to get expansion counts');
+    return response.json();
+  },
+
+  getOutgoingInfluences: async (itemId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}/influences-outgoing`);
+    if (!response.ok) throw new Error('Failed to get outgoing influences');
+    return response.json();
+  },
+
+  getExpandedGraph: async (
+    itemId: string, 
+    includeIncoming: boolean = true, 
+    includeOutgoing: boolean = true,
+    maxDepth: number = 2
+  ): Promise<ExpandedGraph> => {
+    const params = new URLSearchParams({
+      include_incoming: includeIncoming.toString(),
+      include_outgoing: includeOutgoing.toString(),
+      max_depth: maxDepth.toString()
+    });
+    const response = await fetch(`${API_BASE}/items/${itemId}/expanded-graph?${params}`);
+    if (!response.ok) throw new Error('Failed to get expanded graph');
+    return response.json();
+  },
+
+  checkAIHealth: async (): Promise<{ status: string; ai_service: string }> => {
+    const response = await fetch(`${API_BASE}/ai/health`);
+    if (!response.ok) throw new Error('AI health check failed');
+    return response.json();
+  },
+};
+
+// ============================================================================
+// SECTION 8: AI STRUCTURING OPERATIONS
+// ============================================================================
+
+export const structureApi = {
   structureInfluences: async (request: StructureRequest): Promise<StructuredOutput> => {
     try {
       const response = await fetch(`${API_BASE}/ai/structure`, {
@@ -205,12 +271,10 @@ export const api = {
       });
   
       if (!response.ok) {
-        // Try to get detailed error from backend
         let errorMessage = `Structure failed (${response.status})`;
         
         try {
           const errorData = await response.json();
-          console.error('Backend error details:', errorData); // Add this for debugging
           
           if (errorData.detail) {
             errorMessage = `Structure failed: ${errorData.detail}`;
@@ -218,7 +282,6 @@ export const api = {
             errorMessage = `Structure failed: ${errorData.message}`;
           }
         } catch {
-          // If we can't parse error response, use generic message based on status
           if (response.status === 500) {
             errorMessage = 'Server error while structuring influences. This could be due to invalid data format, AI processing timeout, or missing required fields.';
           } else if (response.status === 422) {
@@ -234,12 +297,18 @@ export const api = {
       return response.json();
     } catch (error) {
       if (error instanceof Error) {
-        throw error; // Re-throw with original message
+        throw error;
       }
       throw new Error('Failed to structure influences - network or parsing error');
     }
   },
+};
 
+// ============================================================================
+// SECTION 9: INFLUENCE SAVING OPERATIONS
+// ============================================================================
+
+export const influenceApi = {
   saveStructuredInfluences: async (structuredData: StructuredOutput): Promise<{ item_id: string }> => {
     const response = await fetch(`${API_BASE}/influences/save`, {
       method: 'POST',
@@ -249,12 +318,6 @@ export const api = {
       body: JSON.stringify(structuredData),
     });
     if (!response.ok) throw new Error('Failed to save influences');
-    return response.json();
-  },
-
-  checkAIHealth: async (): Promise<{ status: string; ai_service: string }> => {
-    const response = await fetch(`${API_BASE}/ai/health`);
-    if (!response.ok) throw new Error('AI health check failed');
     return response.json();
   },
 
@@ -290,89 +353,11 @@ export const api = {
     if (!response.ok) throw new Error('Failed to merge');
     return response.json();
   },
-
-  getExpansionCounts: async (itemId: string): Promise<ExpansionCounts> => {
-    const response = await fetch(`${API_BASE}/items/${itemId}/expansion-counts`);
-    if (!response.ok) throw new Error('Failed to get expansion counts');
-    return response.json();
-  },
-
-  getOutgoingInfluences: async (itemId: string): Promise<any> => {
-    const response = await fetch(`${API_BASE}/items/${itemId}/influences-outgoing`);
-    if (!response.ok) throw new Error('Failed to get outgoing influences');
-    return response.json();
-  },
-
-  getExpandedGraph: async (
-    itemId: string, 
-    includeIncoming: boolean = true, 
-    includeOutgoing: boolean = true,
-    maxDepth: number = 2
-  ): Promise<ExpandedGraph> => {
-    const params = new URLSearchParams({
-      include_incoming: includeIncoming.toString(),
-      include_outgoing: includeOutgoing.toString(),
-      max_depth: maxDepth.toString()
-    });
-    const response = await fetch(`${API_BASE}/items/${itemId}/expanded-graph?${params}`);
-    if (!response.ok) throw new Error('Failed to get expanded graph');
-    return response.json();
-  },
 };
 
-// Add this AFTER your existing api object (after the closing brace and semicolon)
-
-// Convert expanded graph format to the GraphResponse format that your visualization expects
-export const convertExpandedGraphToGraphResponse = (expandedGraph: ExpandedGraph): GraphResponse => {
-  // Find the center item
-  const centerNode = expandedGraph.nodes.find(node => node.is_center);
-  if (!centerNode) {
-    throw new Error('No center item found in expanded graph');
-  }
-
-  // Convert relationships to InfluenceRelation format
-  const influences: InfluenceRelation[] = expandedGraph.relationships.map(rel => {
-    const fromNode = expandedGraph.nodes.find(node => node.item.id === rel.from_id);
-    const toNode = expandedGraph.nodes.find(node => node.item.id === rel.to_id);
-    
-    if (!fromNode || !toNode) {
-      throw new Error(`Invalid relationship: missing nodes for ${rel.from_id} -> ${rel.to_id}`);
-    }
-
-    return {
-      from_item: fromNode.item,
-      to_item: toNode.item,
-      confidence: rel.confidence,
-      influence_type: rel.influence_type,
-      explanation: rel.explanation,
-      category: rel.category,
-      source: rel.source
-    };
-  });
-
-  // Get all creators from all nodes (remove duplicates)
-  const allCreators: Creator[] = [];
-  const creatorIds = new Set<string>();
-  
-  expandedGraph.nodes.forEach(node => {
-    node.creators.forEach(creator => {
-      if (!creatorIds.has(creator.id)) {
-        allCreators.push(creator);
-        creatorIds.add(creator.id);
-      }
-    });
-  });
-
-  // Get unique categories
-  const categories = [...new Set(expandedGraph.relationships.map(rel => rel.category).filter(cat => cat))];
-
-  return {
-    main_item: centerNode.item,
-    influences,
-    categories,
-    creators: allCreators
-  };
-};
+// ============================================================================
+// SECTION 10: AI PROPOSAL OPERATIONS
+// ============================================================================
 
 export const proposalApi = {
   generateProposals: async (request: { item_name: string; artist?: string; item_type?: string }): Promise<ProposalResponse> => {
@@ -395,7 +380,6 @@ export const proposalApi = {
     return response.json();
   },
 
-  // Update the api method
   acceptProposals: async (request: AcceptProposalsRequest): Promise<AcceptProposalsResponse> => {
     const response = await fetch(`${API_BASE}/ai/proposals/accept`, {
       method: 'POST',
@@ -415,5 +399,55 @@ export const proposalApi = {
     if (!response.ok) throw new Error('Failed to process question');
     return response.json();
   },
+};
 
+// ============================================================================
+// SECTION 11: UTILITY FUNCTIONS
+// ============================================================================
+
+export const convertExpandedGraphToGraphResponse = (expandedGraph: ExpandedGraph): GraphResponse => {
+  const centerNode = expandedGraph.nodes.find(node => node.is_center);
+  if (!centerNode) {
+    throw new Error('No center item found in expanded graph');
+  }
+
+  const influences: InfluenceRelation[] = expandedGraph.relationships.map(rel => {
+    const fromNode = expandedGraph.nodes.find(node => node.item.id === rel.from_id);
+    const toNode = expandedGraph.nodes.find(node => node.item.id === rel.to_id);
+    
+    if (!fromNode || !toNode) {
+      throw new Error(`Invalid relationship: missing nodes for ${rel.from_id} -> ${rel.to_id}`);
+    }
+
+    return {
+      from_item: fromNode.item,
+      to_item: toNode.item,
+      confidence: rel.confidence,
+      influence_type: rel.influence_type,
+      explanation: rel.explanation,
+      category: rel.category,
+      source: rel.source
+    };
+  });
+
+  const allCreators: Creator[] = [];
+  const creatorIds = new Set<string>();
+  
+  expandedGraph.nodes.forEach(node => {
+    node.creators.forEach(creator => {
+      if (!creatorIds.has(creator.id)) {
+        allCreators.push(creator);
+        creatorIds.add(creator.id);
+      }
+    });
+  });
+
+  const categories = [...new Set(expandedGraph.relationships.map(rel => rel.category).filter(cat => cat))];
+
+  return {
+    main_item: centerNode.item,
+    influences,
+    categories,
+    creators: allCreators
+  };
 };
