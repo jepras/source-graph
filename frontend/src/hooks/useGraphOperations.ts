@@ -97,16 +97,7 @@ export const useGraphOperations = () => {
       const newNodes: GraphNode[] = [];
       const newLinks: GraphLink[] = [];
 
-      // Debug: Check the structure of responses
-      responses.forEach(response => {
-        if ('influences' in response) {
-          console.log('🔍 Full expansion influence object:', response.influences[0]);
-          response.influences.forEach(influence => {
-            console.log('🔍 Expansion influence keys:', Object.keys(influence));
-            console.log('🔍 Expansion influence category:', influence.category);
-          });
-        }
-      });
+      
 
       responses.forEach(response => {
         if ('influences' in response) {
@@ -126,7 +117,7 @@ export const useGraphOperations = () => {
                 clusters: clusters
               });
 
-              console.log(`🔧 Generated clusters for ${influence.from_item.name}: ${clusters}`);
+             
             }
 
             // Add link
@@ -159,7 +150,7 @@ export const useGraphOperations = () => {
                 clusters: clusters
               });
 
-              console.log(`🔧 Generated clusters for ${influence.to_item.name}: ${clusters}`);
+             
             }
 
             // Add link
@@ -178,13 +169,7 @@ export const useGraphOperations = () => {
         }
       });
 
-      console.log('🔄 New nodes from expansion:', newNodes.map(n => ({ 
-        name: n.name, 
-        category: n.category, 
-        clusters: n.clusters,
-        x: n.x,
-        y: n.y
-      })));
+     
 
       if (newNodes.length > 0 || newLinks.length > 0) {
         addNodesAndLinks(newNodes, newLinks);
@@ -207,7 +192,7 @@ export const useGraphOperations = () => {
       const shouldPreserveLayout = existingItemId !== null;
       
       if (shouldPreserveLayout) {
-        console.log(`Item "${itemName}" already exists in graph, preserving layout`);
+        
         // Mark this node as expanded for visual indication
         graphDispatch({ type: 'MARK_NODE_EXPANDED', payload: existingItemId });
       }

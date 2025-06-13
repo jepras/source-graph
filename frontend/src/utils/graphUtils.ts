@@ -1,9 +1,13 @@
 import type { GraphResponse } from '../services/api';
 import type { GraphNode, GraphLink, AccumulatedGraph } from '../types/graph';
 
+// ============================================================================
+// CORE GRAPH DATA EXTRACTION & TRANSFORMATION
+// ============================================================================
+
 export const extractNodesAndRelationships = (
   graphResponse: GraphResponse,
-  existingGraph?: AccumulatedGraph  // Add this parameter
+  existingGraph?: AccumulatedGraph
 ) => {
   const nodes = new Map<string, GraphNode>();
   const relationships = new Map<string, GraphLink>();
@@ -19,17 +23,14 @@ export const extractNodesAndRelationships = (
     name: graphResponse.main_item.name,
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
-    category: mainNodeCategory, // ✅ Preserve existing category
-    clusters: mainNodeClusters, // ✅ Preserve existing clusters
-    x: existingMainNode?.x, // ✅ Preserve position
-    y: existingMainNode?.y  // ✅ Preserve position
+    category: mainNodeCategory,
+    clusters: mainNodeClusters,
+    x: existingMainNode?.x,
+    y: existingMainNode?.y
   });
 
   // Add influence items and relationships
   graphResponse.influences.forEach((influence, index) => {
-    console.log(`🔍 RAW INFLUENCE ${index}:`, influence);
-    console.log(`🔍 INFLUENCE OBJECT KEYS:`, Object.keys(influence));
-    
     const influenceId = influence.from_item.id;
     const relationshipId = `${influenceId}->${graphResponse.main_item.id}`;
 
@@ -41,7 +42,6 @@ export const extractNodesAndRelationships = (
       if (influence.clusters && influence.clusters.length > 0) {
         // Use real cluster data from API
         clusters = influence.clusters;
-        console.log(`🎯 Using API clusters for ${influence.from_item.name}:`, clusters);
       } else {
         // Fallback: Generate meaningful test clusters based on category
         if (influence.category?.toLowerCase().includes('musical')) {
@@ -63,7 +63,6 @@ export const extractNodesAndRelationships = (
           // Use category name as cluster if nothing else matches
           clusters = [influence.category || `Cluster ${index % 3 + 1}`];
         }
-        console.log(`🧪 Generated test clusters for ${influence.from_item.name} (${influence.category}):`, clusters);
       }
 
       nodes.set(influenceId, {
@@ -87,35 +86,10 @@ export const extractNodesAndRelationships = (
     });
   });
 
-  console.log('📊 Final node clusters mapping:');
-  nodes.forEach((node, id) => {
-    if (node.category === 'influence') {
-      console.log(`  ${node.name}: ${node.clusters?.join(', ') || 'no clusters'}`);
-    }
-  });
-
   return { nodes, relationships };
 };
 
-export const generateClustersFromCategory = (category: string): string[] => {
-  // Use your existing logic from extractNodesAndRelationships
-  if (category?.toLowerCase().includes('musical') || category?.toLowerCase().includes('music')) {
-    return ['Music Albums'];
-  } else if (category?.toLowerCase().includes('visual') || category?.toLowerCase().includes('design')) {
-    return ['Cultural Context'];
-  } else if (category?.toLowerCase().includes('renaissance')) {
-    if (category.toLowerCase().includes('art')) return ['Renaissance Art'];
-    if (category.toLowerCase().includes('literature')) return ['Renaissance Literature'];
-    if (category.toLowerCase().includes('science')) return ['Renaissance Science'];
-    return ['Renaissance'];
-  } else if (category?.toLowerCase().includes('technological')) {
-    return ['Technological Advancements'];
-  } else if (category?.toLowerCase().includes('cultural')) {
-    return ['Cultural Context'];
-  }
-  return ['Other'];
-};
-
+// Might be redundand?
 export const mergeExpandedGraphData = (
   existingGraph: AccumulatedGraph,
   expandedGraph: any,
@@ -133,10 +107,10 @@ export const mergeExpandedGraphData = (
       name: nodeData.item.name,
       type: nodeData.item.auto_detected_type || 'unknown',
       year: nodeData.item.year,
-      category: existingNode?.category || 'influence', // Preserve existing category
-      x: existingNode?.x, // Preserve existing position
+      category: existingNode?.category || 'influence',
+      x: existingNode?.x,
       y: existingNode?.y,
-      clusters: nodeData.clusters || existingNode?.clusters || [] // NEW: Preserve or add clusters
+      clusters: nodeData.clusters || existingNode?.clusters || []
     });
   });
 
@@ -161,276 +135,184 @@ export const mergeExpandedGraphData = (
   };
 };
 
-export const findConnectedNodes = (
-    targetNode: GraphNode, 
-    allNodes: GraphNode[], 
-    allLinks: GraphLink[]
-  ): GraphNode[] => {
-    console.log(`Finding connections for ${targetNode.id}`);
-    
-    const connectedNodeIds = new Set<string>();
-    
-    allLinks.forEach(link => {
-      if (link.source === targetNode.id) {
-        connectedNodeIds.add(link.target);
-        console.log(`Found connection: ${targetNode.id} -> ${link.target}`);
-      } else if (link.target === targetNode.id) {
-        connectedNodeIds.add(link.source);
-        console.log(`Found connection: ${link.source} -> ${targetNode.id}`);
-      }
-    });
-    
-    console.log('Connected node IDs:', Array.from(connectedNodeIds));
-    
-    const result = allNodes.filter(node => 
-      connectedNodeIds.has(node.id) && 
-      node.id !== targetNode.id && // Exclude self
-      node.x !== undefined && 
-      node.y !== undefined
-    );
-    
-    console.log('Filtered connected nodes:', result.map(n => ({ id: n.id, x: n.x, y: n.y })));
-    
-    return result;
-  };
-
-// Helper function to check if a position would overlap with existing nodes
-const wouldOverlap = (
-    x: number,
-    y: number,
-    existingNodes: GraphNode[],
-    minDistance: number = 120
-  ): boolean => {
-    return existingNodes.some(node => {
-      if (!node.x || !node.y) return false;
-      const dx = node.x - x;
-      const dy = node.y - y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < minDistance;
-    });
-  };
+export const checkGraphOverlap = (
+  newGraphResponse: GraphResponse,
+  existingGraph: AccumulatedGraph
+): boolean => {
+  const existingNodeIds = new Set(existingGraph.nodes.keys());
   
-// Modified positionNewNodes function
+  if (existingNodeIds.has(newGraphResponse.main_item.id)) {
+    return true;
+  }
+  
+  const hasOverlappingInfluences = newGraphResponse.influences.some(influence => 
+    existingNodeIds.has(influence.from_item.id) || 
+    existingNodeIds.has(influence.to_item.id)
+  );
+  
+  if (hasOverlappingInfluences) {
+    return true;
+  }
+  
+  return false;
+};
+
+// ============================================================================
+// CLUSTER & CATEGORY MANAGEMENT
+// ============================================================================
+
+export const generateClustersFromCategory = (category: string): string[] => {
+  if (category?.toLowerCase().includes('musical') || category?.toLowerCase().includes('music')) {
+    return ['Music Albums'];
+  } else if (category?.toLowerCase().includes('visual') || category?.toLowerCase().includes('design')) {
+    return ['Cultural Context'];
+  } else if (category?.toLowerCase().includes('renaissance')) {
+    if (category.toLowerCase().includes('art')) return ['Renaissance Art'];
+    if (category.toLowerCase().includes('literature')) return ['Renaissance Literature'];
+    if (category.toLowerCase().includes('science')) return ['Renaissance Science'];
+    return ['Renaissance'];
+  } else if (category?.toLowerCase().includes('technological')) {
+    return ['Technological Advancements'];
+  } else if (category?.toLowerCase().includes('cultural')) {
+    return ['Cultural Context'];
+  }
+  return ['Other'];
+};
+
+// Redundant?
+export const extractCategories = (nodes: GraphNode[]) => {
+  const categories = new Map<string, number>();
+  
+  nodes.forEach(node => {
+    const type = node.type || 'unknown';
+    categories.set(type, (categories.get(type) || 0) + 1);
+  });
+
+  return Array.from(categories.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => ({ type, count }));
+};
+
+// ============================================================================
+// NODE POSITIONING & LAYOUT ALGORITHMS
+// ============================================================================
+
+const wouldOverlap = (
+  x: number,
+  y: number,
+  existingNodes: GraphNode[],
+  minDistance: number = 120
+): boolean => {
+  return existingNodes.some(node => {
+    if (!node.x || !node.y) return false;
+    const dx = node.x - x;
+    const dy = node.y - y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < minDistance;
+  });
+};
+
+// redundant? 
 export const positionNewNodes = (
-    existingNodes: GraphNode[], 
-    newNodes: GraphNode[], 
-    allLinks: GraphLink[],
-    width: number,
-    height: number,
-    forceChronological: boolean = false // Add this parameter
-
-  ) => {
-    // If chronological mode is forced, use chronological positioning
-    if (forceChronological) {
-      positionNodesChronologically([...existingNodes, ...newNodes], width, height);
-      return;
-    }
+  existingNodes: GraphNode[], 
+  newNodes: GraphNode[], 
+  allLinks: GraphLink[],
+  width: number,
+  height: number,
+  forceChronological: boolean = false
+) => {
+  if (forceChronological) {
+    positionNodesChronologically([...existingNodes, ...newNodes], width, height);
+    return;
+  }
+  
+  const MIN_NODE_DISTANCE = 120;
+  
+  const mainNode = existingNodes.find(node => node.category === 'main');
+  
+  if (!mainNode || !mainNode.x || !mainNode.y) {
+    return;
+  }
+  
+  const mainNodeX = mainNode.x;
+  const mainNodeY = mainNode.y;
+  
+  const allPositionedNodes = [
+    ...existingNodes, 
+    ...newNodes.filter(n => n.x && n.y)
+  ];
+  
+  newNodes.forEach((newNode, index) => {
+    if (newNode.x && newNode.y) return;
     
-    const MIN_NODE_DISTANCE = 120;
+    const totalNewNodes = newNodes.filter(n => !n.x || !n.y).length;
+    const angleStep = (2 * Math.PI) / Math.max(totalNewNodes, 8);
+    const baseAngle = index * angleStep;
     
-    // Find the main/selected node (the one being expanded)
-    const mainNode = existingNodes.find(node => node.category === 'main');
+    let positioned = false;
     
-    if (!mainNode || !mainNode.x || !mainNode.y) {
-      console.error('Main node not found or not positioned');
-      return;
-    }
-    
-    console.log('Positioning new nodes around main node:', { id: mainNode.id, x: mainNode.x, y: mainNode.y });
-    
-    const allPositionedNodes = [
-      ...existingNodes, 
-      ...newNodes.filter(n => n.x && n.y)
-    ];
-    
-    // Position new nodes in a circle around the main node
-    newNodes.forEach((newNode, index) => {
-      if (newNode.x && newNode.y) return; // Skip already positioned nodes
+    for (let distanceMultiplier = 1.5; distanceMultiplier <= 4; distanceMultiplier += 0.5) {
+      const distance = MIN_NODE_DISTANCE * distanceMultiplier;
       
-      const totalNewNodes = newNodes.filter(n => !n.x || !n.y).length;
-      const angleStep = (2 * Math.PI) / Math.max(totalNewNodes, 8); // At least 8 positions
-      const baseAngle = index * angleStep;
-      
-      // Try different distances until we find a non-overlapping position
-      let positioned = false;
-      
-      for (let distanceMultiplier = 1.5; distanceMultiplier <= 4; distanceMultiplier += 0.5) {
-        const distance = MIN_NODE_DISTANCE * distanceMultiplier;
-        
-        // Try the base angle and some variations
-        const angles = [
-          baseAngle,
-          baseAngle + angleStep * 0.25,
-          baseAngle - angleStep * 0.25,
-          baseAngle + angleStep * 0.5,
-          baseAngle - angleStep * 0.5
-        ];
-        
-        for (const angle of angles) {
-          const x = mainNode.x + Math.cos(angle) * distance;
-          const y = mainNode.y + Math.sin(angle) * distance;
-          
-          // Check bounds
-          if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
-          
-          // Check for overlaps
-          if (!wouldOverlap(x, y, allPositionedNodes, MIN_NODE_DISTANCE)) {
-            newNode.x = x;
-            newNode.y = y;
-            allPositionedNodes.push(newNode); // Add to positioned nodes for next iterations
-            positioned = true;
-            console.log(`Positioned ${newNode.id} at distance ${distance}, angle ${angle}:`, { x, y });
-            break;
-          }
-        }
-        
-        if (positioned) break;
-      }
-      
-      // Fallback: position randomly but away from main node
-      if (!positioned) {
-        let attempts = 0;
-        while (attempts < 50) {
-          const angle = Math.random() * 2 * Math.PI;
-          const distance = MIN_NODE_DISTANCE * (2 + Math.random() * 3); // Random distance 2-5x min distance
-          const x = mainNode.x + Math.cos(angle) * distance;
-          const y = mainNode.y + Math.sin(angle) * distance;
-          
-          // Check bounds
-          if (x < 60 || x > width - 60 || y < 60 || y > height - 60) {
-            attempts++;
-            continue;
-          }
-          
-          if (!wouldOverlap(x, y, allPositionedNodes, MIN_NODE_DISTANCE)) {
-            newNode.x = x;
-            newNode.y = y;
-            allPositionedNodes.push(newNode);
-            console.log(`Random positioned ${newNode.id}:`, { x, y });
-            break;
-          }
-          attempts++;
-        }
-        
-        // Ultimate fallback
-        if (!newNode.x || !newNode.y) {
-          const fallbackAngle = index * angleStep;
-          const fallbackDistance = MIN_NODE_DISTANCE * (3 + index * 0.5);
-          newNode.x = Math.max(60, Math.min(width - 60, mainNode.x + Math.cos(fallbackAngle) * fallbackDistance));
-          newNode.y = Math.max(60, Math.min(height - 60, mainNode.y + Math.sin(fallbackAngle) * fallbackDistance));
-          console.log(`Fallback positioned ${newNode.id}:`, { x: newNode.x, y: newNode.y });
-        }
-      }
-    });
-  };
-
-  // Force-based positioning for very dense graphs
-const findPositionUsingForces = (
-    preferredX: number,
-    preferredY: number,
-    existingNodes: GraphNode[],
-    width: number,
-    height: number,
-    minDistance: number
-  ): { x: number; y: number } => {
-    let x = preferredX;
-    let y = preferredY;
-    
-    // Apply repulsion forces from existing nodes
-    for (let iteration = 0; iteration < 50; iteration++) {
-      let forceX = 0;
-      let forceY = 0;
-      
-      existingNodes.forEach(node => {
-        if (!node.x || !node.y) return;
-        
-        const dx = x - node.x;
-        const dy = y - node.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < minDistance && distance > 0) {
-          // Apply repulsion force
-          const force = (minDistance - distance) / distance;
-          forceX += dx * force * 0.1;
-          forceY += dy * force * 0.1;
-        }
-      });
-      
-      // Apply forces
-      x += forceX;
-      y += forceY;
-      
-      // Keep within bounds with some padding
-      x = Math.max(80, Math.min(width - 80, x));
-      y = Math.max(80, Math.min(height - 80, y));
-      
-      // Check if position is now valid
-      if (!wouldOverlap(x, y, existingNodes, minDistance)) {
-        break;
-      }
-    }
-    
-    return { x, y };
-  };
-
-  const findPositionNearConnections = (
-    connectedNodes: GraphNode[],
-    allPositionedNodes: GraphNode[],
-    width: number,
-    height: number,
-    minDistance: number
-  ): { x: number; y: number } => {
-    
-    if (connectedNodes.length === 0) {
-      // No connections - use center as fallback
-      return { x: width / 2, y: height / 2 };
-    }
-    
-    if (connectedNodes.length === 1) {
-      // Single connection - position in a circle around it
-      const connected = connectedNodes[0];
-      const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2, Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
+      const angles = [
+        baseAngle,
+        baseAngle + angleStep * 0.25,
+        baseAngle - angleStep * 0.25,
+        baseAngle + angleStep * 0.5,
+        baseAngle - angleStep * 0.5
+      ];
       
       for (const angle of angles) {
-        const distance = minDistance * 1.5;
-        const x = (connected.x || 0) + Math.cos(angle) * distance;
-        const y = (connected.y || 0) + Math.sin(angle) * distance;
+        const x = mainNodeX + Math.cos(angle) * distance;
+        const y = mainNodeY + Math.sin(angle) * distance;
         
-        // Check bounds
         if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
         
-        if (!wouldOverlap(x, y, allPositionedNodes, minDistance)) {
-          return { x, y };
+        if (!wouldOverlap(x, y, allPositionedNodes, MIN_NODE_DISTANCE)) {
+          newNode.x = x;
+          newNode.y = y;
+          allPositionedNodes.push(newNode);
+          positioned = true;
+          break;
         }
       }
-    }
-    
-    // Multiple connections - find best position around the centroid
-    const avgX = connectedNodes.reduce((sum, n) => sum + (n.x || 0), 0) / connectedNodes.length;
-    const avgY = connectedNodes.reduce((sum, n) => sum + (n.y || 0), 0) / connectedNodes.length;
-    
-    // Try positions in expanding circles around the average
-    for (let radius = minDistance * 1.2; radius < Math.min(width, height) / 2; radius += minDistance * 0.5) {
-      const numAttempts = Math.max(8, Math.floor(2 * Math.PI * radius / (minDistance * 0.8)));
       
-      for (let i = 0; i < numAttempts; i++) {
-        const angle = (2 * Math.PI * i) / numAttempts;
-        const x = avgX + Math.cos(angle) * radius;
-        const y = avgY + Math.sin(angle) * radius;
-        
-        // Check bounds
-        if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
-        
-        if (!wouldOverlap(x, y, allPositionedNodes, minDistance)) {
-          return { x, y };
-        }
-      }
+      if (positioned) break;
     }
     
-    // Fallback to force-based positioning
-    return findPositionUsingForces(avgX, avgY, allPositionedNodes, width, height, minDistance);
-  };
+    if (!positioned) {
+      let attempts = 0;
+      while (attempts < 50) {
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = MIN_NODE_DISTANCE * (2 + Math.random() * 3);
+        const x = mainNodeX + Math.cos(angle) * distance;
+        const y = mainNodeY + Math.sin(angle) * distance;
+        
+        if (x < 60 || x > width - 60 || y < 60 || y > height - 60) {
+          attempts++;
+          continue;
+        }
+        
+        if (!wouldOverlap(x, y, allPositionedNodes, MIN_NODE_DISTANCE)) {
+          newNode.x = x;
+          newNode.y = y;
+          allPositionedNodes.push(newNode);
+          break;
+        }
+        attempts++;
+      }
+      
+      if (!newNode.x || !newNode.y) {
+        const fallbackAngle = index * angleStep;
+        const fallbackDistance = MIN_NODE_DISTANCE * (3 + index * 0.5);
+        newNode.x = Math.max(60, Math.min(width - 60, mainNodeX + Math.cos(fallbackAngle) * fallbackDistance));
+        newNode.y = Math.max(60, Math.min(height - 60, mainNodeY + Math.sin(fallbackAngle) * fallbackDistance));
+      }
+    }
+  });
+};
 
+// redundant?
 export const positionNodesChronologically = (
   nodes: GraphNode[], 
   width: number, 
@@ -510,7 +392,7 @@ export const positionNodesCategorically = (
       const maxYear = Math.max(...nodesWithYears.map(n => n.year!));
       const yearRange = Math.max(maxYear - minYear, 1);
       
-      const NODE_HEIGHT = 60; // Minimum vertical space per node
+      const NODE_HEIGHT = 60;
       const COLUMN_PADDING = 20;
       
       // Position each category column
@@ -529,7 +411,6 @@ export const positionNodesCategorically = (
         // Track occupied Y positions in this column to avoid overlaps
         const occupiedPositions: { y: number; nodeId: string }[] = [];
         
-        // Position nodes with years
         sortedNodes.forEach((node, index) => {
           // Calculate ideal Y position based on year
           const yearProgress = (maxYear - node.year!) / yearRange;
@@ -545,7 +426,7 @@ export const positionNodesCategorically = (
             );
             
             if (!hasOverlap) {
-              break; // Found a good position
+              break;
             }
             
             // Try positions around the ideal Y
@@ -561,15 +442,12 @@ export const positionNodesCategorically = (
           // Ensure position is within bounds
           actualY = Math.max(padding, Math.min(height - padding - 50, actualY));
           
-          // Position the node
-          const xOffset = (Math.random() - 0.5) * (columnWidth * 0.3); // Less horizontal variation
+          const xOffset = (Math.random() - 0.5) * (columnWidth * 0.3);
           node.x = Math.max(currentX + COLUMN_PADDING, Math.min(currentX + columnWidth - COLUMN_PADDING, currentX + columnWidth/2 + xOffset));
           node.y = actualY;
           
           // Record this position as occupied
           occupiedPositions.push({ y: actualY, nodeId: node.id });
-          
-          console.log(`Positioned ${node.name} (${node.year}) at y=${actualY} (ideal was ${idealY})`);
         });
         
         // Position nodes without years at bottom
@@ -617,45 +495,130 @@ const positionNodesCategoricallyNonChronological = (
   });
 };
 
+// ============================================================================
+// CONNECTION & RELATIONSHIP UTILITIES
+// ============================================================================
 
-
-// Add category information extraction
-export const extractCategories = (nodes: GraphNode[]) => {
-  const categories = new Map<string, number>();
+// redundant? 
+export const findConnectedNodes = (
+  targetNode: GraphNode, 
+  allNodes: GraphNode[], 
+  allLinks: GraphLink[]
+): GraphNode[] => {
+  const connectedNodeIds = new Set<string>();
   
-  nodes.forEach(node => {
-    const type = node.type || 'unknown';
-    categories.set(type, (categories.get(type) || 0) + 1);
+  allLinks.forEach(link => {
+    if (link.source === targetNode.id) {
+      connectedNodeIds.add(link.target);
+    } else if (link.target === targetNode.id) {
+      connectedNodeIds.add(link.source);
+    }
   });
-
-  // Sort by count (descending)
-  return Array.from(categories.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([type, count]) => ({ type, count }));
-};
-
-// Add this function to check if new item data overlaps with existing graph
-export const checkGraphOverlap = (
-  newGraphResponse: GraphResponse,
-  existingGraph: AccumulatedGraph
-): boolean => {
-  const existingNodeIds = new Set(existingGraph.nodes.keys());
   
-  // Check if main item already exists in graph
-  if (existingNodeIds.has(newGraphResponse.main_item.id)) {
-    return true;
-  }
-  
-  // Check if any of the new influences already exist in graph
-  const hasOverlappingInfluences = newGraphResponse.influences.some(influence => 
-    existingNodeIds.has(influence.from_item.id) || 
-    existingNodeIds.has(influence.to_item.id)
+  const result = allNodes.filter(node => 
+    connectedNodeIds.has(node.id) && 
+    node.id !== targetNode.id &&
+    node.x !== undefined && 
+    node.y !== undefined
   );
   
-  if (hasOverlappingInfluences) {
-    return true;
+  return result;
+};
+
+// ============================================================================
+// ADVANCED POSITIONING ALGORITHMS
+// ============================================================================
+
+const findPositionUsingForces = (
+  preferredX: number,
+  preferredY: number,
+  existingNodes: GraphNode[],
+  width: number,
+  height: number,
+  minDistance: number
+): { x: number; y: number } => {
+  let x = preferredX;
+  let y = preferredY;
+  
+  for (let iteration = 0; iteration < 50; iteration++) {
+    let forceX = 0;
+    let forceY = 0;
+    
+    existingNodes.forEach(node => {
+      if (!node.x || !node.y) return;
+      
+      const dx = x - node.x;
+      const dy = y - node.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < minDistance && distance > 0) {
+        const force = (minDistance - distance) / distance;
+        forceX += dx * force * 0.1;
+        forceY += dy * force * 0.1;
+      }
+    });
+    
+    x += forceX;
+    y += forceY;
+    
+    x = Math.max(80, Math.min(width - 80, x));
+    y = Math.max(80, Math.min(height - 80, y));
+    
+    if (!wouldOverlap(x, y, existingNodes, minDistance)) {
+      break;
+    }
   }
   
-  // No overlap found
-  return false;
+  return { x, y };
+};
+
+const findPositionNearConnections = (
+  connectedNodes: GraphNode[],
+  allPositionedNodes: GraphNode[],
+  width: number,
+  height: number,
+  minDistance: number
+): { x: number; y: number } => {
+  
+  if (connectedNodes.length === 0) {
+    return { x: width / 2, y: height / 2 };
+  }
+  
+  if (connectedNodes.length === 1) {
+    const connected = connectedNodes[0];
+    const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2, Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
+    
+    for (const angle of angles) {
+      const distance = minDistance * 1.5;
+      const x = (connected.x || 0) + Math.cos(angle) * distance;
+      const y = (connected.y || 0) + Math.sin(angle) * distance;
+      
+      if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
+      
+      if (!wouldOverlap(x, y, allPositionedNodes, minDistance)) {
+        return { x, y };
+      }
+    }
+  }
+  
+  const avgX = connectedNodes.reduce((sum, n) => sum + (n.x || 0), 0) / connectedNodes.length;
+  const avgY = connectedNodes.reduce((sum, n) => sum + (n.y || 0), 0) / connectedNodes.length;
+  
+  for (let radius = minDistance * 1.2; radius < Math.min(width, height) / 2; radius += minDistance * 0.5) {
+    const numAttempts = Math.max(8, Math.floor(2 * Math.PI * radius / (minDistance * 0.8)));
+    
+    for (let i = 0; i < numAttempts; i++) {
+      const angle = (2 * Math.PI * i) / numAttempts;
+      const x = avgX + Math.cos(angle) * radius;
+      const y = avgY + Math.sin(angle) * radius;
+      
+      if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
+      
+      if (!wouldOverlap(x, y, allPositionedNodes, minDistance)) {
+        return { x, y };
+      }
+    }
+  }
+  
+  return findPositionUsingForces(avgX, avgY, allPositionedNodes, width, height, minDistance);
 };

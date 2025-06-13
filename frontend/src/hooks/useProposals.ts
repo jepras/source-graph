@@ -13,6 +13,7 @@ export const useProposals = () => {
   const { state, dispatch } = useResearch();
   const { addNodesAndLinks } = useGraph();
 
+  // Used in ProposalForm
   const generateProposals = useCallback(async () => {
     if (!state.itemName.trim()) {
       dispatch({ type: 'SET_ERROR', payload: 'Please enter an item name' });
@@ -43,6 +44,7 @@ export const useProposals = () => {
     }
   }, [state.itemName, state.creator, dispatch]);
 
+  // Used in ProposalActions
   const acceptSelectedProposals = useCallback(async (): Promise<AcceptProposalsResponse | null> => {
     if (!state.proposals || state.selectedProposals.size === 0) {
       dispatch({ type: 'SET_ERROR', payload: 'Please select at least one proposal to accept' });
@@ -91,7 +93,7 @@ export const useProposals = () => {
         state.selectedProposals.has(`${proposal.name}-${proposal.scope}`)
       );
 
-      console.log(`Saving ${selectedObjects.length} selected proposals:`, selectedObjects.map(p => `${p.name} (${p.scope})`));
+     
 
       const request: AcceptProposalsRequest = {
         item_name: state.proposals.item_name,
@@ -134,6 +136,7 @@ export const useProposals = () => {
     }
   }, [state, dispatch]);
 
+  // Used in ProposalQuestion
   const askMainItemQuestion = useCallback(async () => {
     if (!state.proposals || !state.mainItemQuestionText.trim()) {
       dispatch({ type: 'SET_ERROR', payload: 'Please enter a question' });
@@ -169,6 +172,8 @@ export const useProposals = () => {
     }
   }, [state.proposals, state.mainItemQuestionText, dispatch]);
 
+  // Used in ProposalQuestion
+  // Used in ProposalResults
   const askInfluenceQuestion = useCallback(async (proposal: any) => {
     if (!state.proposals) return;
     
@@ -211,6 +216,7 @@ export const useProposals = () => {
     }
   }, [state.proposals, state.influenceQuestions, dispatch]);
 
+  // Used in ProposalResults
   const getSpecifics = useCallback(async (proposal: any) => {
     if (!state.proposals) return;
     

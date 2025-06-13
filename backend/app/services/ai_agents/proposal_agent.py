@@ -133,7 +133,6 @@ class ProposalAgent(BaseAgent):
             )
 
         except Exception as e:
-            print(f"Error getting more proposals: {e}")
             return []
 
     async def _parse_proposal_response(
@@ -141,23 +140,13 @@ class ProposalAgent(BaseAgent):
     ) -> ProposalResponse:
         """Parse AI response into organized proposals"""
 
-        print(f"=== PROPOSAL AGENT DEBUG ===")
-        print(f"Item: {item_name} by {artist}")
-        print(f"Raw response length: {len(response)}")
-        print(f"Raw response:\n{response}")
-        print(f"=== END RAW RESPONSE ===")
-
         try:
             # Extract JSON from response
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if not json_match:
-                print("ERROR: No JSON pattern found in response")
                 raise ValueError("No JSON found in response")
 
             json_str = json_match.group()
-            print(f"=== EXTRACTED JSON ===")
-            print(json_str)
-            print(f"=== END EXTRACTED JSON ===")
 
             # Try to clean common JSON issues before parsing
             original_json = json_str
@@ -198,13 +187,7 @@ class ProposalAgent(BaseAgent):
                 for _ in range(missing_braces):
                     json_str += "}"
 
-            if json_str != original_json:
-                print(f"=== CLEANED JSON ===")
-                print(json_str)
-                print(f"=== END CLEANED JSON ===")
-
             data = json.loads(json_str)
-            print(f"SUCCESS: JSON parsed successfully")
 
             # Organize proposals by scope
             macro_influences = []
@@ -231,17 +214,11 @@ class ProposalAgent(BaseAgent):
                         nano_influences.append(proposal)
 
                 except Exception as e:
-                    print(f"Error parsing proposal: {e}")
                     continue
 
             total_proposals = (
                 len(macro_influences) + len(micro_influences) + len(nano_influences)
             )
-
-            print(
-                f"Parsed {total_proposals} proposals: {len(macro_influences)} macro, {len(micro_influences)} micro, {len(nano_influences)} nano"
-            )
-            print(f"Categories found: {list(all_categories)}")
 
             return ProposalResponse(
                 item_name=item_name,
@@ -261,21 +238,6 @@ class ProposalAgent(BaseAgent):
             )
 
         except json.JSONDecodeError as e:
-            print(f"=== JSON PARSE ERROR ===")
-            print(f"Error: {e}")
-            print(f"Error position: line {e.lineno}, column {e.colno}")
-            print(f"Error character position: {e.pos}")
-            print(f"Problematic JSON length: {len(json_str)}")
-
-            # Show the area around the error
-            if hasattr(e, "pos") and e.pos:
-                start = max(0, e.pos - 100)
-                end = min(len(json_str), e.pos + 100)
-                print(f"JSON around error position:")
-                print(f"'{json_str[start:end]}'")
-
-            print(f"=== END JSON PARSE ERROR ===")
-
             # Return empty response instead of crashing
             return ProposalResponse(
                 item_name=item_name,
@@ -292,7 +254,6 @@ class ProposalAgent(BaseAgent):
             )
 
         except Exception as e:
-            print(f"Error parsing proposal response: {e}")
             return ProposalResponse(
                 item_name=item_name,
                 item_type=item_type,
@@ -314,20 +275,13 @@ class ProposalAgent(BaseAgent):
     ) -> List[InfluenceProposal]:
         """Parse additional proposals response"""
 
-        print(f"=== MORE PROPOSALS DEBUG ===")
-        print(f"Raw response length: {len(response)}")
-        print(f"Raw response: {response}")
-        print(f"Looking for scope: {scope}, category: {category}")
-
         try:
             # Extract JSON array from response
             json_match = re.search(r"\[.*\]", response, re.DOTALL)
             if not json_match:
-                print("ERROR: No JSON array found in response")
                 return []
 
             json_str = json_match.group()
-            print(f"Extracted JSON: {json_str}")
 
             proposal_data_list = json.loads(json_str)
 
@@ -337,17 +291,11 @@ class ProposalAgent(BaseAgent):
                     proposal = InfluenceProposal(**proposal_data)
                     proposals.append(proposal)
                 except Exception as e:
-                    print(f"Error parsing additional proposal: {e}")
-                    print(f"Problematic data: {proposal_data}")
                     continue
 
-            print(
-                f"Successfully parsed {len(proposals)} additional {scope} proposals in {category}"
-            )
             return proposals
 
         except Exception as e:
-            print(f"Error parsing more proposals: {e}")
             return []
 
     async def answer_question(
@@ -366,14 +314,6 @@ class ProposalAgent(BaseAgent):
         # Determine question type
         is_drill_down = target_influence_name is not None
         question_type = "drill_down" if is_drill_down else "discovery"
-
-        print(f"=== UNIFIED QUESTION DEBUG ===")
-        print(f"Item: {item_name}")
-        print(f"Question: {question}")
-        print(f"Question type: {question_type}")
-        if is_drill_down:
-            print(f"Target influence: {target_influence_name}")
-        print(f"=== END DEBUG ===")
 
         # Build context about the item
         item_context = f"Item: {item_name}"
@@ -446,31 +386,20 @@ class ProposalAgent(BaseAgent):
     ) -> "UnifiedQuestionResponse":
         """Parse unified question response"""
 
-        print(f"=== UNIFIED QUESTION RESPONSE DEBUG ===")
-        print(f"Question type: {question_type}")
-        print(f"Raw response length: {len(response)}")
-        print(f"Raw response: {response}")
-
         try:
             # Extract JSON from response
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if not json_match:
-                print("ERROR: No JSON pattern found in response")
                 raise ValueError("No JSON found in response")
 
             json_str = json_match.group()
-            print(f"Extracted JSON: {json_str}")
 
             # Clean common JSON issues
             original_json = json_str
             json_str = json_str.replace(",}", "}")
             json_str = json_str.replace(",]", "]")
 
-            if json_str != original_json:
-                print(f"Cleaned JSON: {json_str}")
-
             data = json.loads(json_str)
-            print(f"SUCCESS: JSON parsed successfully")
 
             # Parse new influences
             new_influences = []
@@ -482,10 +411,7 @@ class ProposalAgent(BaseAgent):
                     influence = InfluenceProposal(**influence_data)
                     new_influences.append(influence)
                 except Exception as e:
-                    print(f"Error parsing influence: {e}")
                     continue
-
-            print(f"Parsed {len(new_influences)} new influences")
 
             # Import here to avoid circular import
             from app.models.proposal import UnifiedQuestionResponse
@@ -503,7 +429,6 @@ class ProposalAgent(BaseAgent):
             )
 
         except Exception as e:
-            print(f"Error parsing unified question response: {e}")
             # Import here to avoid circular import
             from app.models.proposal import UnifiedQuestionResponse
 
@@ -523,28 +448,18 @@ class ProposalAgent(BaseAgent):
     ) -> List[InfluenceProposal]:
         """Parse specifics response into InfluenceProposal objects"""
 
-        print(f"=== SPECIFICS DEBUG ===")
-        print(f"Influence: {influence_name}")
-        print(f"Raw response length: {len(response)}")
-        print(f"Raw response: {response}")
-
         try:
             # Extract JSON array from response
             json_match = re.search(r"\[.*\]", response, re.DOTALL)
             if not json_match:
-                print("ERROR: No JSON array found in response")
                 return []
 
             json_str = json_match.group()
-            print(f"Extracted JSON: {json_str}")
 
             # Clean common JSON issues
             original_json = json_str
             json_str = json_str.replace(",}", "}")  # Remove trailing commas before }
             json_str = json_str.replace(",]", "]")  # Remove trailing commas before ]
-
-            if json_str != original_json:
-                print(f"Cleaned JSON: {json_str}")
 
             proposal_data_list = json.loads(json_str)
 
@@ -554,17 +469,11 @@ class ProposalAgent(BaseAgent):
                     proposal = InfluenceProposal(**proposal_data)
                     specifics.append(proposal)
                 except Exception as e:
-                    print(f"Error parsing specific proposal: {e}")
-                    print(f"Problematic data: {proposal_data}")
                     continue
 
-            print(
-                f"Successfully parsed {len(specifics)} specific influences for {influence_name}"
-            )
             return specifics
 
         except Exception as e:
-            print(f"Error parsing specifics response: {e}")
             return []
 
 

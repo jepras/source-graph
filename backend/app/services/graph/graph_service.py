@@ -103,13 +103,6 @@ class GraphService:
             record = result.single()
             if record:
                 node = record["i"]
-
-                print(f"=== GET ITEM DEBUG ===")
-                print(f"Retrieved item: {node['name']}")
-                print(f"Raw description from DB: {node.get('description')}")
-                print(f"Raw year from DB: {node.get('year')}")
-                print(f"All properties: {dict(node)}")
-                print(f"=== END GET ITEM DEBUG ===")
                 return Item(
                     id=node["id"],
                     name=node["name"],
@@ -224,13 +217,6 @@ class GraphService:
         clusters: List[str] = None,
     ):
         """Create influence relationship between items with scope support"""
-        print(f"=== RELATIONSHIP DEBUG ===")
-        print(f"Creating relationship with scope: {scope}")
-        print(f"Creating relationship with clusters: {clusters}")
-        print(f"Clusters type: {type(clusters)}")
-        print(f"From: {from_item_id} -> To: {to_item_id}")
-        print(f"=== END RELATIONSHIP DEBUG ===")
-
         try:
             with neo4j_db.driver.session() as session:
                 result = session.run(
@@ -263,18 +249,7 @@ class GraphService:
                     },
                 )
 
-                # Check what was actually saved
-                saved_result = result.single()
-                if saved_result:
-                    print(
-                        f"Successfully saved clusters: {saved_result['saved_clusters']}"
-                    )
-                else:
-                    print("No result returned from save operation")
-
         except Exception as e:
-            print(f"ERROR in create_influence_relationship: {str(e)}")
-            print(f"Error type: {type(e)}")
             raise  # Re-raise the exception
 
     def ensure_category_exists(self, category_name: str):
@@ -343,14 +318,6 @@ class GraphService:
                 relation = record["r"]
                 creator_node = record.get("creator")
 
-                # ADD DETAILED DEBUG HERE:
-                print(f"=== RELATION DEBUG ===")
-                print(f"Influence: {influence_node['name']}")
-                print(f"All relation properties: {dict(relation)}")
-                print(f"Clusters specifically: {relation.get('clusters')}")
-                print(f"Clusters type: {type(relation.get('clusters'))}")
-                print(f"=== END RELATION DEBUG ===")
-
                 # Build influence item
                 influence_item = Item(
                     id=influence_node["id"],
@@ -375,10 +342,6 @@ class GraphService:
                     scope=relation.get("scope"),  # Will be None for existing data
                     source=relation.get("source"),
                     clusters=relation.get("clusters", []),
-                )
-                # ADD THIS DEBUG LINE:
-                print(
-                    f"DEBUG: Item {influence_item.name} has clusters: {relation.get('clusters')}"
                 )
 
                 influences.append(influence_relation)
@@ -796,33 +759,21 @@ class GraphService:
     ) -> str:
         """Add new influences to an existing item"""
 
-        print(f"=== MERGE DEBUG ===")
-        print(f"Existing item ID: {existing_item_id}")
-        print(f"New data main item: {new_data.main_item}")
-        print(f"Number of new influences: {len(new_data.influences)}")
-
         try:
             # Get existing item
             existing_item = self.get_item_by_id(existing_item_id)
             if not existing_item:
                 raise ValueError(f"Existing item {existing_item_id} not found")
 
-            print(f"Found existing item: {existing_item.name}")
-
             # Update main item creator if new one provided and none exists
             if new_data.main_item_creator:
-                print(f"Checking creators for: {new_data.main_item_creator}")
-
                 with neo4j_db.driver.session() as session:
                     existing_creators = session.run(
                         "MATCH (i:Item {id: $id})-[:CREATED_BY]->(c:Creator) RETURN count(c) as count",
                         {"id": existing_item_id},
                     ).single()["count"]
 
-                    print(f"Existing creators count: {existing_creators}")
-
                     if existing_creators == 0:
-                        print(f"Adding creator: {new_data.main_item_creator}")
                         creator = self.create_creator(
                             name=new_data.main_item_creator,
                             creator_type=new_data.main_item_creator_type or "person",
@@ -842,13 +793,8 @@ class GraphService:
                     else f"Unknown Influence {i + 1}"
                 )
 
-                print(
-                    f"Processing influence {i + 1}: '{influence_name}' (type: {type(influence.name)})"
-                )
-
                 # Skip if name is empty or invalid
                 if not influence_name or influence_name.lower() in ["none", "null", ""]:
-                    print(f"Skipping invalid influence name: {influence_name}")
                     continue
 
                 # FIXED: Check for duplicates using Python instead of Cypher
@@ -872,24 +818,17 @@ class GraphService:
                                 if name and isinstance(name, str):
                                     existing_names.append(name.lower())
                             except Exception as e:
-                                print(f"Skipping corrupted influence record: {e}")
                                 continue
 
                         is_duplicate = influence_name.lower() in existing_names
                         existing_influence = 1 if is_duplicate else 0
 
-                        print(f"Existing influences: {existing_names}")
-                        print(f"Is '{influence_name}' a duplicate? {is_duplicate}")
-
                     except Exception as e:
-                        print(f"Error checking duplicates, assuming no duplicates: {e}")
                         existing_influence = (
                             0  # Default to not duplicate if query fails
                         )
 
                     if existing_influence == 0:
-                        print(f"Creating new influence: {influence_name}")
-
                         # Create new influence with cleaned data
                         influence_item = self.create_item(
                             name=influence_name,
@@ -899,8 +838,6 @@ class GraphService:
                             confidence_score=influence.confidence,
                         )
 
-                        print(f"Created influence item: {influence_item.id}")
-
                         # Create influence creator if provided
                         if influence.creator_name:
                             creator_name = str(influence.creator_name).strip()
@@ -909,7 +846,6 @@ class GraphService:
                                 "null",
                                 "",
                             ]:
-                                print(f"Creating influence creator: {creator_name}")
                                 influence_creator = self.create_creator(
                                     name=creator_name,
                                     creator_type=influence.creator_type or "person",
@@ -932,9 +868,6 @@ class GraphService:
                             else "Uncategorized"
                         )
 
-                        print(
-                            f"Creating influence relationship: {influence_item.id} -> {existing_item_id}"
-                        )
                         self.create_influence_relationship(
                             from_item_id=influence_item.id,
                             to_item_id=existing_item_id,
@@ -950,16 +883,10 @@ class GraphService:
                         # Ensure category exists
                         self.ensure_category_exists(category)
                         new_influences_added += 1
-                        print(f"Successfully added influence: {influence_name}")
-                    else:
-                        print(f"Skipping duplicate influence: {influence_name}")
 
-            print(f"=== MERGE COMPLETE ===")
-            print(f"Added {new_influences_added} new influences to existing item")
             return existing_item_id
 
         except Exception as e:
-            print(f"Error in add_influences_to_existing: {e}")
             import traceback
 
             traceback.print_exc()
@@ -971,12 +898,6 @@ class GraphService:
 
     def save_structured_influences(self, structured_data: StructuredOutput) -> str:
         """Save complete structured influence data to database with scope support"""
-
-        print(f"=== SAVE DEBUG ===")
-        print(f"Saving main_item: {structured_data.main_item}")
-        print(f"Saving main_item_description: {structured_data.main_item_description}")
-        print(f"Saving main_item_year: {structured_data.main_item_year}")
-        print(f"=== END SAVE DEBUG ===")
 
         # 1. Create or get main item
         main_item = self.create_item(
@@ -1029,8 +950,6 @@ class GraphService:
 
             # Ensure category exists
             self.ensure_category_exists(influence.category)
-
-        print(f"Created item with ID: {main_item.id}")
 
         return main_item.id
 

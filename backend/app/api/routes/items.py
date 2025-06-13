@@ -52,12 +52,6 @@ async def get_item_influences(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Example usage in URL:
-# GET /api/items/{item_id}/influences                    # All influences
-# GET /api/items/{item_id}/influences?scopes=macro       # Only macro influences
-# GET /api/items/{item_id}/influences?scopes=macro&scopes=micro  # Macro and micro
-
-
 @router.get("/{item_id}/expansion-counts")
 async def get_expansion_counts(item_id: str):
     """Get counts for potential graph expansions"""

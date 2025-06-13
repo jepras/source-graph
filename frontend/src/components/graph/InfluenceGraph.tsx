@@ -45,9 +45,6 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
   // Main positioning function - 4 clear combinations
   const positionNodes = (nodes: GraphNode[], width: number, height: number) => {
-    console.log(`🎯 Positioning ${nodes.length} nodes - Clustering: ${isClusteringEnabled}, Chronological: ${isChronologicalOrder}`);
-    
-    console.log('🔍 Node categories:', nodes.map(n => ({ name: n.name, category: n.category, clusters: n.clusters })));
 
     if (isClusteringEnabled) {
       if (isChronologicalOrder) {
@@ -62,8 +59,6 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         positionDefaultModeNatural(nodes, width, height);
       }
     }
-
-    console.log('📍 Node positions:', nodes.map(n => ({ name: n.name, x: n.x, y: n.y })));
 
   };
 
@@ -270,8 +265,6 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
     const nodes = Array.from(accumulatedGraph.nodes.values());
     const links = Array.from(accumulatedGraph.relationships.values());
-
-    console.log('🎨 Rendering graph:', { nodes: nodes.length, links: links.length });
 
     // Clear previous graph
     d3.select(svgRef.current).selectAll("*").remove();
