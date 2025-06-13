@@ -8,6 +8,26 @@ export const useGraphOperations = () => {
   const { state: graphData, dispatch: graphDispatch } = useGraph();
   const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
 
+  // Helper function
+  const checkIfItemExistsInGraph = useCallback((itemName: string): string | null => {
+    if (!graphData?.data) return null;
+    
+    // Check main item
+    if (graphData.data.main_item.name.toLowerCase() === itemName.toLowerCase()) {
+      return graphData.data.main_item.id;
+    }
+    
+    // Check influences
+    for (const influence of graphData.data.influences) {
+      if (influence.from_item.name.toLowerCase() === itemName.toLowerCase()) {
+        return influence.from_item.id;
+      }
+    }
+    
+    return null;
+  }, [graphData]);
+
+  // Used in MainLayout
   const loadItemInfluences = useCallback(async (itemId: string) => {
     setLoading(true);
     setError(null);
@@ -46,6 +66,18 @@ export const useGraphOperations = () => {
     }
   }, [addNodesAndLinks, selectNode, setLoading, setError, state.accumulatedGraph.nodes, clearGraph]);
 
+  // Used in MainLayout
+  const searchAndLoadItem = useCallback(async (query: string) => {
+    try {
+      const items = await api.searchItems(query);
+      return items;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed');
+      return [];
+    }
+  }, [setError]);
+
+  // Used in ItemDetailsPanel
   const expandNode = useCallback(async (itemId: string, direction: 'incoming' | 'outgoing' | 'both') => {
     setLoading(true);
     setError(null);
@@ -164,35 +196,8 @@ export const useGraphOperations = () => {
       setLoading(false);
     }
   }, [state.accumulatedGraph, addNodesAndLinks, setLoading, setError]);
-
-  const searchAndLoadItem = useCallback(async (query: string) => {
-    try {
-      const items = await api.searchItems(query);
-      return items;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed');
-      return [];
-    }
-  }, [setError]);
-
-  const checkIfItemExistsInGraph = useCallback((itemName: string): string | null => {
-    if (!graphData?.data) return null;
-    
-    // Check main item
-    if (graphData.data.main_item.name.toLowerCase() === itemName.toLowerCase()) {
-      return graphData.data.main_item.id;
-    }
-    
-    // Check influences
-    for (const influence of graphData.data.influences) {
-      if (influence.from_item.name.toLowerCase() === itemName.toLowerCase()) {
-        return influence.from_item.id;
-      }
-    }
-    
-    return null;
-  }, [graphData]);
-
+  
+  // Used in ProposalAction
   const loadItemWithAccumulation = useCallback(async (itemId: string, itemName: string) => {
     try {
       graphDispatch({ type: 'SET_LOADING', payload: true });

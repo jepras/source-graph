@@ -2,6 +2,116 @@
 
 Latest updated on 11/6/2025 - 19:30
 
+### Current tree structure
+influence-graph/
+├── 📁 backend/
+│   ├── 📁 app/
+│   │   ├── 📁 api/
+│   │   │   └── 📁 routes/
+│   │   │       ├── ai.py (9.3KB, 265 lines)
+│   │   │       ├── items.py (4.3KB, 130 lines)
+│   │   │       └── influences.py (4.0KB, 119 lines)
+│   │   ├── 📁 core/
+│   │   │   └── 📁 database/
+│   │   │       ├── neo4j.py (632B, 26 lines)
+│   │   │       ├── sample_data.py (6.7KB, 210 lines)
+│   │   │       └── schema.py (2.0KB, 58 lines)
+│   │   ├── 📁 mcps/ (empty)
+│   │   ├── 📁 models/
+│   │   │   ├── ai.py (396B, 18 lines)
+│   │   │   ├── item.py (1.2KB, 49 lines)
+│   │   │   ├── proposal.py (5.6KB, 150 lines)
+│   │   │   └── structured.py (2.9KB, 79 lines)
+│   │   ├── 📁 services/
+│   │   │   ├── 📁 ai_agents/
+│   │   │   │   ├── base_agent.py (1003B, 28 lines)
+│   │   │   │   ├── init.py (20B, 2 lines)
+│   │   │   │   ├── proposal_agent.py (21KB, 573 lines)
+│   │   │   │   ├── prompts.py (7.2KB, 166 lines)
+│   │   │   │   ├── research_agent.py (4.1KB, 84 lines)
+│   │   │   │   └── structure_agent.py (9.0KB, 252 lines)
+│   │   │   ├── 📁 content/ (empty)
+│   │   │   └── 📁 graph/
+│   │   │       └── graph_service.py (41KB, 1000 lines)
+│   │   ├── �� workers/ (empty)
+│   │   ├── config.py (819B, 35 lines)
+│   │   ├── main.py (911B, 34 lines)
+│   │   └── test_script.py (170B, 6 lines)
+│   ├── 📁 venv/ (Python virtual environment)
+│   ├── debug_structure.py (1.2KB, 40 lines)
+│   ├── requirements.txt (340B, 21 lines)
+│   ├── run.py (140B, 6 lines)
+│   ├── setup_db.py (396B, 17 lines)
+│   ├── test_ai_endpoint.py (782B, 32 lines)
+│   ├── test_graph_service.py (602B, 19 lines)
+│   ├── test_llm.py (619B, 24 lines)
+│   └── test_scope.py (4.9KB, 148 lines)
+├── 📁 frontend/
+│   ├── 📁 node_modules/ (npm dependencies)
+│   ├── 📁 public/ (static assets)
+│   ├── 📁 src/
+│   │   ├── 📁 assets/ (static assets)
+│   │   ├── 📁 components/
+│   │   │   ├── 📁 common/
+│   │   │   │   ├── ConflictResolution.tsx (5.9KB, 158 lines)
+│   │   │   │   ├── ResizableGraphLayout.tsx (4.1KB, 110 lines)
+│   │   │   │   ├── ResizablePanels.tsx (3.8KB, 106 lines)
+│   │   │   │   ├── SearchBar.tsx (2.2KB, 73 lines)
+│   │   │   │   └── YearValidation.tsx (6.7KB, 211 lines)
+│   │   │   ├── 📁 graph/
+│   │   │   │   ├── GraphExpansionControls.tsx (3.5KB, 98 lines)
+│   │   │   │   └── InfluenceGraph.tsx (19KB, 527 lines)
+│   │   │   ├── 📁 layout/
+│   │   │   │   └── MainLayout.tsx (3.0KB, 94 lines)
+│   │   │   ├── 📁 panels/
+│   │   │   │   ├── GraphPanel.tsx (2.7KB, 66 lines)
+│   │   │   │   ├── ItemDetailsPanel.tsx (9.1KB, 270 lines)
+│   │   │   │   └── ResearchPanel.tsx (1.5KB, 44 lines)
+│   │   │   └── 📁 research/
+│   │   │       ├── ProposalActions.tsx (3.8KB, 101 lines)
+│   │   │       ├── ProposalForm.tsx (4.2KB, 114 lines)
+│   │   │       ├── ProposalQuestions.tsx (8.6KB, 192 lines)
+│   │   │       └── ProposalResults.tsx (12KB, 233 lines)
+│   │   ├── 📁 contexts/ (React contexts)
+│   │   ├── 📁 hooks/
+│   │   │   ├── useGraphOperations.ts (8.5KB, 238 lines)
+│   │   │   └── useProposals.ts (9.7KB, 254 lines)
+│   │   ├── 📁 services/
+│   │   │   └── api.ts (14KB, 451 lines)
+│   │   ├── 📁 types/
+│   │   │   └── graph.ts (613B, 27 lines)
+│   │   ├── 📁 utils/
+│   │   │   └── graphUtils.ts (23KB, 661 lines)
+│   │   ├── App.css (606B, 43 lines)
+│   │   ├── App.tsx (298B, 14 lines)
+│   │   ├── index.css (306B, 10 lines)
+│   │   ├── main.tsx (230B, 11 lines)
+│   │   └── vite-env.d.ts (38B, 2 lines)
+│   ├── .gitignore (253B, 25 lines)
+│   ├── eslint.config.js (734B, 29 lines)
+│   ├── index.html (366B, 14 lines)
+│   ├── package-lock.json (169KB, 4939 lines)
+│   ├── package.json (812B, 35 lines)
+│   ├── README.md (1.9KB, 55 lines)
+│   ├── tsconfig.app.json (702B, 28 lines)
+│   ├── tsconfig.json (119B, 8 lines)
+│   ├── tsconfig.node.json (630B, 26 lines)
+│   └── vite.config.ts (229B, 11 lines)
+├── 📁 docs/ (documentation)
+├── 📁 infrastructure/ (deployment configs)
+├── 📁 shared/ (shared utilities)
+├── 📁 own stuff/ (personal files)
+├── 📁 .cursor/ (Cursor IDE config)
+├── 📁 .git/ (git repository)
+├── 📁 .vscode/ (VS Code config)
+├── .gitignore (310B, 26 lines)
+├── package-lock.json (87B, 7 lines)
+├── previous_db.json (1.7KB, 77 lines)
+├── PROJECT_OVERVIEW.md (9.0KB, 258 lines)
+├── README.md (731B, 18 lines)
+├── TASKS.md (11KB, 211 lines)
+└── worklog.md (4.6KB, 88 lines)
+
 ## What This Is
 
 **Influence Graph** is an AI-powered knowledge graph system that traces and visualizes influence relationships between any type of creative work, cultural artifact, or innovation. It uses AI agents to discover and structure influence relationships, then presents them in an interactive timeline-based graph visualization.
