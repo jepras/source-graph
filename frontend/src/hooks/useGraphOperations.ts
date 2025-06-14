@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { api } from '../services/api';
 import { useGraph } from '../contexts/GraphContext';
-import { extractNodesAndRelationships, generateClustersFromCategory } from '../utils/graphUtils';
+import { extractNodesAndRelationships } from '../utils/graphUtils';
 import type { GraphNode, GraphLink } from '../types/graph';
 
 export const useGraphOperations = () => {
@@ -106,7 +106,7 @@ export const useGraphOperations = () => {
             // For incoming influences:
             if (!state.accumulatedGraph.nodes.has(influence.from_item.id)) {
               // Generate clusters from category (same logic as initial load)
-              const clusters = influence.clusters || generateClustersFromCategory(influence.category);
+              const clusters = influence.clusters
               
               newNodes.push({
                 id: influence.from_item.id,
@@ -139,7 +139,7 @@ export const useGraphOperations = () => {
             // For outgoing influences:
             if (!state.accumulatedGraph.nodes.has(influence.to_item.id)) {
               // Generate clusters from category (same logic as initial load)
-              const clusters = influence.clusters || generateClustersFromCategory(influence.category);
+              const clusters = influence.clusters
               
               newNodes.push({
                 id: influence.to_item.id,

@@ -136,16 +136,6 @@ export interface ProposalResponse {
   all_clusters?: string[];
 }
 
-export interface MoreProposalsRequest {
-  item_name: string;
-  item_type?: string;
-  artist?: string;
-  scope: string;
-  category: string;
-  count: number;
-  existing_influences: string[];
-}
-
 export interface AcceptProposalsRequest {
   item_name: string;
   item_type?: string;
@@ -256,70 +246,16 @@ export const api = {
 };
 
 // ============================================================================
-// SECTION 8: AI STRUCTURING OPERATIONS
+// SECTION 8: AI STRUCTURING OPERATIONS -- redundant?
 // ============================================================================
 
-export const structureApi = {
-  structureInfluences: async (request: StructureRequest): Promise<StructuredOutput> => {
-    try {
-      const response = await fetch(`${API_BASE}/ai/structure`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-  
-      if (!response.ok) {
-        let errorMessage = `Structure failed (${response.status})`;
-        
-        try {
-          const errorData = await response.json();
-          
-          if (errorData.detail) {
-            errorMessage = `Structure failed: ${errorData.detail}`;
-          } else if (errorData.message) {
-            errorMessage = `Structure failed: ${errorData.message}`;
-          }
-        } catch {
-          if (response.status === 500) {
-            errorMessage = 'Server error while structuring influences. This could be due to invalid data format, AI processing timeout, or missing required fields.';
-          } else if (response.status === 422) {
-            errorMessage = 'Invalid request data format. Check that all required fields are present.';
-          } else if (response.status === 400) {
-            errorMessage = 'Bad request - the research text may be malformed or too complex.';
-          }
-        }
-        
-        throw new Error(errorMessage);
-      }
-  
-      return response.json();
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to structure influences - network or parsing error');
-    }
-  },
-};
 
 // ============================================================================
-// SECTION 9: INFLUENCE SAVING OPERATIONS
+// SECTION 9: INFLUENCE SAVING OPERATIONS 
 // ============================================================================
 
 export const influenceApi = {
-  saveStructuredInfluences: async (structuredData: StructuredOutput): Promise<{ item_id: string }> => {
-    const response = await fetch(`${API_BASE}/influences/save`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(structuredData),
-    });
-    if (!response.ok) throw new Error('Failed to save influences');
-    return response.json();
-  },
+  
 
   getItemPreview: async (itemId: string): Promise<any> => {
     const response = await fetch(`${API_BASE}/influences/preview/${itemId}`);
@@ -370,16 +306,6 @@ export const proposalApi = {
     return response.json();
   },
 
-  getMoreProposals: async (request: MoreProposalsRequest): Promise<{proposals: InfluenceProposal[]; count: number}> => {
-    const response = await fetch(`${API_BASE}/ai/propose/more`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-    if (!response.ok) throw new Error('Failed to get more proposals');
-    return response.json();
-  },
-
   acceptProposals: async (request: AcceptProposalsRequest): Promise<AcceptProposalsResponse> => {
     const response = await fetch(`${API_BASE}/ai/proposals/accept`, {
       method: 'POST',
@@ -399,55 +325,4 @@ export const proposalApi = {
     if (!response.ok) throw new Error('Failed to process question');
     return response.json();
   },
-};
-
-// ============================================================================
-// SECTION 11: UTILITY FUNCTIONS
-// ============================================================================
-
-export const convertExpandedGraphToGraphResponse = (expandedGraph: ExpandedGraph): GraphResponse => {
-  const centerNode = expandedGraph.nodes.find(node => node.is_center);
-  if (!centerNode) {
-    throw new Error('No center item found in expanded graph');
-  }
-
-  const influences: InfluenceRelation[] = expandedGraph.relationships.map(rel => {
-    const fromNode = expandedGraph.nodes.find(node => node.item.id === rel.from_id);
-    const toNode = expandedGraph.nodes.find(node => node.item.id === rel.to_id);
-    
-    if (!fromNode || !toNode) {
-      throw new Error(`Invalid relationship: missing nodes for ${rel.from_id} -> ${rel.to_id}`);
-    }
-
-    return {
-      from_item: fromNode.item,
-      to_item: toNode.item,
-      confidence: rel.confidence,
-      influence_type: rel.influence_type,
-      explanation: rel.explanation,
-      category: rel.category,
-      source: rel.source
-    };
-  });
-
-  const allCreators: Creator[] = [];
-  const creatorIds = new Set<string>();
-  
-  expandedGraph.nodes.forEach(node => {
-    node.creators.forEach(creator => {
-      if (!creatorIds.has(creator.id)) {
-        allCreators.push(creator);
-        creatorIds.add(creator.id);
-      }
-    });
-  });
-
-  const categories = [...new Set(expandedGraph.relationships.map(rel => rel.category).filter(cat => cat))];
-
-  return {
-    main_item: centerNode.item,
-    influences,
-    categories,
-    creators: allCreators
-  };
 };
