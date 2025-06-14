@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List  # Add this line
-from app.models.ai import ResearchRequest, ResearchResponse
 from app.models.structured import StructureRequest, StructuredOutput
-from app.services.ai_agents.structure_agent import structure_agent
 from app.models.proposal import (
     ProposalRequest,
     ProposalResponse,
