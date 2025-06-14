@@ -6,7 +6,7 @@ class StructuredInfluence(BaseModel):
     name: str = Field(description="Name of the influencing item")
     type: Optional[str] = Field(None, description="Type will be auto-detected by LLM")
     creator_name: Optional[str] = Field(
-        None, description="Creator, artist, director, company, etc."
+        None, description="Creator, director, company, etc."
     )
     creator_type: Optional[str] = Field(
         None, description="person/organization/collective"

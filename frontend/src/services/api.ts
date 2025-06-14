@@ -123,7 +123,7 @@ export interface InfluenceProposal {
 export interface ProposalResponse {
   item_name: string;
   item_type?: string;
-  artist?: string;
+  creator?: string;
   item_description?: string;
   item_year?: number;
   macro_influences: InfluenceProposal[];
@@ -139,7 +139,7 @@ export interface ProposalResponse {
 export interface AcceptProposalsRequest {
   item_name: string;
   item_type?: string;
-  artist?: string;
+  creator?: string;
   item_year?: number;
   item_description?: string;
   accepted_proposals: InfluenceProposal[];
@@ -162,7 +162,7 @@ export interface AcceptProposalsResponse {
 export interface UnifiedQuestionRequest {
   item_name: string;
   item_type?: string;
-  artist?: string;
+  creator?: string;
   item_year?: number;
   item_description?: string;
   question: string;
@@ -296,7 +296,7 @@ export const influenceApi = {
 // ============================================================================
 
 export const proposalApi = {
-  generateProposals: async (request: { item_name: string; artist?: string; item_type?: string }): Promise<ProposalResponse> => {
+  generateProposals: async (request: { item_name: string; creator?: string; item_type?: string }): Promise<ProposalResponse> => {
     const response = await fetch(`${API_BASE}/ai/propose`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

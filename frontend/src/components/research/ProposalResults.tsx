@@ -50,8 +50,8 @@ export const ProposalResults: React.FC<ProposalResultsProps> = ({ onItemSaved })
           {state.proposals.item_description && (
             <div><strong>Description:</strong> {state.proposals.item_description}</div>
           )}
-          {state.proposals.artist && (
-            <div><strong>Artist:</strong> {state.proposals.artist}</div>
+          {state.proposals.creator && (
+            <div><strong>creator:</strong> {state.proposals.creator}</div>
           )}
           {state.proposals.item_type && (
             <div><strong>Type:</strong> {state.proposals.item_type}</div>

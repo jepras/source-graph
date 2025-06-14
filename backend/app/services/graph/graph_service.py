@@ -13,7 +13,7 @@ class GraphService:
 
     This service handles all database operations for:
     - Items (songs, movies, books, etc.)
-    - Creators (artists, directors, authors, etc.)
+    - Creators (directors, authors, etc.)
     - Influence relationships between items
     - Graph queries and expansions
     - Conflict resolution and merging

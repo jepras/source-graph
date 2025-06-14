@@ -24,7 +24,7 @@ async def propose_influences(request: ProposalRequest):
         proposals = await proposal_agent.propose_influences(
             item_name=request.item_name,
             item_type=request.item_type,
-            artist=request.artist,
+            creator=request.creator,
             context=request.context,
         )
         return proposals
@@ -64,7 +64,7 @@ async def accept_proposals(request: AcceptProposalsRequest):
         structured_data = StructuredOutput(
             main_item=request.item_name,
             main_item_type=request.item_type,
-            main_item_creator=request.artist,  # Map artist back to creator
+            main_item_creator=request.creator,  # Map creator back to creator
             main_item_creator_type="person",  # Default
             main_item_year=request.item_year,
             main_item_description=request.item_description,
@@ -125,11 +125,11 @@ async def accept_proposals(request: AcceptProposalsRequest):
 
 
 @router.get("/proposals/test/{item_name}")
-async def test_proposals(item_name: str, artist: str = None, item_type: str = None):
+async def test_proposals(item_name: str, creator: str = None, item_type: str = None):
     """Test endpoint for proposal generation"""
     try:
         proposals = await proposal_agent.propose_influences(
-            item_name=item_name, item_type=item_type, artist=artist
+            item_name=item_name, item_type=item_type, creator=creator
         )
 
         return {
@@ -167,7 +167,7 @@ async def ask_question(request: UnifiedQuestionRequest):
             item_name=request.item_name,
             question=request.question,
             item_type=request.item_type,
-            artist=request.artist,
+            creator=request.creator,
             item_year=request.item_year,
             item_description=request.item_description,
             target_influence_name=request.target_influence_name,

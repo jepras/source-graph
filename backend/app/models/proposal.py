@@ -8,7 +8,7 @@ class InfluenceProposal(BaseModel):
     name: str = Field(description="Name of the influencing item")
     type: Optional[str] = Field(None, description="Type will be auto-detected by LLM")
     creator_name: Optional[str] = Field(
-        None, description="Creator, artist, director, company, etc."
+        None, description="Creator, creator, director, company, etc."
     )
     creator_type: Optional[str] = Field(
         None, description="person/organization/collective"
@@ -49,7 +49,7 @@ class ProposalRequest(BaseModel):
 
     item_name: str = Field(description="Name of item to research")
     item_type: Optional[str] = Field(None, description="Type of item (song/movie/etc)")
-    artist: Optional[str] = Field(None, description="Creator of the item")
+    creator: Optional[str] = Field(None, description="Creator of the item")
     context: Optional[str] = Field(
         None, description="Additional context about the item"
     )
@@ -60,7 +60,7 @@ class ProposalResponse(BaseModel):
 
     item_name: str
     item_type: Optional[str]
-    artist: Optional[str]
+    creator: Optional[str]
     item_description: Optional[str] = None  # NEW: Add this line
     item_year: Optional[int] = None  # NEW: Add this line
     macro_influences: List[InfluenceProposal] = Field(
@@ -86,7 +86,7 @@ class MoreProposalsRequest(BaseModel):
 
     item_name: str
     item_type: Optional[str] = None
-    artist: Optional[str] = None
+    creator: Optional[str] = None
     scope: str = Field(description="macro/micro/nano")
     category: str = Field(description="Category to get more influences in")
     count: int = Field(
@@ -102,7 +102,7 @@ class AcceptProposalsRequest(BaseModel):
 
     item_name: str
     item_type: Optional[str] = None
-    artist: Optional[str] = None
+    creator: Optional[str] = None
     item_year: Optional[int] = None
     item_description: Optional[str] = None  # Make sure this line exists
     accepted_proposals: List[InfluenceProposal]
@@ -114,7 +114,7 @@ class UnifiedQuestionRequest(BaseModel):
     # Main item context (always present)
     item_name: str = Field(description="Name of the main item")
     item_type: Optional[str] = Field(None, description="Type of item (song/movie/etc)")
-    artist: Optional[str] = Field(None, description="Creator of the item")
+    creator: Optional[str] = Field(None, description="Creator of the item")
     item_year: Optional[int] = Field(None, description="Year of the item")
     item_description: Optional[str] = Field(None, description="Description of the item")
 

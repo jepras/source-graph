@@ -11,7 +11,7 @@ Your job is to propose influences for a creative work at three different scope l
 - Foundational works that established traditions
 
 **MICRO (2 influences)**: Specific techniques and elements  
-- Particular artistic techniques or methods
+- Particular creatoric techniques or methods
 - Specific works that provided direct inspiration
 - Production methods or creative processes
 - Regional scenes or specialized communities
@@ -113,7 +113,7 @@ Return ONLY valid JSON in this exact format:
 ]
 }}
 
-Focus on finding the actual sources - which specific songs, which particular artists, which exact techniques."""
+Focus on finding the actual sources - which specific songs, which particular creators, which exact techniques."""
 
 DISCOVERY_QUESTION_PROMPT = """You are an expert at discovering specific influences based on user questions with consistent clustering.
 

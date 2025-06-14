@@ -28,7 +28,7 @@ export const useProposals = () => {
     try {
       const proposalResponse = await proposalApi.generateProposals({
         item_name: state.itemName.trim(),
-        artist: state.creator.trim() || undefined,
+        creator: state.creator.trim() || undefined,
         item_type: undefined // Let AI auto-detect
       });
 
@@ -98,7 +98,7 @@ export const useProposals = () => {
       const request: AcceptProposalsRequest = {
         item_name: state.proposals.item_name,
         item_type: state.proposals.item_type,
-        artist: state.proposals.artist,
+        creator: state.proposals.creator,
         item_year: state.proposals.item_year,
         item_description: state.proposals.item_description,
         accepted_proposals: selectedObjects.map(p => ({ ...p, accepted: true }))
@@ -150,7 +150,7 @@ export const useProposals = () => {
       const request: UnifiedQuestionRequest = {
         item_name: state.proposals.item_name,
         item_type: state.proposals.item_type,
-        artist: state.proposals.artist,
+        creator: state.proposals.creator,
         item_year: state.proposals.item_year,
         item_description: state.proposals.item_description,
         question: state.mainItemQuestionText.trim(),
@@ -192,7 +192,7 @@ export const useProposals = () => {
       const request: UnifiedQuestionRequest = {
         item_name: state.proposals.item_name,
         item_type: state.proposals.item_type,
-        artist: state.proposals.artist,
+        creator: state.proposals.creator,
         item_year: state.proposals.item_year,
         item_description: state.proposals.item_description,
         question: questionText.trim(),
@@ -228,7 +228,7 @@ export const useProposals = () => {
       const response = await proposalApi.askQuestion({
         item_name: state.proposals.item_name,
         item_type: state.proposals.item_type,
-        artist: state.proposals.artist,
+        creator: state.proposals.creator,
         item_year: state.proposals.item_year,
         item_description: state.proposals.item_description,
         question: "Which specific sources, songs, or works influenced this technique?",

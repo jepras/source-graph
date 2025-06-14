@@ -22,14 +22,14 @@ class ProposalAgent(BaseAgent):
         self,
         item_name: str,
         item_type: str = None,
-        artist: str = None,
+        creator: str = None,
         context: str = None,
     ) -> ProposalResponse:
         """Propose influences across macro/micro/nano scope levels"""
 
         # Build the human prompt
-        if artist:
-            human_message = f"Propose 6 influences (2 macro, 2 micro, 2 nano) for '{item_name}' by {artist}"
+        if creator:
+            human_message = f"Propose 6 influences (2 macro, 2 micro, 2 nano) for '{item_name}' by {creator}"
         else:
             human_message = (
                 f"Propose 6 influences (2 macro, 2 micro, 2 nano) for '{item_name}'"
@@ -50,14 +50,14 @@ class ProposalAgent(BaseAgent):
         try:
             response = await self.invoke(prompt, {})
             return await self._parse_proposal_response(
-                response, item_name, item_type, artist
+                response, item_name, item_type, creator
             )
 
         except Exception as e:
             return ProposalResponse(
                 item_name=item_name,
                 item_type=item_type,
-                artist=artist,
+                creator=creator,
                 item_description=None,
                 item_year=None,
                 macro_influences=[],
@@ -116,8 +116,8 @@ class ProposalAgent(BaseAgent):
     ]"""
 
         # Build human prompt
-        if request.artist:
-            human_message = f"Find {request.count} more {request.scope} influences in '{request.category}' category for '{request.item_name}' by {request.artist}"
+        if request.creator:
+            human_message = f"Find {request.count} more {request.scope} influences in '{request.category}' category for '{request.item_name}' by {request.creator}"
         else:
             human_message = f"Find {request.count} more {request.scope} influences in '{request.category}' category for '{request.item_name}'"
 
@@ -136,7 +136,7 @@ class ProposalAgent(BaseAgent):
             return []
 
     async def _parse_proposal_response(
-        self, response: str, item_name: str, item_type: str, artist: str
+        self, response: str, item_name: str, item_type: str, creator: str
     ) -> ProposalResponse:
         """Parse AI response into organized proposals"""
 
@@ -223,7 +223,7 @@ class ProposalAgent(BaseAgent):
             return ProposalResponse(
                 item_name=item_name,
                 item_type=item_type or data.get("main_item_type"),
-                artist=artist or data.get("main_item_creator"),
+                creator=creator or data.get("main_item_creator"),
                 item_description=data.get(
                     "main_item_description"
                 ),  # NEW: Add this line
@@ -242,7 +242,7 @@ class ProposalAgent(BaseAgent):
             return ProposalResponse(
                 item_name=item_name,
                 item_type=item_type,
-                artist=artist,
+                creator=creator,
                 macro_influences=[],
                 micro_influences=[],
                 nano_influences=[],
@@ -257,7 +257,7 @@ class ProposalAgent(BaseAgent):
             return ProposalResponse(
                 item_name=item_name,
                 item_type=item_type,
-                artist=artist,
+                creator=creator,
                 item_description=None,  # NEW: Add this line
                 item_year=None,  # NEW: Add this line
                 macro_influences=[],
@@ -303,7 +303,7 @@ class ProposalAgent(BaseAgent):
         item_name: str,
         question: str,
         item_type: str = None,
-        artist: str = None,
+        creator: str = None,
         item_year: int = None,
         item_description: str = None,
         target_influence_name: str = None,
@@ -317,8 +317,8 @@ class ProposalAgent(BaseAgent):
 
         # Build context about the item
         item_context = f"Item: {item_name}"
-        if artist:
-            item_context += f" by {artist}"
+        if creator:
+            item_context += f" by {creator}"
         if item_year:
             item_context += f" ({item_year})"
         if item_type:
@@ -338,7 +338,7 @@ class ProposalAgent(BaseAgent):
 
     User Question: "{question}"
 
-    Find 3-5 specific sources that answer this question. Look for actual songs, albums, artists, products, or techniques that contributed to this influence.
+    Find 3-5 specific sources that answer this question. Look for actual songs, albums, products, or techniques that contributed to this influence.
 
     Return only valid JSON with the exact structure specified."""
 

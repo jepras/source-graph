@@ -7,7 +7,7 @@ class ResearchAgent(BaseAgent):
         super().__init__(temperature=0.3)  # Lower temperature for more focused research
 
     async def research_influences(
-        self, item_name: str, item_type: str, artist: str = None
+        self, item_name: str, item_type: str, creator: str = None
     ) -> str:
         """Research influences for a given item using LLM"""
 
@@ -52,14 +52,14 @@ class ResearchAgent(BaseAgent):
         - Year used for indexing: 1960
         
         1. **Rock and Roll Music**
-        Explanation: The Beatles were heavily influenced by American rock and roll artists such as Elvis Presley, Chuck Berry, and Little Richard. They incorporated elements of rock and roll into their music, helping to shape their energetic and dynamic sound.
+        Explanation: The Beatles were heavily influenced by American rock and roll creators such as Elvis Presley, Chuck Berry, and Little Richard. They incorporated elements of rock and roll into their music, helping to shape their energetic and dynamic sound.
         Year used for indexing: 1950 
         
         2. Etc.."""
 
         # Create the human prompt with the specific item details
-        if artist:
-            human_message = f"Research the key influences that shaped '{item_name}' by {artist} ({item_type}). What directly influenced this {item_type}'s creation, style, content, or production?"
+        if creator:
+            human_message = f"Research the key influences that shaped '{item_name}' by {creator} ({item_type}). What directly influenced this {item_type}'s creation, style, content, or production?"
         else:
             human_message = f"Research the key influences that shaped '{item_name}' ({item_type}). What directly influenced this {item_type}'s creation, style, content, or production?"
 
@@ -71,7 +71,7 @@ class ResearchAgent(BaseAgent):
                 {
                     "item_name": item_name,
                     "item_type": item_type,
-                    "artist": artist or "Unknown",
+                    "creator": creator or "Unknown",
                 },
             )
             return response

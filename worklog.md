@@ -92,7 +92,7 @@ Like any code that is being developed too fast??
 # What interesting influence links could be
 1. 
 How The Streets have influenced music
-- Influences danish artists like Suspekt making Proletar. Probably in other countries as well.
+- Influences danish creators like Suspekt making Proletar. Probably in other countries as well.
 - Even in 2025 we see it in Little Simz's new album.
 
 2.
