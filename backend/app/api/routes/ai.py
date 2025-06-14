@@ -19,24 +19,6 @@ from app.models.structured import StructuredOutput, StructuredInfluence
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
-@router.post("/structure", response_model=StructuredOutput)
-async def structure_influences(request: StructureRequest):
-    """Convert free text influences into structured data"""
-    try:
-        structured_data = await structure_agent.structure_influences(
-            influences_text=request.influences_text,
-            main_item=request.main_item,
-            main_item_creator=request.main_item_creator,
-        )
-
-        return structured_data
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to structure influences: {str(e)}"
-        )
-
-
 @router.post("/propose", response_model=ProposalResponse)
 async def propose_influences(request: ProposalRequest):
     """Get AI proposals for influences across macro/micro/nano levels"""

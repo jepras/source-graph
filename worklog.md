@@ -72,6 +72,22 @@ Could /save & /force-save become 1 if using a recursive statement? That shows i'
 10.
 Cursor works better for restructuring code. They did fuck up a restructure by putting an api endpoint under export const proposalApi instead of export const api, and didn't solve it in other files. 
 
+11.
+When a way of doing things feels wrong, then i sense it and gets expert advice from multiple sources (cursor, claude, ai studio) about what to do. Example: single source of truth from the database instead of writing variable names in base models + frontend interfaces.
+
+12.
+Circle of vibecoding:
+- Wow, amazing it can do this.
+- And it just adds whatever i want!
+- Huh, annoying i had to reprompt to get the right answer.
+- This is starting to take a long time. Is it fucking stupid or what?
+- Is this why they write tests? I might need that eventually.. 
+- Converge: Okay, I need to understand what is going on. Learning moment.
+- Now i see the point of monitoring. Pydantic-to-typescript?
+- Restructure, simplify, optimize, tests, etc. 
+- .. Over again.
+Like any code that is being developed too fast?? 
+
 
 # What interesting influence links could be
 1. 
