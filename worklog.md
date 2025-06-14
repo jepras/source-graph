@@ -69,6 +69,9 @@ I don't know how to write any db queries without AI. Why is that important?
 9. 
 Could /save & /force-save become 1 if using a recursive statement? That shows i'm actually learning to use the things from boot.dev
 
+10.
+Cursor works better for restructuring code. They did fuck up a restructure by putting an api endpoint under export const proposalApi instead of export const api, and didn't solve it in other files. 
+
 
 # What interesting influence links could be
 1. 
