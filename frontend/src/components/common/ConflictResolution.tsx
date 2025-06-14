@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
+import { influenceApi } from '../../services/api';
 import type { StructuredOutput } from '../../services/api';
 
 interface ConflictResolutionProps {
@@ -21,7 +22,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
     setPreviewLoading(true);
     
     try {
-      const preview = await api.getItemPreview(itemId);
+      const preview = await influenceApi.getItemPreview(itemId);
       setPreviewData(preview);
     } catch (err) {
       console.error('Failed to load preview:', err);

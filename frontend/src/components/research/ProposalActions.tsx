@@ -6,7 +6,7 @@ import { ConflictResolution } from '../common/ConflictResolution'; // Reuse exis
 import { api } from '../../services/api'; // ADD this import
 import type { StructuredOutput } from '../../services/api';
 import { useGraphOperations } from '../../hooks/useGraphOperations'; // ADD this import
-
+import { influenceApi } from '../../services/api';
 
 
 interface ProposalActionsProps {
@@ -47,14 +47,14 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     
     try {
       if (resolution === 'create_new') {
-        const result = await api.forceSaveAsNew(conflictData.newData);
+        const result = await influenceApi.forceSaveAsNew(conflictData.newData);
         if (result.success && result.item_id) {
           // Use accumulative loading
           await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
           onItemSaved(result.item_id);
         }
       } else if (resolution === 'merge' && selectedItemId) {
-        const result = await api.mergeWithExisting(selectedItemId, conflictData.newData);
+        const result = await influenceApi.mergeWithExisting(selectedItemId, conflictData.newData);
         if (result.success && result.item_id) {
           // Use accumulative loading  
           await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
