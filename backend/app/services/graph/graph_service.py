@@ -674,18 +674,18 @@ class GraphService:
             MATCH (i:Item) 
             OPTIONAL MATCH (i)-[:CREATED_BY]->(c:Creator)
             WITH i, collect(c.name) as creators,
-                // Calculate similarity score
                 CASE 
                     WHEN toLower(i.name) = toLower($name) THEN 100
-                    WHEN toLower(i.name) CONTAINS toLower($name) THEN 80
-                    WHEN toLower($name) CONTAINS toLower(i.name) THEN 70
-                    ELSE 50
+                    WHEN toLower(i.name) CONTAINS toLower($name) AND size($name) >= 4 THEN 80
+                    WHEN toLower($name) CONTAINS toLower(i.name) AND size(i.name) >= 4 THEN 70
+                    ELSE 0  // Remove the catch-all 50 score
                 END as name_score
-            WHERE name_score >= 50
-            OR any(creator IN creators WHERE toLower(creator) CONTAINS toLower($creator_name))
+            WHERE name_score >= 70  // Much higher threshold
+            OR ($creator_name IS NOT NULL AND $creator_name <> '' 
+                AND any(creator IN creators WHERE toLower(creator) CONTAINS toLower($creator_name)))
             RETURN i, creators, name_score
             ORDER BY name_score DESC
-            LIMIT 5
+            LIMIT 3
             """
 
             results = session.run(

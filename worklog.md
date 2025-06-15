@@ -73,7 +73,7 @@ Could /save & /force-save become 1 if using a recursive statement? That shows i'
 Cursor works better for restructuring code. They did fuck up a restructure by putting an api endpoint under export const proposalApi instead of export const api, and didn't solve it in other files. 
 
 11.
-When a way of doing things feels wrong, then i sense it and gets expert advice from multiple sources (cursor, claude, ai studio) about what to do. Example: single source of truth from the database instead of writing variable names in base models + frontend interfaces.
+When a way of doing things feels wrong, then i sense it and gets expert advice from multiple sources (cursor, claude, ai studio) about what to do. Example: single source of truth from the database instead of writing variable names in base models + frontend interfaces. Model-first development. 
 
 12.
 Circle of vibecoding:
@@ -87,6 +87,10 @@ Circle of vibecoding:
 - Restructure, simplify, optimize, tests, etc. 
 - .. Over again.
 Like any code that is being developed too fast?? 
+
+13. 
+For frontend only, then cursor is quite alright. 
+- It deleted unnecessary imports and actions where Claude didn't (given the same context).
 
 
 # What interesting influence links could be

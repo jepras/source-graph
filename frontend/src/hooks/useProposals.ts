@@ -5,8 +5,7 @@ import { useGraph } from '../contexts/GraphContext';
 import type { 
   AcceptProposalsRequest, 
   AcceptProposalsResponse,
-  UnifiedQuestionRequest,
-  MoreProposalsRequest 
+  UnifiedQuestionRequest
 } from '../services/api';
 
 export const useProposals = () => {
@@ -24,6 +23,25 @@ export const useProposals = () => {
     dispatch({ type: 'SET_ERROR', payload: null });
     dispatch({ type: 'SET_PROPOSALS', payload: null });
     dispatch({ type: 'SET_SELECTED_PROPOSALS', payload: new Set() });
+    
+    // Clear all question responses from previous research session
+    dispatch({ type: 'SET_MAIN_ITEM_QUESTION_RESPONSE', payload: null });
+    dispatch({ type: 'SET_MAIN_ITEM_QUESTION_TEXT', payload: '' });
+    
+    // Clear all influence question responses
+    Object.keys(state.influenceQuestionResponses).forEach(key => {
+      dispatch({ type: 'REMOVE_INFLUENCE_QUESTION_RESPONSE', payload: key });
+    });
+    
+    // Clear all influence question inputs
+    Object.keys(state.influenceQuestions).forEach(key => {
+      dispatch({ type: 'SET_INFLUENCE_QUESTION', payload: { key, value: '' } });
+    });
+    
+    // Clear expanded proposals (specifics)
+    Object.keys(state.expandedProposals).forEach(key => {
+      dispatch({ type: 'SET_EXPANDED_PROPOSALS', payload: { key, proposals: null } });
+    });
 
     try {
       const proposalResponse = await proposalApi.generateProposals({
@@ -42,7 +60,7 @@ export const useProposals = () => {
     } finally {
       dispatch({ type: 'SET_PROPOSAL_LOADING', payload: false });
     }
-  }, [state.itemName, state.creator, dispatch]);
+  }, [state.itemName, state.creator, state.influenceQuestionResponses, state.influenceQuestions, state.expandedProposals, dispatch]);
 
   // Used in ProposalActions
   const acceptSelectedProposals = useCallback(async (): Promise<AcceptProposalsResponse | null> => {

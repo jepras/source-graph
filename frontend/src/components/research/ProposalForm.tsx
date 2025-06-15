@@ -20,7 +20,7 @@ export const ProposalForm: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 mb-1">
-            Item Name *
+            Item Name*
           </label>
           <input
             id="itemName"
@@ -34,7 +34,7 @@ export const ProposalForm: React.FC = () => {
 
         <div>
           <label htmlFor="creator" className="block text-sm font-medium text-gray-700 mb-1">
-            Creator (optional)
+            Creator
           </label>
           <input
             id="creator"

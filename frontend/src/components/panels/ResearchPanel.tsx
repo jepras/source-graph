@@ -17,7 +17,7 @@ export const ResearchPanel: React.FC<ResearchPanelProps> = ({ onItemSaved }) => 
           🤖 AI Research
         </h3>
         <p className="text-xs text-gray-500 mt-1">
-          Generate influence proposals across macro/micro/nano levels
+          Search and find what influences everything
         </p>
       </div>
       
@@ -34,7 +34,7 @@ export const ResearchPanel: React.FC<ResearchPanelProps> = ({ onItemSaved }) => 
             <div className="text-3xl mb-3">🎯</div>
             <p className="text-sm font-medium">Generate Influence Proposals</p>
             <p className="text-xs mt-1 text-gray-400">
-              Enter an item name to discover organized influences across multiple levels
+              Enter an item name to discover organized influences
             </p>
           </div>
         )}
