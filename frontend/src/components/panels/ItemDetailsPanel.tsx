@@ -13,7 +13,7 @@ interface InfluenceData {
 }
 
 export const ItemDetailsPanel: React.FC = () => {
-  const { state, selectNode } = useGraph();
+  const { state, selectNode, removeNodeFromGraph } = useGraph();
   const { expandNode } = useGraphOperations();
   const [itemDetails, setItemDetails] = useState<Item | null>(null);
   const [influenceData, setInfluenceData] = useState<InfluenceData>({
@@ -26,6 +26,10 @@ export const ItemDetailsPanel: React.FC = () => {
     incoming: false,
     outgoing: false,
   });
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [mergeCandidates, setMergeCandidates] = useState<any[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Load item details and influence data when selectedNodeId changes
   useEffect(() => {
@@ -68,6 +72,15 @@ export const ItemDetailsPanel: React.FC = () => {
     loadItemData();
   }, [state.selectedNodeId]);
 
+  // Add this useEffect right after your existing useEffect for loading item data
+  useEffect(() => {
+    // Clear action states when selection changes
+    setDeleteConfirm(false);
+    setMergeMode(false);
+    setMergeCandidates([]);
+    setActionLoading(false);
+  }, [state.selectedNodeId]);
+
   const toggleSection = (section: 'incoming' | 'outgoing') => {
     setExpandedSections(prev => ({
       ...prev,
@@ -77,6 +90,55 @@ export const ItemDetailsPanel: React.FC = () => {
 
   const handleExpand = async (itemId: string, direction: 'incoming' | 'outgoing' | 'both') => {
     await expandNode(itemId, direction);
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteConfirm(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    setActionLoading(true);
+    try {
+      const nodeIdToDelete = state.selectedNodeId!;
+      await api.deleteItem(nodeIdToDelete);
+      
+      // Remove the node from the graph (this also clears selection)
+      removeNodeFromGraph(nodeIdToDelete);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+    } finally {
+      setActionLoading(false);
+      setDeleteConfirm(false);
+    }
+  };
+  
+  const handleMergeClick = async () => {
+    setActionLoading(true);
+    try {
+      const response = await api.getMergeCandidates(state.selectedNodeId!);
+      setMergeCandidates(response.candidates);
+      setMergeMode(true);
+    } catch (error) {
+      console.error('Failed to get merge candidates:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+  
+  const handleMergeConfirm = async (targetId: string) => {
+    setActionLoading(true);
+    try {
+      await api.mergeItems(state.selectedNodeId!, targetId);
+      // Navigate to the target item
+      selectNode(targetId);
+      setMergeMode(false);
+      setMergeCandidates([]);
+    } catch (error) {
+      console.error('Merge failed:', error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (!state.selectedNodeId || !itemDetails) {
@@ -161,6 +223,80 @@ export const ItemDetailsPanel: React.FC = () => {
             <p className="text-sm text-gray-700 leading-relaxed">
               {itemDetails.description}
             </p>
+          )}
+        </div>
+
+        {/* Graph Actions Section */}
+        <div className="border-t border-gray-200 pt-4">
+          <h6 className="text-xs font-medium text-gray-700 mb-3">🔍 Graph Actions</h6>
+          
+          <div className="flex space-x-2 mb-3">
+            <button
+              onClick={() => {/* placeholder */}}
+              className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              disabled
+            >
+              ✏️ Edit
+            </button>
+            
+            <button
+              onClick={deleteConfirm ? handleDeleteConfirm : handleDeleteClick}
+              disabled={actionLoading}
+              className={`px-3 py-1 text-xs rounded ${
+                deleteConfirm 
+                  ? 'bg-red-600 text-white hover:bg-red-700' 
+                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+              }`}
+            >
+              {actionLoading ? '...' : deleteConfirm ? 'Are you sure?' : '🗑️ Delete'}
+            </button>
+            
+            <button
+              onClick={handleMergeClick}
+              disabled={actionLoading || mergeMode}
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+            >
+              {actionLoading ? '...' : '🔗 Merge'}
+            </button>
+          </div>
+
+          {/* Merge Candidates */}
+          {mergeMode && (
+            <div className="space-y-2">
+              <div className="text-xs text-gray-600 mb-2">
+                Merge "{itemDetails.name}" into:
+              </div>
+              
+              {mergeCandidates.length === 0 ? (
+                <div className="text-xs text-gray-500 italic p-2 bg-gray-50 rounded">
+                  No similar items found for merging
+                </div>
+              ) : (
+                mergeCandidates.map((candidate) => (
+                  <div
+                    key={candidate.id}
+                    onClick={() => handleMergeConfirm(candidate.id)}
+                    className="p-2 border border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50"
+                  >
+                    <div className="text-xs font-medium text-gray-900">{candidate.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {candidate.year && `${candidate.year} • `}
+                      {candidate.auto_detected_type}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {candidate.existing_influences_count} influences • {candidate.similarity_score}% match
+                    </div>
+                  </div>
+                ))
+              )}
+              
+              <button
+                onClick={() => {setMergeMode(false); setMergeCandidates([]);}}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
 

@@ -253,6 +253,28 @@ export const api = {
     if (!response.ok) throw new Error('AI health check failed');
     return response.json();
   },
+
+  deleteItem: async (itemId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete item');
+    return response.json();
+  },
+  
+  getMergeCandidates: async (itemId: string): Promise<{ candidates: any[] }> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}/merge-candidates`);
+    if (!response.ok) throw new Error('Failed to get merge candidates');
+    return response.json();
+  },
+  
+  mergeItems: async (sourceId: string, targetId: string): Promise<{ success: boolean; target_item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/items/${sourceId}/merge-into/${targetId}`, {
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error('Failed to merge items');
+    return response.json();
+  },
 };
 
 // ============================================================================

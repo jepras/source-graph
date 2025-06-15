@@ -29,7 +29,9 @@ type GraphAction =
   | { type: 'UPDATE_NODE'; payload: { nodeId: string; updates: Partial<GraphNode> } }
   | { type: 'PRESERVE_POSITIONS'; payload: Map<string, { x: number; y: number }> }
   | { type: 'MARK_NODE_EXPANDED'; payload: string }
-  | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: GraphResponse; preservePositions: boolean } };
+  | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: GraphResponse; preservePositions: boolean } }
+  | { type: 'REMOVE_NODE'; payload: string }; 
+
 
 
 // Initial State
@@ -190,7 +192,36 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
             error: null,
           };
         }
+      
+      case 'REMOVE_NODE':
+        const nodeToRemove = action.payload;
+        const filteredNodes = new Map(state.accumulatedGraph.nodes);
+        const filteredRelationships = new Map(state.accumulatedGraph.relationships);
         
+        // Remove the node
+        filteredNodes.delete(nodeToRemove);
+        
+        // Remove all relationships involving this node
+        for (const [linkId, link] of filteredRelationships.entries()) {
+          if (link.source === nodeToRemove || link.target === nodeToRemove) {
+            filteredRelationships.delete(linkId);
+          }
+        }
+        
+        // Clear selection if the deleted node was selected
+        const newSelectedNodeId = state.selectedNodeId === nodeToRemove ? null : state.selectedNodeId;
+        
+        return {
+          ...state,
+          accumulatedGraph: {
+            ...state.accumulatedGraph,
+            nodes: filteredNodes,
+            relationships: filteredRelationships,
+            selectedNodeId: newSelectedNodeId
+          },
+          selectedNodeId: newSelectedNodeId
+        };
+
       default:
         return state;
   }
@@ -209,6 +240,7 @@ interface GraphContextType {
   clearGraph: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  removeNodeFromGraph: (nodeId: string) => void;
 }
 
 const GraphContext = createContext<GraphContextType | undefined>(undefined);
@@ -255,6 +287,10 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_ERROR', payload: error });
   };
 
+  const removeNodeFromGraph = (nodeId: string) => {
+    dispatch({ type: 'REMOVE_NODE', payload: nodeId });
+  };
+
   const value: GraphContextType = {
     state,
     dispatch,
@@ -265,7 +301,8 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     addNodesAndLinks,
     clearGraph,
     setLoading,
-    setError
+    setError,
+    removeNodeFromGraph
   };
 
   return (

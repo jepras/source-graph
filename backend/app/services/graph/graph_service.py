@@ -958,6 +958,63 @@ class GraphService:
 
         return preview
 
+    def delete_item_completely(self, item_id: str) -> bool:
+        """Delete item and all its relationships"""
+        with neo4j_db.driver.session() as session:
+            try:
+                # Delete all relationships first, then the item
+                session.run(
+                    """
+                    MATCH (i:Item {id: $item_id})
+                    DETACH DELETE i
+                    """,
+                    {"item_id": item_id},
+                )
+                return True
+            except Exception as e:
+                raise Exception(f"Failed to delete item: {str(e)}")
+
+    def merge_items(self, source_item_id: str, target_item_id: str) -> str:
+        """Transfer all relationships from source to target, delete source"""
+        with neo4j_db.driver.session() as session:
+            try:
+                # Transfer incoming influences (what influenced source -> what influenced target)
+                session.run(
+                    """
+                    MATCH (inf:Item)-[r:INFLUENCES]->(source:Item {id: $source_id})
+                    MATCH (target:Item {id: $target_id})
+                    WHERE NOT EXISTS((inf)-[:INFLUENCES]->(target))
+                    CREATE (inf)-[new_r:INFLUENCES]->(target)
+                    SET new_r = r
+                    DELETE r
+                    """,
+                    {"source_id": source_item_id, "target_id": target_item_id},
+                )
+
+                # Transfer outgoing influences (source influenced -> target influenced)
+                session.run(
+                    """
+                    MATCH (source:Item {id: $source_id})-[r:INFLUENCES]->(inf:Item)
+                    MATCH (target:Item {id: $target_id})
+                    WHERE NOT EXISTS((target)-[:INFLUENCES]->(inf))
+                    CREATE (target)-[new_r:INFLUENCES]->(inf)
+                    SET new_r = r
+                    DELETE r
+                    """,
+                    {"source_id": source_item_id, "target_id": target_item_id},
+                )
+
+                # Delete the source item
+                session.run(
+                    "MATCH (source:Item {id: $source_id}) DETACH DELETE source",
+                    {"source_id": source_item_id},
+                )
+
+                return target_item_id
+
+            except Exception as e:
+                raise Exception(f"Failed to merge items: {str(e)}")
+
     # ============================================================================
     # SECTION 7: BULK DATA OPERATIONS
     # ============================================================================

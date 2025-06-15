@@ -121,3 +121,51 @@ async def test_expansion(item_id: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
+
+
+@router.delete("/{item_id}")
+async def delete_item(item_id: str):
+    """Delete item and all its relationships"""
+    try:
+        success = graph_service.delete_item_completely(item_id)
+        if success:
+            return {"success": True, "message": "Item deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete item")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{item_id}/merge-candidates")
+async def get_merge_candidates(item_id: str):
+    """Get potential merge candidates for an item"""
+    try:
+        item = graph_service.get_item_by_id(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        # Get creators for better matching
+        graph_data = graph_service.get_influences(item_id)
+        creator_name = graph_data.creators[0].name if graph_data.creators else None
+
+        candidates = graph_service.find_similar_items(item.name, creator_name)
+        # Remove the current item from candidates
+        candidates = [c for c in candidates if c["id"] != item_id]
+
+        return {"candidates": candidates}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{source_id}/merge-into/{target_id}")
+async def merge_items(source_id: str, target_id: str):
+    """Merge source item into target item"""
+    try:
+        result_id = graph_service.merge_items(source_id, target_id)
+        return {
+            "success": True,
+            "target_item_id": result_id,
+            "message": "Items merged successfully",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
