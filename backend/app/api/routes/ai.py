@@ -58,7 +58,7 @@ async def get_more_proposals(request: MoreProposalsRequest):
 
 @router.post("/proposals/accept")
 async def accept_proposals(request: AcceptProposalsRequest):
-    """Accept selected proposals with conflict resolution"""
+    """Accept selected proposals with comprehensive conflict resolution"""
     try:
         # Convert proposals back to StructuredOutput format
         structured_data = StructuredOutput(
@@ -91,19 +91,20 @@ async def accept_proposals(request: AcceptProposalsRequest):
             ),
         )
 
-        # Use the existing conflict resolution logic
-        similar_items = graph_service.find_similar_items(
-            name=structured_data.main_item,
-            creator_name=structured_data.main_item_creator,
-        )
+        # Use comprehensive conflict detection
+        conflicts = graph_service.find_comprehensive_conflicts(structured_data)
 
-        if similar_items:
+        if conflicts["total_conflicts"] > 0:
+            # Get comprehensive preview data
+            preview_data = graph_service.get_comprehensive_preview(conflicts)
+
             return {
                 "success": False,
                 "requires_review": True,
-                "similar_items": similar_items,
+                "conflicts": conflicts,
+                "preview_data": preview_data,
                 "new_data": structured_data.dict(),
-                "message": f"Found {len(similar_items)} potentially similar item(s). Please review before proceeding.",
+                "message": f"Found {conflicts['total_conflicts']} potential conflicts. Please review before proceeding.",
             }
 
         # No conflicts, save normally

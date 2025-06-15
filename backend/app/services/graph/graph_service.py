@@ -892,6 +892,72 @@ class GraphService:
             traceback.print_exc()
             raise
 
+    def find_comprehensive_conflicts(self, new_data: StructuredOutput) -> Dict:
+        """Find conflicts for main item AND all influences"""
+        conflicts = {
+            "main_item_conflicts": [],
+            "influence_conflicts": {},
+            "total_conflicts": 0,
+        }
+
+        # Check main item conflicts
+        main_conflicts = self.find_similar_items(
+            new_data.main_item, new_data.main_item_creator
+        )
+        conflicts["main_item_conflicts"] = main_conflicts
+        conflicts["total_conflicts"] += len(main_conflicts)
+
+        # Check each influence for conflicts
+        for i, influence in enumerate(new_data.influences):
+            influence_name = str(influence.name).strip()
+            if not influence_name or influence_name.lower() in ["none", "null", ""]:
+                continue
+
+            influence_conflicts = self.find_similar_items(
+                influence_name, influence.creator_name
+            )
+
+            if influence_conflicts:
+                conflicts["influence_conflicts"][i] = {
+                    "influence": influence,
+                    "similar_items": influence_conflicts,
+                    "influence_index": i,
+                }
+                conflicts["total_conflicts"] += len(influence_conflicts)
+
+        return conflicts
+
+    def get_comprehensive_preview(self, conflict_data: Dict) -> Dict:
+        """Get preview data for main item and all conflicting influences"""
+        preview = {
+            "main_item_preview": None,
+            "influence_previews": {},
+            "merge_strategy": "selective",  # or "all_or_nothing"
+        }
+
+        # Get main item preview if there are conflicts
+        if conflict_data.get("main_item_conflicts"):
+            # Use existing logic for main item
+            pass
+
+        # Get previews for each conflicting influence
+        for influence_idx, conflict_info in conflict_data.get(
+            "influence_conflicts", {}
+        ).items():
+            influence = conflict_info["influence"]
+            similar_items = conflict_info["similar_items"]
+
+            # Get preview for first similar item (most similar)
+            if similar_items:
+                first_similar = similar_items[0]
+                preview["influence_previews"][influence_idx] = {
+                    "influence": influence,
+                    "similar_item": first_similar,
+                    "preview_data": self.get_item_preview(first_similar["id"]),
+                }
+
+        return preview
+
     # ============================================================================
     # SECTION 7: BULK DATA OPERATIONS
     # ============================================================================

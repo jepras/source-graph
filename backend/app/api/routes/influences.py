@@ -69,7 +69,7 @@ async def force_save_as_new(structured_data: StructuredOutput):
 
 @router.post("/merge")
 async def merge_with_existing(merge_request: dict):
-    """Merge new influences with existing item"""
+    """Merge new influences with existing item (supports comprehensive influence-level resolutions)"""
     try:
         # Validate required fields
         if "existing_item_id" not in merge_request:
@@ -78,6 +78,7 @@ async def merge_with_existing(merge_request: dict):
             raise HTTPException(status_code=400, detail="Missing new_data")
 
         existing_item_id = merge_request["existing_item_id"]
+        influence_resolutions = merge_request.get("influence_resolutions", {})
 
         # Parse new_data more safely
         try:
@@ -85,14 +86,70 @@ async def merge_with_existing(merge_request: dict):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid new_data format: {e}")
 
-        # Add new influences to existing item
-        result_id = graph_service.add_influences_to_existing(existing_item_id, new_data)
+        # If influence_resolutions is provided, handle comprehensive merge
+        if influence_resolutions:
+            # Process influence resolutions
+            processed_influences = []
 
-        return {
-            "success": True,
-            "item_id": result_id,
-            "message": "Successfully merged influences with existing item",
-        }
+            for i, influence in enumerate(new_data.influences):
+                influence_key = str(i)
+
+                if influence_key in influence_resolutions:
+                    resolution = influence_resolutions[influence_key]
+
+                    if resolution.get("resolution") == "merge" and resolution.get(
+                        "selectedItemId"
+                    ):
+                        # Merge with existing influence item - create relationship from existing item to main item
+                        selected_item_id = resolution["selectedItemId"]
+
+                        # Create influence relationship from the existing influence item to the main item
+                        graph_service.create_influence_relationship(
+                            from_item_id=selected_item_id,  # The existing influence item
+                            to_item_id=existing_item_id,  # The main item (Beastie Boys' 'Licensed to Ill')
+                            confidence=influence.confidence,
+                            influence_type=influence.influence_type,
+                            explanation=influence.explanation,
+                            category=influence.category,
+                            scope=influence.scope,
+                            source=influence.source,
+                            year_of_influence=influence.year,
+                            clusters=influence.clusters,
+                        )
+                    else:
+                        # Create new influence item
+                        processed_influences.append(influence)
+                else:
+                    # No resolution specified, create new
+                    processed_influences.append(influence)
+
+            # Update new_data with processed influences
+            new_data.influences = processed_influences
+
+            # Add remaining influences to the main item
+            if processed_influences:
+                result_id = graph_service.add_influences_to_existing(
+                    existing_item_id, new_data
+                )
+            else:
+                result_id = existing_item_id
+
+            return {
+                "success": True,
+                "item_id": result_id,
+                "message": f"Successfully merged with comprehensive resolutions. Created {len(processed_influences)} new influences.",
+            }
+        else:
+            # Original simple merge behavior
+            result_id = graph_service.add_influences_to_existing(
+                existing_item_id, new_data
+            )
+
+            return {
+                "success": True,
+                "item_id": result_id,
+                "message": "Successfully merged influences with existing item",
+            }
 
     except HTTPException:
         raise  # Re-raise HTTP exceptions

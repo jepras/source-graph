@@ -20,7 +20,8 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
   
   // Add conflict resolution state
   const [conflictData, setConflictData] = useState<{
-    similarItems: any[];
+    conflicts: any;
+    previewData: any;
     newData: StructuredOutput;
   } | null>(null);
 
@@ -30,7 +31,8 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     // Check if conflict resolution is needed
     if (result && !result.success && result.requires_review) {
       setConflictData({
-        similarItems: result.similar_items || [],
+        conflicts: result.conflicts,
+        previewData: result.preview_data,
         newData: result.new_data as StructuredOutput
       });
     } else if (result?.success && result.item_id) {
@@ -42,7 +44,7 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     }
   };
 
-  const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string) => {
+  const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string, influenceResolutions?: Record<string, any>) => {
     if (!conflictData) return;
     
     try {
@@ -54,7 +56,12 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
           onItemSaved(result.item_id);
         }
       } else if (resolution === 'merge' && selectedItemId) {
-        const result = await influenceApi.mergeWithExisting(selectedItemId, conflictData.newData);
+        // Handle comprehensive merge with influence resolutions
+        const result = await influenceApi.mergeWithComprehensiveResolutions(
+          selectedItemId, 
+          conflictData.newData, 
+          influenceResolutions || {}
+        );
         if (result.success && result.item_id) {
           // Use accumulative loading  
           await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
@@ -72,7 +79,8 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     return (
       <div className="pt-3 border-t border-blue-300">
         <ConflictResolution
-          similarItems={conflictData.similarItems}
+          conflicts={conflictData.conflicts}
+          previewData={conflictData.previewData}
           newData={conflictData.newData}
           onResolve={handleConflictResolve}
           onCancel={() => setConflictData(null)}

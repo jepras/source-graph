@@ -152,6 +152,16 @@ export interface AcceptProposalsResponse {
   message?: string;
   requires_review?: boolean;
   similar_items?: any[];
+  conflicts?: {
+    main_item_conflicts: any[];
+    influence_conflicts: Record<string, any>;
+    total_conflicts: number;
+  };
+  preview_data?: {
+    main_item_preview: any;
+    influence_previews: Record<string, any>;
+    merge_strategy: string;
+  };
   new_data?: StructuredOutput;
 }
 
@@ -287,6 +297,26 @@ export const influenceApi = {
       }),
     });
     if (!response.ok) throw new Error('Failed to merge');
+    return response.json();
+  },
+
+  mergeWithComprehensiveResolutions: async (
+    existingItemId: string, 
+    newData: StructuredOutput, 
+    influenceResolutions: Record<string, any>
+  ): Promise<{ success: boolean; item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/influences/merge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        existing_item_id: existingItemId,
+        new_data: newData,
+        influence_resolutions: influenceResolutions
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to merge with comprehensive resolutions');
     return response.json();
   },
 };
