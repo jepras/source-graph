@@ -145,7 +145,27 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .style("fill", "#9ca3af")
       .text(d => d.year?.toString() || "");
 
-  }, [accumulatedGraph, dimensions, isChronologicalOrder, isClusteringEnabled]);
+  }, [
+    // Only depend on the actual graph data, not selection state
+    accumulatedGraph.nodes.size,
+    accumulatedGraph.relationships.size,
+    dimensions, 
+    isChronologicalOrder, 
+    isClusteringEnabled
+  ]);
+
+  // Add a separate effect for handling selection changes
+  useEffect(() => {
+    if (!svgRef.current || accumulatedGraph.nodes.size === 0) return;
+    
+    // Only update the visual selection state without repositioning
+    const svg = d3.select(svgRef.current);
+    
+    svg.selectAll<SVGCircleElement, GraphNode>(".node circle")
+      .attr("stroke", d => d.id === accumulatedGraph.selectedNodeId ? "#f59e0b" : "#fff")
+      .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 4 : 3);
+      
+  }, [accumulatedGraph.selectedNodeId]);
 
   // Helper function to draw cluster areas
   const drawClusterAreas = (graphGroup: any, nodes: GraphNode[], width: number, height: number) => {

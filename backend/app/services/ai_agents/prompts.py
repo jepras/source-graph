@@ -31,7 +31,9 @@ After generating influences, organize them into 2-4 semantic clusters that repre
 
 CRITICAL REQUIREMENTS:
 - It is important that you also research what year the main_item is from. It needs to be included in the JSON.
-- Each influence MUST have a specific year (integer only, never strings)
+- Each influence MUST have a specific year (integer only, never strings). 
+- Only include influences from item_year or earlier. Only include influences that existed BEFORE item_year. 
+An influence created after CANNOT have influenced this item.
 - Provide influences across diverse categories (don't repeat categories)
 - Each influence needs: name, year, category, scope, explanation, confidence, clusters array
 - Categories should be descriptive: "Audio Samples & Music", "Literary Techniques", etc.
