@@ -24,6 +24,10 @@ export const useProposals = () => {
     dispatch({ type: 'SET_PROPOSALS', payload: null });
     dispatch({ type: 'SET_SELECTED_PROPOSALS', payload: new Set() });
     
+    // Clear save state for new research session
+    dispatch({ type: 'SET_SAVED_ITEM_ID', payload: null });
+    dispatch({ type: 'SET_SAVE_LOADING', payload: false });
+    
     // Clear all question responses from previous research session
     dispatch({ type: 'SET_MAIN_ITEM_QUESTION_RESPONSE', payload: null });
     dispatch({ type: 'SET_MAIN_ITEM_QUESTION_TEXT', payload: '' });

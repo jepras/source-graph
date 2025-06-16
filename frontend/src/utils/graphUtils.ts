@@ -102,7 +102,7 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
     const spacing = 200;
     const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
     node.x = startX + (index * spacing);
-    node.y = 85; // Your current main item position
+    node.y = 160; // CHANGED: Position underneath cluster text labels (which are at y=130)
   });
 
   // Sort ALL influence nodes globally by year (newest first)
@@ -166,7 +166,7 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
     const spacing = 200;
     const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
     node.x = startX + (index * spacing);
-    node.y = 85; // Your current main item position
+    node.y = 160; // CHANGED: Position underneath cluster text labels (which are at y=130)
   });
 
   const padding = 80;

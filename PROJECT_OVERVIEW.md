@@ -8,109 +8,106 @@ influence-graph/
 │   ├── 📁 app/
 │   │   ├── 📁 api/
 │   │   │   └── 📁 routes/
-│   │   │       ├── ai.py (9.3KB, 265 lines)
-│   │   │       ├── items.py (4.3KB, 130 lines)
-│   │   │       └── influences.py (4.0KB, 119 lines)
+│   │   │       ├── ai.py
+│   │   │       ├── items.py
+│   │   │       └── influences.py
 │   │   ├── 📁 core/
 │   │   │   └── 📁 database/
-│   │   │       ├── neo4j.py (632B, 26 lines)
-│   │   │       ├── sample_data.py (6.7KB, 210 lines)
-│   │   │       └── schema.py (2.0KB, 58 lines)
+│   │   │       ├── neo4j.py
+│   │   │       └── schema.py
 │   │   ├── 📁 mcps/ (empty)
 │   │   ├── 📁 models/
-│   │   │   ├── ai.py (396B, 18 lines)
-│   │   │   ├── item.py (1.2KB, 49 lines)
-│   │   │   ├── proposal.py (5.6KB, 150 lines)
-│   │   │   └── structured.py (2.9KB, 79 lines)
+│   │   │   ├── item.py
+│   │   │   ├── proposal.py
+│   │   │   └── structured.py
 │   │   ├── 📁 services/
 │   │   │   ├── 📁 ai_agents/
-│   │   │   │   ├── base_agent.py (1003B, 28 lines)
-│   │   │   │   ├── init.py (20B, 2 lines)
-│   │   │   │   ├── proposal_agent.py (21KB, 573 lines)
-│   │   │   │   ├── prompts.py (7.2KB, 166 lines)
-│   │   │   │   ├── research_agent.py (4.1KB, 84 lines)
-│   │   │   │   └── structure_agent.py (9.0KB, 252 lines)
+│   │   │   │   ├── base_agent.py
+│   │   │   │   ├── init.py
+│   │   │   │   ├── proposal_agent.py
+│   │   │   │   └── prompts.py
 │   │   │   ├── 📁 content/ (empty)
 │   │   │   └── 📁 graph/
-│   │   │       └── graph_service.py (41KB, 1000 lines)
-│   │   ├── �� workers/ (empty)
-│   │   ├── config.py (819B, 35 lines)
-│   │   ├── main.py (911B, 34 lines)
-│   │   └── test_script.py (170B, 6 lines)
-│   ├── 📁 venv/ (Python virtual environment)
-│   ├── debug_structure.py (1.2KB, 40 lines)
-│   ├── requirements.txt (340B, 21 lines)
-│   ├── run.py (140B, 6 lines)
-│   ├── setup_db.py (396B, 17 lines)
-│   ├── test_ai_endpoint.py (782B, 32 lines)
-│   ├── test_graph_service.py (602B, 19 lines)
-│   ├── test_llm.py (619B, 24 lines)
-│   └── test_scope.py (4.9KB, 148 lines)
+│   │   │       └── graph_service.py
+│   │   ├── 📁 workers/ (empty)
+│   │   ├── config.py
+│   │   ├── main.py
+│   │   └── test_script.py
+│   ├── .env
+│   ├── requirements.txt
+│   ├── run.py
+│   └── setup_db.py
 ├── 📁 frontend/
-│   ├── 📁 node_modules/ (npm dependencies)
-│   ├── 📁 public/ (static assets)
+│   ├── 📁 public/
+│   │   └── vite.svg
 │   ├── 📁 src/
-│   │   ├── 📁 assets/ (static assets)
+│   │   ├── 📁 assets/
+│   │   │   └── react.svg
 │   │   ├── 📁 components/
 │   │   │   ├── 📁 common/
-│   │   │   │   ├── ConflictResolution.tsx (5.9KB, 158 lines)
-│   │   │   │   ├── ResizableGraphLayout.tsx (4.1KB, 110 lines)
-│   │   │   │   ├── ResizablePanels.tsx (3.8KB, 106 lines)
-│   │   │   │   ├── SearchBar.tsx (2.2KB, 73 lines)
-│   │   │   │   └── YearValidation.tsx (6.7KB, 211 lines)
+│   │   │   │   ├── ConflictResolution.tsx
+│   │   │   │   ├── ResizableGraphLayout.tsx
+│   │   │   │   ├── ResizablePanels.tsx
+│   │   │   │   ├── SearchBar.tsx
+│   │   │   │   └── YearValidation.tsx
 │   │   │   ├── 📁 graph/
-│   │   │   │   ├── GraphExpansionControls.tsx (3.5KB, 98 lines)
-│   │   │   │   └── InfluenceGraph.tsx (19KB, 527 lines)
+│   │   │   │   ├── GraphExpansionControls.tsx
+│   │   │   │   └── InfluenceGraph.tsx
 │   │   │   ├── 📁 layout/
-│   │   │   │   └── MainLayout.tsx (3.0KB, 94 lines)
+│   │   │   │   └── MainLayout.tsx
 │   │   │   ├── 📁 panels/
-│   │   │   │   ├── GraphPanel.tsx (2.7KB, 66 lines)
-│   │   │   │   ├── ItemDetailsPanel.tsx (9.1KB, 270 lines)
-│   │   │   │   └── ResearchPanel.tsx (1.5KB, 44 lines)
+│   │   │   │   ├── GraphPanel.tsx
+│   │   │   │   ├── ItemDetailsPanel.tsx
+│   │   │   │   └── ResearchPanel.tsx
 │   │   │   └── 📁 research/
-│   │   │       ├── ProposalActions.tsx (3.8KB, 101 lines)
-│   │   │       ├── ProposalForm.tsx (4.2KB, 114 lines)
-│   │   │       ├── ProposalQuestions.tsx (8.6KB, 192 lines)
-│   │   │       └── ProposalResults.tsx (12KB, 233 lines)
-│   │   ├── 📁 contexts/ (React contexts)
+│   │   │       ├── ProposalActions.tsx
+│   │   │       ├── ProposalForm.tsx
+│   │   │       ├── ProposalQuestions.tsx
+│   │   │       └── ProposalResults.tsx
+│   │   ├── 📁 contexts/
+│   │   │   ├── AppStateProvider.tsx
+│   │   │   ├── GraphContext.tsx
+│   │   │   └── ResearchContext.tsx
 │   │   ├── 📁 hooks/
-│   │   │   ├── useGraphOperations.ts (8.5KB, 238 lines)
-│   │   │   └── useProposals.ts (9.7KB, 254 lines)
+│   │   │   ├── useGraphOperations.ts
+│   │   │   └── useProposals.ts
 │   │   ├── 📁 services/
-│   │   │   └── api.ts (14KB, 451 lines)
+│   │   │   └── api.ts
 │   │   ├── 📁 types/
-│   │   │   └── graph.ts (613B, 27 lines)
+│   │   │   └── graph.ts
 │   │   ├── 📁 utils/
-│   │   │   └── graphUtils.ts (23KB, 661 lines)
-│   │   ├── App.css (606B, 43 lines)
-│   │   ├── App.tsx (298B, 14 lines)
-│   │   ├── index.css (306B, 10 lines)
-│   │   ├── main.tsx (230B, 11 lines)
-│   │   └── vite-env.d.ts (38B, 2 lines)
-│   ├── .gitignore (253B, 25 lines)
-│   ├── eslint.config.js (734B, 29 lines)
-│   ├── index.html (366B, 14 lines)
-│   ├── package-lock.json (169KB, 4939 lines)
-│   ├── package.json (812B, 35 lines)
-│   ├── README.md (1.9KB, 55 lines)
-│   ├── tsconfig.app.json (702B, 28 lines)
-│   ├── tsconfig.json (119B, 8 lines)
-│   ├── tsconfig.node.json (630B, 26 lines)
-│   └── vite.config.ts (229B, 11 lines)
-├── 📁 docs/ (documentation)
-├── 📁 infrastructure/ (deployment configs)
-├── 📁 shared/ (shared utilities)
-├── 📁 own stuff/ (personal files)
-├── 📁 .cursor/ (Cursor IDE config)
-├── 📁 .git/ (git repository)
-├── 📁 .vscode/ (VS Code config)
-├── .gitignore (310B, 26 lines)
-├── package-lock.json (87B, 7 lines)
-├── previous_db.json (1.7KB, 77 lines)
-├── PROJECT_OVERVIEW.md (9.0KB, 258 lines)
-├── README.md (731B, 18 lines)
-├── TASKS.md (11KB, 211 lines)
-└── worklog.md (4.6KB, 88 lines)
+│   │   │   └── graphUtils.ts
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   └── vite-env.d.ts
+│   ├── .env
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── 📁 docs/ (empty)
+├── 📁 infrastructure/ (empty)
+├── 📁 shared/ (empty)
+├── 📁 own stuff/
+│   └── 📁 img/
+│       ├── Screenshot 2025-06-12 at 09.07.18.png
+│       ├── Screenshot 2025-06-13 at 08.28.41.png
+│       └── image.png
+├── .gitignore
+├── package-lock.json
+├── PROJECT_OVERVIEW.md
+├── README.md
+├── TASKS.md
+├── own_understanding.md
+└── worklog.md
 
 ## What This Is
 
@@ -135,12 +132,12 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
 ## 🎯 Core Features
 
 ### 1. AI-Powered Influence Discovery
-- **Research Agent**: Analyzes items to find potential influences
-- **Structure Agent**: Converts free-text research into structured data
-- **Proposal Agent**: Generates organized influence proposals across three scopes:
+- **Research & Proposal Agent**: Generates organized influence proposals across three scopes:
   - **Macro**: Major foundational influences
   - **Micro**: Specific techniques and elements  
   - **Nano**: Tiny details and specific references
+- **Structure Agent**: Converts free-text research into structured data
+
 
 ### 2. Interactive Graph Visualization
 - **Timeline Layout**: Chronological arrangement showing influence flow
@@ -161,17 +158,18 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
 Item {
   id: string
   name: string
-  type: string (auto-detected)
-  year: number
-  description: string
-  confidence_score: float
-  verification_status: string
+  description?: string
+  year?: number
+  auto_detected_type?: string  // song/movie/innovation/etc
+  confidence_score?: float
+  verification_status: string  // ai_generated/user_verified/community_verified
+  created_at?: datetime
 }
 
 Creator {
   id: string
   name: string
-  type: "person" | "organization" | "collective"
+  type: string  // person/organization/collective
 }
 
 InfluenceRelation {
@@ -180,16 +178,76 @@ InfluenceRelation {
   confidence: float
   influence_type: string
   explanation: string
+  category: string  // LLM creates freely
+  scope?: string  // macro/micro/nano
+  source?: string
+  year_of_influence?: number
+  clusters?: string[]
+}
+
+InfluenceProposal {
+  name: string
+  type?: string  // auto-detected by LLM
+  creator_name?: string
+  creator_type?: string  // person/organization/collective
+  year?: number
   category: string
-  scope: "macro" | "micro" | "nano"
-  source: string
+  scope: string  // macro/micro/nano
+  influence_type: string
+  confidence: float  // 0.0-1.0
+  explanation: string
+  source?: string
+  accepted: boolean
+  parent_id?: string  // for nested proposals
+  children: InfluenceProposal[]
+  clusters?: string[]
+}
+
+GraphResponse {
+  main_item: Item
+  influences: InfluenceRelation[]
+  categories: string[]
+  creators: Creator[]
+  scopes?: string[]  // available scopes for filtering
 }
 ```
 
 ### Graph Schema
-- `(Item)-[:CREATED_BY]->(Creator)`
-- `(Item)-[:INFLUENCES]->(Item)`
-- `(Item)-[:BELONGS_TO]->(Category)`
+```cypher
+// Node Labels
+(:Item) - Creative works, cultural artifacts, innovations
+(:Creator) - People, organizations, collectives who create items
+(:Category) - Influence categories (for usage tracking only)
+(:User) - Future: user accounts for community features
+
+// Relationships
+(Item)-[:CREATED_BY {role: string}]->(Creator)
+(Item)-[:INFLUENCES {
+  confidence: float,
+  influence_type: string,
+  explanation: string,
+  category: string,  // Stored as property, not relationship
+  scope: string,
+  source: string,
+  year_of_influence: number,
+  clusters: string[],
+  created_at: datetime
+}]->(Item)
+
+// Note: Categories are stored as string properties on INFLUENCES relationships
+// Category nodes exist only for usage tracking, not for direct relationships
+
+// Constraints & Indexes
+CREATE CONSTRAINT item_id FOR (i:Item) REQUIRE i.id IS UNIQUE
+CREATE CONSTRAINT creator_id FOR (c:Creator) REQUIRE c.id IS UNIQUE
+
+CREATE INDEX item_name FOR (i:Item) ON (i.name)
+CREATE INDEX item_year FOR (i:Item) ON (i.year)
+CREATE INDEX item_type FOR (i:Item) ON (i.auto_detected_type)
+CREATE INDEX creator_name FOR (c:Creator) ON (c.name)
+CREATE INDEX creator_type FOR (c:Creator) ON (c.type)
+
+```
 
 ## 🔄 User Workflow
 
@@ -249,7 +307,6 @@ src/
 └── utils/ # Utility functions
   └── graphUtils.ts # Graph data processing and positioning
 
-
 ## 🚀 Current Status
 
 ### ✅ Completed Features
@@ -259,8 +316,13 @@ src/
 - **Database Schema**: Neo4j graph with items, creators, and relationships
 - **API Layer**: Complete FastAPI backend with structured endpoints
 - **UI Framework**: Modern React frontend with resizable panels
+- **Conflict Resolution**: Smart merging of duplicate items and influences
+- **Year Validation**: Ensures chronological accuracy of influence relationships
+- **Proposal System**: AI-generated influence proposals with user confirmation
+- **Follow-up Questions**: Interactive research with targeted AI analysis
+- **Database Management**: UI-based cleanup and merge operations
 
-### �� In Progress
+### 🔄 In Progress
 - **Clustering**: Semantic grouping of related influences
 - **MCP Integration**: Enhanced data gathering with external tools
 - **Community Features**: User verification and voting systems
@@ -344,7 +406,6 @@ NEO4J_PASSWORD=your_password
 - Identify key influencers and innovations
 - Create thematic exhibitions and collections
 
-
 ## 🤝 Contributing
 
 This project follows a clear separation between interface and implementation packages, allowing for both human-written core logic and AI-generated implementation details. The architecture supports:
@@ -354,14 +415,32 @@ This project follows a clear separation between interface and implementation pac
 - **Clear Dependencies**: Implementation depends on interfaces, never reverse
 - **Regeneration Freedom**: AI-generated packages can be rewritten without fear
 
-## �� Related Projects
+## 🔗 Related Projects
 
 - **MusicMap**: Genre influence visualization
 - **Every Noise at Once**: Music genre mapping
 - **The Pudding's Film Influences**: Movie influence analysis
 - **Wikipedia Influence Graph**: Academic influence tracking
 
+## 📈 Recent Developments
 
+### Architecture Improvements
+- **Streamlined API Structure**: Consolidated endpoints and improved consistency
+- **Enhanced Conflict Resolution**: Better handling of duplicate items and influences
+- **Improved Year Validation**: Support for historical dates and chronological accuracy
+- **Refactored Frontend**: Cleaner component structure and better state management
+
+### AI Agent Enhancements
+- **Proposal System**: Multi-scope influence proposals (macro/micro/nano)
+- **Follow-up Questions**: Interactive research with targeted analysis
+- **Structured Output**: Consistent data formatting for database storage
+- **Confidence Scoring**: AI-assigned confidence levels for relationships
+
+### User Experience Updates
+- **Integrated Research**: AI research panel integrated into main graph view
+- **Smart Merging**: Automatic detection and resolution of duplicate items
+- **Database Management**: UI-based cleanup and merge operations
+- **Enhanced Visualization**: Improved timeline and categorical layouts
 
 ---
 

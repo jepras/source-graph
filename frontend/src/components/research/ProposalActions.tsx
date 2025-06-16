@@ -49,28 +49,46 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     
     try {
       if (resolution === 'create_new') {
+        
         const result = await influenceApi.forceSaveAsNew(conflictData.newData);
+        
         if (result.success && result.item_id) {
-          // Use accumulative loading
           await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
           onItemSaved(result.item_id);
         }
-      } else if (resolution === 'merge' && selectedItemId) {
-        // Handle comprehensive merge with influence resolutions
-        const result = await influenceApi.mergeWithComprehensiveResolutions(
-          selectedItemId, 
-          conflictData.newData, 
-          influenceResolutions || {}
-        );
-        if (result.success && result.item_id) {
-          // Use accumulative loading  
-          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
-          onItemSaved(result.item_id);
+      } else if (resolution === 'merge') {
+        // Handle both main item merge and influence-only merge
+        if (selectedItemId) {
+          // Main item merge with influence resolutions
+          
+          const result = await influenceApi.mergeWithComprehensiveResolutions(
+            selectedItemId, 
+            conflictData.newData, 
+            influenceResolutions || {}
+          );
+          
+          if (result.success && result.item_id) {
+            await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+            onItemSaved(result.item_id);
+          }
+        } else if (Object.keys(influenceResolutions || {}).length > 0) {
+          // Influence-only merge - use force save since there's no existing main item
+          
+          const result = await influenceApi.forceSaveAsNew(conflictData.newData);
+          
+          if (result.success && result.item_id) {
+            await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+            onItemSaved(result.item_id);
+          }
+        } else {
+          
         }
+      } else {
+        
       }
       setConflictData(null);
     } catch (error) {
-      console.error('Conflict resolution failed:', error);
+      
     }
   };
 
