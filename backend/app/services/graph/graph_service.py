@@ -33,8 +33,13 @@ class GraphService:
         clean_name = name.lower().replace(" ", "-").replace("'", "").replace('"', "")
         clean_name = "".join(c for c in clean_name if c.isalnum() or c == "-")
 
+        # Clean item_type for ID (NEW: sanitize item_type as well)
         if item_type:
-            return f"{clean_name}-{item_type}-{uuid.uuid4().hex[:8]}"
+            clean_type = (
+                item_type.lower().replace(" ", "-").replace("'", "").replace('"', "")
+            )
+            clean_type = "".join(c for c in clean_type if c.isalnum() or c == "-")
+            return f"{clean_name}-{clean_type}-{uuid.uuid4().hex[:8]}"
         else:
             return f"{clean_name}-{uuid.uuid4().hex[:8]}"
 

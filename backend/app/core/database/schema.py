@@ -6,7 +6,6 @@ def create_constraints(session: Session):
     constraints = [
         "CREATE CONSTRAINT item_id IF NOT EXISTS FOR (i:Item) REQUIRE i.id IS UNIQUE",
         "CREATE CONSTRAINT creator_id IF NOT EXISTS FOR (c:Creator) REQUIRE c.id IS UNIQUE",
-        "CREATE CONSTRAINT category_name IF NOT EXISTS FOR (cat:Category) REQUIRE cat.name IS UNIQUE",
         "CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE",  # Keep for future
     ]
 
@@ -22,7 +21,6 @@ def create_indexes(session: Session):
         "CREATE INDEX item_type IF NOT EXISTS FOR (i:Item) ON (i.auto_detected_type)",  # Updated field name
         "CREATE INDEX creator_name IF NOT EXISTS FOR (c:Creator) ON (c.name)",
         "CREATE INDEX creator_type IF NOT EXISTS FOR (c:Creator) ON (c.type)",
-        "CREATE INDEX category_usage IF NOT EXISTS FOR (cat:Category) ON (cat.usage_count)",
     ]
 
     for index in indexes:
