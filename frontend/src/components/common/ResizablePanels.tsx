@@ -22,6 +22,23 @@ export const ResizablePanels: React.FC<ResizablePanelsProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const dividerRef = useRef<HTMLDivElement>(null);
 
+  // Calculate dynamic max width based on container size (50% of screen)
+  const [dynamicMaxWidth, setDynamicMaxWidth] = useState(maxLeftWidth);
+
+  useEffect(() => {
+    const updateMaxWidth = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const fiftyPercent = Math.floor(containerWidth * 0.5);
+        setDynamicMaxWidth(Math.max(maxLeftWidth, fiftyPercent));
+      }
+    };
+
+    updateMaxWidth();
+    window.addEventListener('resize', updateMaxWidth);
+    return () => window.removeEventListener('resize', updateMaxWidth);
+  }, [maxLeftWidth]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -35,15 +52,24 @@ export const ResizablePanels: React.FC<ResizablePanelsProps> = ({
     const containerRect = containerRef.current.getBoundingClientRect();
     const newLeftWidth = e.clientX - containerRect.left;
     
-    // Constrain to min/max bounds
-    const constrainedWidth = Math.max(minLeftWidth, Math.min(maxLeftWidth, newLeftWidth));
+    // Constrain to min/max bounds using dynamic max width
+    const constrainedWidth = Math.max(minLeftWidth, Math.min(dynamicMaxWidth, newLeftWidth));
     setLeftWidth(constrainedWidth);
-  }, [isDragging, minLeftWidth, maxLeftWidth]);
+  }, [isDragging, minLeftWidth, dynamicMaxWidth]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
+  }, []);
+
+  // Function to set left panel to 50% width
+  const setToFiftyPercent = useCallback(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const fiftyPercent = Math.floor(containerWidth * 0.5);
+      setLeftWidth(fiftyPercent);
+    }
   }, []);
 
   useEffect(() => {
@@ -57,6 +83,19 @@ export const ResizablePanels: React.FC<ResizablePanelsProps> = ({
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Keyboard shortcut for 50% width
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === '5') {
+        e.preventDefault();
+        setToFiftyPercent();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [setToFiftyPercent]);
 
   return (
     <div 
@@ -95,6 +134,15 @@ export const ResizablePanels: React.FC<ResizablePanelsProps> = ({
         <div className="absolute top-1/2 left-full ml-2 transform -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
           Drag to resize
         </div>
+
+        {/* 50% Width Button */}
+        <button
+          onClick={setToFiftyPercent}
+          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+          title="Set to 50% width"
+        >
+          50%
+        </button>
       </div>
 
       {/* Right Panel */}

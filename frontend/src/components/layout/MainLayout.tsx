@@ -83,7 +83,7 @@ export const MainLayout: React.FC = () => {
             />
           }
           minLeftWidth={280}
-          maxLeftWidth={500}
+          maxLeftWidth={800}
           defaultLeftWidth={350}
           className="h-full"
         />

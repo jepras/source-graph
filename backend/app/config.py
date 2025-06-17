@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     BACKEND_PORT: int = 8000  # Default port
 
     # LLM settings
-    DEFAULT_MODEL: str = "gpt-3.5-turbo"
-    MAX_TOKENS: int = 4000
+    DEFAULT_MODEL: str = "gpt-4o-mini"
+    MAX_TOKENS: int = 8000
     TEMPERATURE: float = 0.7
 
     model_config = SettingsConfigDict(env_file=".env")
