@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import items, ai, influences
+from app.api.routes import items, ai, influences, canvas
+
 
 app = FastAPI(
     title="Influence Graph API",
@@ -21,6 +22,7 @@ app.add_middleware(
 app.include_router(items.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")  # Add AI routes
 app.include_router(influences.router, prefix="/api")  # Add influences routes
+app.include_router(canvas.router, prefix="/api")
 
 
 @app.get("/")

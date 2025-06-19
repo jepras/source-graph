@@ -137,7 +137,12 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
   - **Micro**: Specific techniques and elements  
   - **Nano**: Tiny details and specific references
 - **Structure Agent**: Converts free-text research into structured data
+- **Source Tracking**: Tracks information sources and verification status
 
+### 4. Canvas Research (Interactive Document Mode)
+- **Canvas Research**: Provides an interactive, document-based research mode where users can iteratively refine, edit, and structure AI-generated research about an item before saving influences to the graph.
+- **Section Editing & Refinement**: Users can edit any section, prompt the AI to refine content, and select which influences to add to the graph.
+- **Flexible Workflow**: Enables deeper, more controlled research and curation before graph integration.
 
 ### 2. Interactive Graph Visualization
 - **Timeline Layout**: Chronological arrangement showing influence flow
@@ -149,7 +154,6 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
 - **Conflict Resolution**: Merges duplicate items and creators
 - **Year Validation**: Ensures influences predate influenced items
 - **Confidence Scoring**: AI-assigned confidence levels for relationships
-- **Source Tracking**: Tracks information sources and verification status
 
 ## 📊 Data Model
 
@@ -254,9 +258,11 @@ CREATE INDEX creator_type FOR (c:Creator) ON (c.type)
 ### 1. Research New Items
 1. Enter item name, type, and creator in Research Panel
 2. AI generates influence proposals across macro/micro/nano levels
-3. Review and select relevant proposals
-4. Ask follow-up questions for deeper analysis
-5. Save confirmed influences to database
+3. **Switch to Canvas Research for document-based exploration and refinement**
+4. In Canvas mode, review, edit, and refine sections of the research document
+5. Select relevant influences and save to the graph
+6. Ask follow-up questions for deeper analysis
+7. Save confirmed influences to database
 
 ### 2. Explore Existing Graph
 1. Search for items in the database
@@ -295,17 +301,31 @@ src/
 │ │ ├── ResearchPanel.tsx
 │ │ ├── GraphPanel.tsx
 │ │ └── ItemDetailsPanel.tsx
+│ ├── canvas/ # Canvas research document mode
+│ │ ├── CanvasTab.tsx
+│ │ ├── DocumentRenderer.tsx
+│ │ └── SectionComponent.tsx
 │ ├── graph/ # D3.js graph visualization
 │ ├── research/ # AI research interface
 │ └── common/ # Reusable UI components
 ├── contexts/ # React context providers
+│ └── CanvasContext.tsx # Canvas document state management
 ├── hooks/ # Custom React hooks
+│ ├── useCanvasOperations.ts # Canvas research logic (start, refine, update sections)
 │ ├── useGraphOperations.ts # Graph loading and expansion logic
 │ └── useProposals.ts # AI proposal management
 ├── services/ # API client and utilities
 ├── types/ # TypeScript type definitions
 └── utils/ # Utility functions
   └── graphUtils.ts # Graph data processing and positioning
+
+#### Canvas Research Implementation Details
+- **CanvasTab**: Main entry point for Canvas mode, manages switching between proposal and canvas workflows.
+- **DocumentRenderer**: Renders the canvas document as a list of editable/refinable sections.
+- **SectionComponent**: Handles editing, AI refinement, and selection for each section.
+- **CanvasContext**: Provides state management for the current document, loading states, and section updates.
+- **useCanvasOperations**: Custom hook for starting research, sending chat messages, and refining sections via API.
+- **Workflow**: Users can edit, refine, and structure research before saving selected influences to the graph, allowing for a more controlled and iterative research process.
 
 ## 🚀 Current Status
 

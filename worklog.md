@@ -91,6 +91,7 @@ Like any code that is being developed too fast??
 13. 
 For frontend only, then cursor is quite alright. 
 - It deleted unnecessary imports and actions where Claude didn't (given the same context).
+- Cursor just does things. Claude asks me more questions. 
 
 
 # What interesting influence links could be
