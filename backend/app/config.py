@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     # AI Services
     OPENAI_API_KEY: str
     ANTHROPIC_API_KEY: str | None = None  # Make Anthropic optional for now
+    GOOGLE_API_KEY: str | None = None  # Add this line
 
     # Database
     NEO4J_URI: str

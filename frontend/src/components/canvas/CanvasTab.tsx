@@ -17,6 +17,7 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   const { state, clearCanvas, updateSection} = useCanvas();
   const { startResearch, sendChatMessage } = useCanvasOperations();
   const { loadItemWithAccumulation } = useGraphOperations();
+  const [saveError, setSaveError] = useState<string | null>(null); // Add this line
   
   // Add conflict resolution state
   const [conflictData, setConflictData] = useState<{
@@ -38,6 +39,7 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   };
 
   const handleSaveToGraph = async () => {
+    setSaveError(null); 
     if (!state.currentDocument) return;
 
     // Get all sections selected for graph
@@ -86,9 +88,37 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
           updateSection(section.id, { selectedForGraph: false }); // ✅ Use the one from top level
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save to graph:', err);
-      alert('Failed to save to graph. Please try again.');
+      
+      // Parse validation errors from API response
+      let errorMessage = 'Failed to save to graph. Please try again.';
+      
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        
+        if (typeof detail === 'string' && detail.includes('validation error')) {
+          // Parse Pydantic validation error
+          if (detail.includes('scope')) {
+            errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
+          } else if (detail.includes('year')) {
+            errorMessage = 'Error with influence. Issue with year - must be a valid number.';
+          } else if (detail.includes('confidence')) {
+            errorMessage = 'Error with influence. Issue with confidence - must be between 0 and 1.';
+          } else {
+            errorMessage = 'Error with influence data. Please refine sections and try again.';
+          }
+        }
+      } else if (err?.message) {
+        // Handle other error formats
+        if (err.message.includes('scope')) {
+          errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
+        } else if (err.message.includes('validation error')) {
+          errorMessage = 'Error with influence data. Please refine sections and try again.';
+        }
+      }
+      
+      setSaveError(errorMessage);
     } finally {
       setSaveLoading(false);
     }
@@ -219,9 +249,19 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
       </div>
 
       {/* Error Display */}
-      {state.error && (
+      {(state.error || saveError) && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 m-4">
-          <p className="text-sm text-red-700">{state.error}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-700">{state.error || saveError}</p>
+            {saveError && (
+              <button
+                onClick={() => setSaveError(null)}
+                className="text-red-400 hover:text-red-600 text-sm"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
