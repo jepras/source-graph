@@ -378,3 +378,87 @@ export const proposalApi = {
     return response.json();
   },
 };
+
+// ============================================================================
+// SECTION 11: CANVAS API OPERATIONS
+// ============================================================================
+
+export const canvasApi = {
+  generateResearch: async (request: {
+    item_name: string;
+    creator?: string;
+    item_type?: string;
+    scope?: string;
+  }): Promise<{
+    success: boolean;
+    document?: any;
+    response_text?: string;
+    error_message?: string;
+  }> => {
+    const response = await fetch(`${API_BASE}/canvas/research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to generate research');
+    return response.json();
+  },
+
+  sendChatMessage: async (request: {
+    message: string;
+    current_document: any;
+    context?: Record<string, any>;
+  }): Promise<{
+    success: boolean;
+    response_text: string;
+    new_sections?: any[];
+    updated_sections?: any[];
+    insert_after?: string;
+    error_message?: string;
+  }> => {
+    console.log('=== CANVAS API CHAT DEBUG ===');
+    console.log('Request:', { message: request.message, document_id: request.current_document?.id });
+    
+    try {
+      const response = await fetch(`${API_BASE}/canvas/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('API Response Data:', data);
+      return data;
+      
+    } catch (error) {
+      console.error('Canvas Chat API Error:', error);
+      throw error;
+    }
+  },
+
+  refineSection: async (request: {
+    section_id: string;
+    prompt: string;
+    document: any;
+  }): Promise<{
+    success: boolean;
+    refined_content: string;
+  }> => {
+    const response = await fetch(`${API_BASE}/canvas/refine`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to refine section');
+    return response.json();
+  },
+};
