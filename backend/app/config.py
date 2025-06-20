@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     ANTHROPIC_API_KEY: str | None = None  # Make Anthropic optional for now
     GOOGLE_API_KEY: str | None = None  # Add this line
+    PERPLEXITY_API_KEY: str | None = None
 
     # Database
     NEO4J_URI: str
