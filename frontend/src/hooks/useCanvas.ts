@@ -171,18 +171,20 @@ export const useCanvasOperations = () => {
         selected_model: state.selectedModel
       });
   
-      if (response.success && response.refined_content) {
+      if (response.success && response.refined_section) {
         // Update active model if provided
         if (response.active_model) {
           setActiveModel(response.active_model);
         }
         
-        // Update the section content
+        // Update the section with the complete refined section data
+        const refinedSection = response.refined_section;
         const currentSection = state.currentDocument.sections.find(s => s.id === sectionId);
         const currentMetadata = currentSection?.metadata || { createdAt: new Date(), aiGenerated: true };
         
         updateSection(sectionId, { 
-          content: response.refined_content,
+          content: refinedSection.content,
+          influence_data: refinedSection.influence_data,
           metadata: {
             ...currentMetadata,
             lastEdited: new Date()

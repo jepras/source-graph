@@ -117,11 +117,14 @@ SCOPE DEFINITIONS:
 - MICRO: Specific techniques and elements (particular methods, regional scenes, specific works)  
 - NANO: Tiny details and specifics (sounds, visual elements, phrases, personal experiences)
 
-JSON CLEANING REQUIREMENTS:
-- Use only integer years, never strings
+JSON FORMATTING REQUIREMENTS:
+- YEAR VALUES: Use only integers (1994, 1975, 2001) NEVER strings ("1990s", "mid-80s")
+- NO COMMENTS: JSON does not support comments. NEVER use // or /* */ in the JSON
 - Remove trailing commas before }} and ]
 - Ensure all quotes are properly escaped
-- Close all brackets and braces properly"""
+- Close all brackets and braces properly
+
+CRITICAL: The "year" field must be an integer like 1994, NOT a string like "1990s\""""
 
 PROPOSAL_GENERATION_PROMPT = """You are an expert at discovering influences across multiple scope levels and organizing them into semantic clusters.
 

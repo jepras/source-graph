@@ -96,13 +96,22 @@ async def process_chat(request: CanvasChatRequest):
 @router.post("/refine")
 async def refine_section(request: dict):
     """Refine a specific section - returns complete updated section"""
+    print("=== CANVAS REFINE ENDPOINT ===")
+    print(f"Refine request keys: {list(request.keys())}")
+    print(f"Section ID: {request.get('section_id', 'NOT FOUND')}")
+    print(f"Prompt: {request.get('prompt', 'NOT FOUND')}")
+    print(f"Document ID: {request.get('document', {}).get('id', 'NOT FOUND')}")
+
     try:
         # Validate required fields
         if "section_id" not in request:
+            print("ERROR: Missing section_id in request")
             raise HTTPException(status_code=400, detail="section_id is required")
         if "prompt" not in request:
+            print("ERROR: Missing prompt in request")
             raise HTTPException(status_code=400, detail="prompt is required")
         if "document" not in request:
+            print("ERROR: Missing document in request")
             raise HTTPException(status_code=400, detail="document is required")
 
         # Convert dict document back to CanvasDocument (same parsing as before)
@@ -111,17 +120,22 @@ async def refine_section(request: dict):
         from datetime import datetime
 
         document_data = request["document"]
+        print(f"Document data keys: {list(document_data.keys())}")
+        print(f"Number of sections: {len(document_data.get('sections', []))}")
 
         # Convert sections manually since they might need special handling
         sections = []
-        for section_data in document_data.get("sections", []):
+        for i, section_data in enumerate(document_data.get("sections", [])):
+            print(f"Processing section {i}: {section_data.get('id', 'NO ID')}")
+
             # Convert influence_data if present
             influence_data = None
             if section_data.get("influence_data"):
                 try:
                     influence_data = InfluenceProposal(**section_data["influence_data"])
+                    print(f"Successfully parsed influence_data for section {i}")
                 except Exception as e:
-                    print(f"Failed to parse influence_data: {e}")
+                    print(f"ERROR: Failed to parse influence_data for section {i}: {e}")
                     influence_data = None
 
             # Parse created_at if it's a string
@@ -171,17 +185,23 @@ async def refine_section(request: dict):
             sections=sections,
             created_at=doc_created_at,
         )
+        print(f"Created CanvasDocument with {len(canvas_document.sections)} sections")
 
         # Get refined section data (complete section, not just content)
+        print(
+            f"Calling canvas_agent.refine_section for section_id: {request['section_id']}"
+        )
         refined_section_data = await canvas_agent.refine_section(
             section_id=request["section_id"],
             refinement_prompt=request["prompt"],
             current_document=canvas_document,
             selected_model=request.get("selected_model"),
         )
+        print("Successfully got refined section data")
 
         # Add active model info to response
         active_model_info = canvas_agent.get_active_model_info()
+        print("Refine endpoint completed successfully")
 
         return {
             "success": True,
@@ -191,6 +211,11 @@ async def refine_section(request: dict):
         }
 
     except Exception as e:
+        print(f"EXCEPTION in refine endpoint: {e}")
+        print(f"Exception type: {type(e)}")
+        import traceback
+
+        print(f"Full traceback: {traceback.format_exc()}")
         print(f"Refine section error: {str(e)}")
         import traceback
 

@@ -290,10 +290,21 @@ Return the complete updated section in the exact JSON format."""
         prompt = self.create_prompt(CANVAS_REFINE_PROMPT, human_message)
 
         try:
+            logger.info(f"=== REFINE SECTION DEBUG: {section_id} ===")
+            logger.info(f"Refinement prompt: {refinement_prompt}")
+            logger.info(f"Selected model: {selected_model}")
+
             response = await self.invoke(prompt, {})
+            logger.info(f"Raw refine response: {repr(response)}")
+
             return await self._parse_refine_response(response, section_id)
 
         except Exception as e:
+            logger.error(f"Exception in refine section: {e}")
+            logger.error(f"Exception type: {type(e)}")
+            import traceback
+
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             raise Exception(f"Error refining section: {str(e)}")
 
     async def _parse_refine_response(
@@ -301,35 +312,78 @@ Return the complete updated section in the exact JSON format."""
     ) -> Dict[str, Any]:
         """Parse refinement response into section data"""
 
+        logger.info("=== PARSING REFINE RESPONSE ===")
+        logger.info(f"Raw refine response length: {len(response)}")
+        logger.info(f"Raw refine response: {repr(response)}")
+
         try:
             # Extract JSON object from response
+            logger.info("=== SEARCHING FOR JSON IN REFINE RESPONSE ===")
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
             if not json_match:
+                logger.error("No JSON match found in refine response")
                 raise ValueError("No valid JSON found in response")
 
             json_str = json_match.group()
+            logger.info(f"Extracted refine JSON string: {repr(json_str)}")
 
             # Clean JSON issues
+            logger.info("=== CLEANING REFINE JSON ===")
+            original_json = json_str
             json_str = json_str.replace(",}", "}")
             json_str = json_str.replace(",]", "]")
 
             # Remove JSON comments (which are not valid in JSON)
             if "//" in json_str:
+                logger.warning("Found JSON comments in refine response - removing them")
                 json_str = re.sub(r"\s*//.*$", "", json_str, flags=re.MULTILINE)
+                logger.info("Removed JSON comments from refine response")
 
             json_str = re.sub(r'"year":\s*"[^"]*"', '"year": null', json_str)
             json_str = re.sub(r'"year":\s*[a-zA-Z][^,}\]]*', '"year": null', json_str)
             json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
 
+            if json_str != original_json:
+                logger.info("Refine JSON was modified during cleaning")
+                logger.info(f"Cleaned refine JSON: {repr(json_str)}")
+
+            logger.info("=== ATTEMPTING REFINE JSON PARSE ===")
             section_data = json.loads(json_str)
+            logger.info("Refine JSON parsing successful!")
+            logger.info(f"Parsed refine data: {section_data}")
 
             # Ensure the section ID matches
             section_data["id"] = section_id
+            logger.info(f"Set section ID to: {section_id}")
 
             return section_data
 
+        except json.JSONDecodeError as e:
+            logger.error(f"Refine JSON parsing failed: {e}")
+            logger.error(f"Error at line {e.lineno}, column {e.colno}, char {e.pos}")
+
+            # Show context around the error
+            if hasattr(e, "pos") and e.pos is not None:
+                start = max(0, e.pos - 100)
+                end = min(len(json_str), e.pos + 100)
+                context = json_str[start:end]
+                logger.error(f"Context around refine error position {e.pos}:")
+                logger.error(f"'{context}'")
+
+                # Show exactly what's at the error position
+                if e.pos < len(json_str):
+                    error_char = json_str[e.pos]
+                    logger.error(
+                        f"Character at refine error position: {repr(error_char)}"
+                    )
+
+            raise ValueError(f"Failed to parse refinement response as JSON: {str(e)}")
         except Exception as e:
-            print(f"Error parsing refine response: {e}")
+            logger.error(f"Unexpected error during refine parsing: {e}")
+            logger.error(f"Refine error type: {type(e)}")
+            import traceback
+
+            logger.error(f"Refine traceback: {traceback.format_exc()}")
             raise ValueError(f"Failed to parse refinement response: {str(e)}")
 
     async def _parse_research_response(

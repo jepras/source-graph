@@ -459,7 +459,7 @@ export const canvasApi = {
     selected_model?: string;
   }): Promise<{
     success: boolean;
-    refined_content: string;
+    refined_section: any;
     active_model?: string;
     active_model_display?: string;
   }> => {
