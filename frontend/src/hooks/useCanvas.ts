@@ -12,7 +12,9 @@ export const useCanvasOperations = () => {
     addChatMessage, 
     updateSection,
     setSectionLoading,
-    addSections
+    addSections,
+    setActiveModel,
+    setLoadingStage
   } = useCanvas();
 
   const startResearch = useCallback(async (itemName: string) => {
@@ -23,6 +25,18 @@ export const useCanvasOperations = () => {
 
     setLoading(true);
     setError(null);
+
+    // Set initial loading stage for two-agent system
+    if (state.use_two_agent) {
+      setLoadingStage('analyzing');
+      
+      // Simulate the structuring stage after a delay
+      setTimeout(() => {
+        if (state.loading) {
+          setLoadingStage('structuring');
+        }
+      }, 8000); // 8 seconds delay
+    }
 
     try {
       // Add user message to chat
@@ -35,11 +49,18 @@ export const useCanvasOperations = () => {
 
       const response = await canvasApi.generateResearch({
         item_name: itemName,
-        scope: 'highlights'
+        scope: 'highlights',
+        selected_model: state.selectedModel,
+        use_two_agent: state.use_two_agent
       });
 
       if (response.success && response.document) {
         setDocument(response.document);
+        
+        // Update active model if provided
+        if (response.active_model) {
+          setActiveModel(response.active_model);
+        }
         
         // Add AI response to chat
         addChatMessage({
@@ -55,14 +76,16 @@ export const useCanvasOperations = () => {
       setError(err instanceof Error ? err.message : 'Failed to start research');
     } finally {
       setLoading(false);
+      setLoadingStage(null);
     }
-  }, [setLoading, setError, setDocument, addChatMessage]);
+  }, [setLoading, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, setLoadingStage]);
 
   const sendChatMessage = useCallback(async (message: string) => {
     console.log('=== SEND CHAT MESSAGE DEBUG ===');
     console.log('Message:', message);
     console.log('Current document exists:', !!state.currentDocument);
     console.log('Message trimmed length:', message.trim().length);
+    console.log('Selected model:', state.selectedModel);
     
     if (!state.currentDocument || !message.trim()) {
       console.log('Early return - missing document or message');
@@ -86,13 +109,20 @@ export const useCanvasOperations = () => {
       console.log('Making API call to canvasApi.sendChatMessage');
       const response = await canvasApi.sendChatMessage({
         message: message.trim(),
-        current_document: state.currentDocument
+        current_document: state.currentDocument,
+        selected_model: state.selectedModel
       });
   
       console.log('API Response received:', response);
   
       if (response.success) {
         console.log('Response successful, adding AI message');
+        
+        // Update active model if provided
+        if (response.active_model) {
+          setActiveModel(response.active_model);
+        }
+        
         // Add AI response to chat
         addChatMessage({
           id: (Date.now() + 1).toString(),
@@ -125,7 +155,7 @@ export const useCanvasOperations = () => {
       console.log('Setting loading to false');
       setLoading(false);
     }
-  }, [state.currentDocument, setLoading, setError, addChatMessage, addSections, updateSection]);
+  }, [state.currentDocument, state.selectedModel, setLoading, setError, addChatMessage, addSections, updateSection, setActiveModel]);
 
   const refineSection = useCallback(async (sectionId: string, prompt: string) => {
     if (!state.currentDocument || !prompt.trim()) return;
@@ -137,25 +167,24 @@ export const useCanvasOperations = () => {
       const response = await canvasApi.refineSection({
         section_id: sectionId,
         prompt: prompt,
-        document: state.currentDocument
+        document: state.currentDocument,
+        selected_model: state.selectedModel
       });
   
-      if (response.success && response.refined_section) {
-        // Update the section with ALL refined data, not just content
-        const refinedData = response.refined_section;
-        
-        // Convert influence_data back to the right format if present
-        let influence_data = null;
-        if (refinedData.influence_data) {
-          influence_data = refinedData.influence_data;
+      if (response.success && response.refined_content) {
+        // Update active model if provided
+        if (response.active_model) {
+          setActiveModel(response.active_model);
         }
-  
+        
+        // Update the section content
+        const currentSection = state.currentDocument.sections.find(s => s.id === sectionId);
+        const currentMetadata = currentSection?.metadata || { createdAt: new Date(), aiGenerated: true };
+        
         updateSection(sectionId, { 
-          content: refinedData.content,
-          influence_data: influence_data,
-          selectedForGraph: refinedData.selectedForGraph,
+          content: response.refined_content,
           metadata: {
-            ...state.currentDocument.sections.find(s => s.id === sectionId)?.metadata,
+            ...currentMetadata,
             lastEdited: new Date()
           }
         });
@@ -168,7 +197,7 @@ export const useCanvasOperations = () => {
     } finally {
       setSectionLoading(sectionId, false);
     }
-  }, [state.currentDocument, setSectionLoading, setError, updateSection]);
+  }, [state.currentDocument, state.selectedModel, setSectionLoading, setError, updateSection, setActiveModel]);
 
   return {
     startResearch,

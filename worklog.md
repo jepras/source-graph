@@ -93,6 +93,20 @@ For frontend only, then cursor is quite alright.
 - It deleted unnecessary imports and actions where Claude didn't (given the same context).
 - Cursor just does things. Claude asks me more questions. 
 
+14.
+Testing the effect of different model and prompts in a matrix takes some time. Future models can do a lot :o All AI software need the ability to change model and prompt. 
+
+15. 
+First i tried different prompts. Got better responses, but only narrowly.
+Then i tried in different LLM's website and got ABSOLUTELY BLOWN AWAY by Gemini 2.5 Pro. That's not available as API just yet though.
+So compared different prompts with latest API models from Google, Anthropic, OpenAI. 
+Found myself double checking influences they came up with through Google Search. Then switched to Perplexity. Then realised I could use a Perplexity API!
+The different prompts showed the winner was an academic_forensic_analyst. Distilled from Gemini 2.5 Pro trying to tell me how to get their level responses from a lesser model (with added sourcing i found working from another prompt). It worked by having obvious and lesser known influences. 
+The model winners became Gemini & Perplexity. Quite important with Perplexity to also have up to date access (and sources ofc). 
+
+16.
+Jules couldn't implement ability to choose new models. Cursor did it the first time around. 
+
 
 # What interesting influence links could be
 1. 

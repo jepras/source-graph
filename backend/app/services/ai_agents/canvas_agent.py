@@ -30,8 +30,13 @@ class CanvasAgent(BaseAgent):
         item_type: str = None,
         creator: str = None,
         scope: str = "highlights",
+        selected_model: str = None,
     ) -> CanvasResearchResponse:
         """Generate initial Canvas research document"""
+
+        # Set model if specified
+        if selected_model and selected_model != "default":
+            self.set_model(selected_model)
 
         # Build human message
         if creator:
@@ -67,14 +72,21 @@ class CanvasAgent(BaseAgent):
         message: str,
         current_document: CanvasDocument,
         context: Dict[str, Any] = None,
+        selected_model: str = None,
     ) -> CanvasChatResponse:
         """Process chat message and update document"""
 
+        # Set model if specified
+        if selected_model and selected_model != "default":
+            self.set_model(selected_model)
+
         # Treat all chat messages as influence requests
-        return await self._handle_more_influences_request(message, current_document)
+        return await self._handle_more_influences_request(
+            message, current_document, selected_model
+        )
 
     async def _handle_more_influences_request(
-        self, message: str, current_document: CanvasDocument
+        self, message: str, current_document: CanvasDocument, selected_model: str = None
     ) -> CanvasChatResponse:
         """Handle requests for more influences"""
 
@@ -172,9 +184,17 @@ Return only the JSON array of new sections. Maximum 6 influences."""
             return []
 
     async def refine_section(
-        self, section_id: str, refinement_prompt: str, current_document: CanvasDocument
+        self,
+        section_id: str,
+        refinement_prompt: str,
+        current_document: CanvasDocument,
+        selected_model: str = None,
     ) -> Dict[str, Any]:
         """Refine a specific section based on user prompt - returns complete updated section"""
+
+        # Set model if specified
+        if selected_model and selected_model != "default":
+            self.set_model(selected_model)
 
         section = next(
             (s for s in current_document.sections if s.id == section_id), None

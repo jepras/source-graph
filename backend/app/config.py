@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import ClassVar, Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,9 +27,34 @@ class Settings(BaseSettings):
     BACKEND_PORT: int = 8000  # Default port
 
     # LLM settings
-    DEFAULT_MODEL: str = "gpt-4o-mini"
+    DEFAULT_MODEL: str = "perplexity"  # Changed from "gpt-4o-mini" to "perplexity"
     MAX_TOKENS: int = 8000
     TEMPERATURE: float = 0.7
+
+    # Model configuration constants
+    AVAILABLE_MODELS: ClassVar[Dict[str, Dict[str, Any]]] = {
+        "perplexity": {
+            "provider": "perplexity",
+            "model_name": "llama-3.1-sonar-large-128k-online",
+            "display_name": "Perplexity",
+            "description": "Real-time web search capability",
+        },
+        "gemini": {
+            "provider": "google",
+            "model_name": "gemini-1.5-pro-latest",
+            "display_name": "Gemini",
+            "description": "Strong analytical capabilities",
+        },
+        "openai": {
+            "provider": "openai",
+            "model_name": "gpt-4o",
+            "display_name": "OpenAI",
+            "description": "Reliable performance",
+        },
+    }
+
+    # Fallback configuration
+    FALLBACK_MODEL: str = "gemini"  # Fallback if Perplexity fails
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -201,10 +201,18 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               <div className="text-sm text-gray-600 font-medium">
-                Researching influences...
+                {state.use_two_agent && state.loading_stage === 'analyzing' 
+                  ? 'Analyzing influences...' 
+                  : state.use_two_agent && state.loading_stage === 'structuring'
+                  ? 'Structuring data...'
+                  : 'Researching influences...'
+                }
               </div>
               <div className="text-xs text-gray-500">
-                This may take 10-15 seconds
+                {state.use_two_agent 
+                  ? 'This may take 15-20 seconds with enhanced analysis'
+                  : 'This may take 10-15 seconds'
+                }
               </div>
             </div>
           </div>

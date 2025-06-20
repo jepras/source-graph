@@ -31,6 +31,12 @@ class CanvasResearchRequest(BaseModel):
     creator: Optional[str] = None
     item_type: Optional[str] = None
     scope: Optional[str] = "highlights"  # 'highlights' or 'comprehensive'
+    selected_model: Optional[str] = (
+        None  # 'perplexity', 'gemini', 'openai', or 'default'
+    )
+    use_two_agent: Optional[bool] = (
+        False  # Use two-agent system instead of single-agent
+    )
 
 
 class CanvasResearchResponse(BaseModel):
@@ -38,12 +44,20 @@ class CanvasResearchResponse(BaseModel):
     document: Optional[CanvasDocument] = None
     response_text: Optional[str] = None
     error_message: Optional[str] = None
+    active_model: Optional[str] = None  # Model key that was actually used
+    active_model_display: Optional[str] = None  # Display name of the model used
 
 
 class CanvasChatRequest(BaseModel):
     message: str
     current_document: CanvasDocument
     context: Optional[Dict[str, Any]] = None
+    selected_model: Optional[str] = (
+        None  # 'perplexity', 'gemini', 'openai', or 'default'
+    )
+    use_two_agent: Optional[bool] = (
+        False  # Use two-agent system instead of single-agent
+    )
 
 
 class CanvasChatResponse(BaseModel):
@@ -53,3 +67,5 @@ class CanvasChatResponse(BaseModel):
     updated_sections: Optional[List[DocumentSection]] = None
     insert_after: Optional[str] = None
     error_message: Optional[str] = None
+    active_model: Optional[str] = None  # Model key that was actually used
+    active_model_display: Optional[str] = None  # Display name of the model used

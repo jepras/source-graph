@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+import logging
 from app.models.canvas import (
     CanvasResearchRequest,
     CanvasResearchResponse,
@@ -6,23 +7,65 @@ from app.models.canvas import (
     CanvasChatResponse,
 )
 from app.services.ai_agents.canvas_agent import canvas_agent
+from app.services.ai_agents.two_agent_canvas_agent import TwoAgentCanvasAgent
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 router = APIRouter(prefix="/canvas", tags=["canvas"])
+
+# Create two-agent instance
+two_agent_canvas_agent = TwoAgentCanvasAgent()
 
 
 @router.post("/research", response_model=CanvasResearchResponse)
 async def start_research(request: CanvasResearchRequest):
     """Generate initial Canvas research document"""
+    logger.info("=== CANVAS RESEARCH ENDPOINT ===")
+    logger.info(f"Request: {request}")
+
     try:
-        response = await canvas_agent.generate_research(
+        # Check if two-agent system is requested
+        use_two_agent = getattr(request, "use_two_agent", False)
+        logger.info(f"Using two-agent system: {use_two_agent}")
+
+        if use_two_agent:
+            agent = two_agent_canvas_agent
+            logger.info("Selected TwoAgentCanvasAgent")
+        else:
+            agent = canvas_agent
+            logger.info("Selected CanvasAgent")
+
+        logger.info(
+            f"Calling agent.generate_research with item_name='{request.item_name}'"
+        )
+        response = await agent.generate_research(
             item_name=request.item_name,
             item_type=request.item_type,
             creator=request.creator,
             scope=request.scope,
+            selected_model=getattr(request, "selected_model", None),
         )
+
+        logger.info(f"Agent response success: {response.success}")
+        if not response.success:
+            logger.error(f"Agent response error: {response.error_message}")
+
+        # Add active model info to response
+        active_model_info = agent.get_active_model_info()
+        response.active_model = active_model_info["model_key"]
+        response.active_model_display = active_model_info["display_name"]
+
+        logger.info("Research endpoint completed successfully")
         return response
 
     except Exception as e:
+        logger.error(f"Exception in research endpoint: {e}")
+        logger.error(f"Exception type: {type(e)}")
+        import traceback
+
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=500, detail=f"Failed to generate research: {str(e)}"
         )
@@ -36,7 +79,14 @@ async def process_chat(request: CanvasChatRequest):
             message=request.message,
             current_document=request.current_document,
             context=request.context,
+            selected_model=getattr(request, "selected_model", None),
         )
+
+        # Add active model info to response
+        active_model_info = canvas_agent.get_active_model_info()
+        response.active_model = active_model_info["model_key"]
+        response.active_model_display = active_model_info["display_name"]
+
         return response
 
     except Exception as e:
@@ -127,9 +177,18 @@ async def refine_section(request: dict):
             section_id=request["section_id"],
             refinement_prompt=request["prompt"],
             current_document=canvas_document,
+            selected_model=request.get("selected_model"),
         )
 
-        return {"success": True, "refined_section": refined_section_data}
+        # Add active model info to response
+        active_model_info = canvas_agent.get_active_model_info()
+
+        return {
+            "success": True,
+            "refined_section": refined_section_data,
+            "active_model": active_model_info["model_key"],
+            "active_model_display": active_model_info["display_name"],
+        }
 
     except Exception as e:
         print(f"Refine section error: {str(e)}")

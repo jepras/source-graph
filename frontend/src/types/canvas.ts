@@ -41,6 +41,10 @@ export interface CanvasDocument {
     error: string | null;
     chatHistory: ChatMessage[];
     sectionLoadingStates: Record<string, boolean>;
+    selectedModel: string;  // User-selected model: 'perplexity', 'gemini', 'openai'
+    activeModel: string;    // Currently active model (may differ due to fallback)
+    use_two_agent: boolean; // Use two-agent system instead of single-agent
+    loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
   }
   
   export interface ChatMessage {
@@ -56,18 +60,24 @@ export interface CanvasDocument {
     creator?: string;
     item_type?: string;
     scope?: 'highlights' | 'comprehensive';
+    selected_model?: string;  // 'perplexity', 'gemini', 'openai', or 'default'
+    use_two_agent?: boolean;  // Use two-agent system instead of single-agent
   }
   
   export interface CanvasResearchResponse {
     success: boolean;
     document: CanvasDocument;
     error_message?: string;
+    active_model?: string;  // Model key that was actually used
+    active_model_display?: string;  // Display name of the model used
   }
   
   export interface CanvasChatRequest {
     message: string;
     current_document: CanvasDocument;
     context?: Record<string, any>;
+    selected_model?: string;  // 'perplexity', 'gemini', 'openai', or 'default'
+    use_two_agent?: boolean;  // Use two-agent system instead of single-agent
   }
   
   export interface CanvasChatResponse {
@@ -77,4 +87,6 @@ export interface CanvasDocument {
     updated_sections?: DocumentSection[];
     insert_after?: string;
     error_message?: string;
+    active_model?: string;  // Model key that was actually used
+    active_model_display?: string;  // Display name of the model used
   }

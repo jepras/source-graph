@@ -389,11 +389,15 @@ export const canvasApi = {
     creator?: string;
     item_type?: string;
     scope?: string;
+    selected_model?: string;
+    use_two_agent?: boolean;
   }): Promise<{
     success: boolean;
     document?: any;
     response_text?: string;
     error_message?: string;
+    active_model?: string;
+    active_model_display?: string;
   }> => {
     const response = await fetch(`${API_BASE}/canvas/research`, {
       method: 'POST',
@@ -408,6 +412,7 @@ export const canvasApi = {
     message: string;
     current_document: any;
     context?: Record<string, any>;
+    selected_model?: string;
   }): Promise<{
     success: boolean;
     response_text: string;
@@ -415,6 +420,8 @@ export const canvasApi = {
     updated_sections?: any[];
     insert_after?: string;
     error_message?: string;
+    active_model?: string;
+    active_model_display?: string;
   }> => {
     console.log('=== CANVAS API CHAT DEBUG ===');
     console.log('Request:', { message: request.message, document_id: request.current_document?.id });
@@ -449,9 +456,12 @@ export const canvasApi = {
     section_id: string;
     prompt: string;
     document: any;
+    selected_model?: string;
   }): Promise<{
     success: boolean;
     refined_content: string;
+    active_model?: string;
+    active_model_display?: string;
   }> => {
     const response = await fetch(`${API_BASE}/canvas/refine`, {
       method: 'POST',

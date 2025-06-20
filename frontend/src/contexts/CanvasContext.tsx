@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
+import type { ReactNode } from 'react';
 import type { CanvasState, CanvasDocument, DocumentSection, ChatMessage } from '../types/canvas';
 
 // Canvas Actions
@@ -11,6 +12,10 @@ type CanvasAction =
   | { type: 'DELETE_SECTION'; payload: string }
   | { type: 'ADD_SECTIONS'; payload: { sections: DocumentSection[]; insertAfter?: string } }
   | { type: 'SET_SECTION_LOADING'; payload: { sectionId: string; loading: boolean } }
+  | { type: 'SET_SELECTED_MODEL'; payload: string }
+  | { type: 'SET_ACTIVE_MODEL'; payload: string }
+  | { type: 'SET_USE_TWO_AGENT'; payload: boolean }
+  | { type: 'SET_LOADING_STAGE'; payload: 'analyzing' | 'structuring' | null }
   | { type: 'CLEAR_CANVAS' };
 
 // Initial State
@@ -19,7 +24,11 @@ const initialState: CanvasState = {
   loading: false,
   error: null,
   chatHistory: [],
-  sectionLoadingStates: {}
+  sectionLoadingStates: {},
+  selectedModel: 'perplexity', // Default model
+  activeModel: 'perplexity',    // Currently active model (may differ due to fallback)
+  use_two_agent: false,         // Use two-agent system instead of single-agent
+  loading_stage: null,          // 'analyzing' | 'structuring' | null
 };
 
 // Reducer
@@ -103,8 +112,24 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         }
       };
     
+    case 'SET_SELECTED_MODEL':
+      return { ...state, selectedModel: action.payload };
+    
+    case 'SET_ACTIVE_MODEL':
+      return { ...state, activeModel: action.payload };
+    
+    case 'SET_USE_TWO_AGENT':
+      return { ...state, use_two_agent: action.payload };
+    
+    case 'SET_LOADING_STAGE':
+      return { ...state, loading_stage: action.payload };
+    
     case 'CLEAR_CANVAS':
-      return initialState;
+      return {
+        ...initialState,
+        selectedModel: state.selectedModel, // Keep model selection when clearing canvas
+        activeModel: state.selectedModel
+      };
     
     default:
       return state;
@@ -124,6 +149,10 @@ interface CanvasContextType {
   deleteSection: (sectionId: string) => void;
   addSections: (sections: DocumentSection[], insertAfter?: string) => void;
   setSectionLoading: (sectionId: string, loading: boolean) => void;
+  setSelectedModel: (model: string) => void;
+  setActiveModel: (model: string) => void;
+  setUseTwoAgent: (useTwoAgent: boolean) => void;
+  setLoadingStage: (stage: 'analyzing' | 'structuring' | null) => void;
   clearCanvas: () => void;
 }
 
@@ -170,6 +199,22 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_SECTION_LOADING', payload: { sectionId, loading } });
   };
 
+  const setSelectedModel = (model: string) => {
+    dispatch({ type: 'SET_SELECTED_MODEL', payload: model });
+  };
+
+  const setActiveModel = (model: string) => {
+    dispatch({ type: 'SET_ACTIVE_MODEL', payload: model });
+  };
+
+  const setUseTwoAgent = (useTwoAgent: boolean) => {
+    dispatch({ type: 'SET_USE_TWO_AGENT', payload: useTwoAgent });
+  };
+
+  const setLoadingStage = (stage: 'analyzing' | 'structuring' | null) => {
+    dispatch({ type: 'SET_LOADING_STAGE', payload: stage });
+  };
+
   const clearCanvas = () => {
     dispatch({ type: 'CLEAR_CANVAS' });
   };
@@ -185,6 +230,10 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     deleteSection,
     addSections,
     setSectionLoading,
+    setSelectedModel,
+    setActiveModel,
+    setUseTwoAgent,
+    setLoadingStage,
     clearCanvas
   };
 

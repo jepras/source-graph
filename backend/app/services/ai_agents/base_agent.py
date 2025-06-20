@@ -1,16 +1,87 @@
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_perplexity import ChatPerplexity
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseAgent:
     def __init__(self, model_name: str = None, temperature: float = None):
-        self.llm = ChatOpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            model=model_name or settings.DEFAULT_MODEL,
-            temperature=temperature or settings.TEMPERATURE,
-            max_tokens=settings.MAX_TOKENS,
-        )
+        self.model_name = model_name or settings.DEFAULT_MODEL
+        self.temperature = temperature or settings.TEMPERATURE
+        self.llm = self._initialize_llm(self.model_name)
+        self.active_model = self.model_name
+
+    def _initialize_llm(self, model_key: str):
+        """Initialize LLM based on model key with fallback logic"""
+        try:
+            model_config = settings.AVAILABLE_MODELS.get(model_key)
+            if not model_config:
+                logger.warning(
+                    f"Unknown model key: {model_key}, falling back to default"
+                )
+                model_config = settings.AVAILABLE_MODELS.get(settings.DEFAULT_MODEL)
+
+            provider = model_config["provider"]
+            model_name = model_config["model_name"]
+
+            if provider == "perplexity":
+                if not settings.PERPLEXITY_API_KEY:
+                    raise ValueError("Perplexity API key not configured")
+                return ChatPerplexity(
+                    api_key=settings.PERPLEXITY_API_KEY,
+                    model=model_name,
+                    temperature=self.temperature,
+                    max_tokens=settings.MAX_TOKENS,
+                )
+            elif provider == "google":
+                if not settings.GOOGLE_API_KEY:
+                    raise ValueError("Google API key not configured")
+                return ChatGoogleGenerativeAI(
+                    google_api_key=settings.GOOGLE_API_KEY,
+                    model=model_name,
+                    temperature=self.temperature,
+                    max_tokens=settings.MAX_TOKENS,
+                )
+            elif provider == "openai":
+                if not settings.OPENAI_API_KEY:
+                    raise ValueError("OpenAI API key not configured")
+                return ChatOpenAI(
+                    api_key=settings.OPENAI_API_KEY,
+                    model=model_name,
+                    temperature=self.temperature,
+                    max_tokens=settings.MAX_TOKENS,
+                )
+            else:
+                raise ValueError(f"Unknown provider: {provider}")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize model {model_key}: {e}")
+            # Try fallback model
+            if model_key != settings.FALLBACK_MODEL:
+                logger.info(f"Falling back to {settings.FALLBACK_MODEL}")
+                return self._initialize_llm(settings.FALLBACK_MODEL)
+            else:
+                raise e
+
+    def set_model(self, model_key: str):
+        """Change the active model"""
+        try:
+            self.llm = self._initialize_llm(model_key)
+            self.model_name = model_key
+            self.active_model = model_key
+            logger.info(f"Successfully switched to model: {model_key}")
+        except Exception as e:
+            logger.error(f"Failed to switch to model {model_key}: {e}")
+            # Try fallback
+            if model_key != settings.FALLBACK_MODEL:
+                logger.info(f"Falling back to {settings.FALLBACK_MODEL}")
+                self.set_model(settings.FALLBACK_MODEL)
+            else:
+                raise e
 
     def create_prompt(
         self, system_message: str, human_message: str
@@ -22,6 +93,28 @@ class BaseAgent:
 
     async def invoke(self, prompt: ChatPromptTemplate, input_data: dict) -> str:
         """Invoke the LLM with the given prompt and data"""
-        chain = prompt | self.llm
-        response = await chain.ainvoke(input_data)
-        return response.content
+        try:
+            chain = prompt | self.llm
+            response = await chain.ainvoke(input_data)
+            return response.content
+        except Exception as e:
+            logger.error(f"Error invoking {self.active_model}: {e}")
+            # Try fallback if not already using fallback
+            if self.active_model != settings.FALLBACK_MODEL:
+                logger.info(f"Falling back to {settings.FALLBACK_MODEL}")
+                self.set_model(settings.FALLBACK_MODEL)
+                chain = prompt | self.llm
+                response = await chain.ainvoke(input_data)
+                return response.content
+            else:
+                raise e
+
+    def get_active_model_info(self):
+        """Get information about the currently active model"""
+        model_config = settings.AVAILABLE_MODELS.get(self.active_model, {})
+        return {
+            "model_key": self.active_model,
+            "display_name": model_config.get("display_name", self.active_model),
+            "provider": model_config.get("provider", "unknown"),
+            "description": model_config.get("description", ""),
+        }
