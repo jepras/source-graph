@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     BACKEND_PORT: int = 8000  # Default port
 
     # LLM settings
-    DEFAULT_MODEL: str = "perplexity"  # Changed from "gpt-4o-mini" to "perplexity"
+    DEFAULT_MODEL: str = "gemini-2.5-flash"  # Changed to Gemini 2.5 Flash as default
     MAX_TOKENS: int = 8000
     TEMPERATURE: float = 0.7
 
@@ -36,25 +36,37 @@ class Settings(BaseSettings):
         "perplexity": {
             "provider": "perplexity",
             "model_name": "llama-3.1-sonar-large-128k-online",
-            "display_name": "Perplexity",
+            "display_name": "Perplexity Sonar Large",
             "description": "Real-time web search capability",
         },
-        "gemini": {
+        "perplexity-sonar-reasoning": {
+            "provider": "perplexity",
+            "model_name": "llama-3.1-sonar-large-128k-online",
+            "display_name": "Perplexity Sonar Reasoning",
+            "description": "Enhanced reasoning with web search",
+        },
+        "gemini-2.5-flash": {
             "provider": "google",
-            "model_name": "gemini-1.5-pro-latest",
-            "display_name": "Gemini",
-            "description": "Strong analytical capabilities",
+            "model_name": "gemini-2.5-flash",
+            "display_name": "Gemini 2.5 Flash",
+            "description": "Fast and efficient Gemini model",
+        },
+        "gemini-2.5-pro": {
+            "provider": "google",
+            "model_name": "gemini-2.5-pro",
+            "display_name": "Gemini 2.5 Pro",
+            "description": "Latest Gemini Pro model with enhanced capabilities",
         },
         "openai": {
             "provider": "openai",
             "model_name": "gpt-4o",
-            "display_name": "OpenAI",
+            "display_name": "GPT-4o",
             "description": "Reliable performance",
         },
     }
 
     # Fallback configuration
-    FALLBACK_MODEL: str = "gemini"  # Fallback if Perplexity fails
+    FALLBACK_MODEL: str = "gemini-2.5-pro"  # Fallback to Gemini 2.5 Pro
 
     model_config = SettingsConfigDict(env_file=".env")
 

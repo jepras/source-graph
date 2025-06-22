@@ -11,6 +11,14 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
+const MODEL_NAMES: Record<string, string> = {
+  'perplexity': 'Perplexity Sonar Large',
+  'perplexity-sonar-reasoning': 'Perplexity Sonar Reasoning',
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gemini-2.5-pro': 'Gemini 2.5 Pro',
+  'openai': 'GPT-4o'
+};
+
 export const ChatInput: React.FC<ChatInputProps> = ({ 
   onSubmit, 
   onSave,
@@ -29,14 +37,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   useEffect(() => {
     if (lastActiveModel !== state.activeModel && state.activeModel !== state.selectedModel) {
       // Model changed due to fallback
-      const modelNames: Record<string, string> = {
-        'perplexity': 'Perplexity',
-        'gemini': 'Gemini', 
-        'openai': 'OpenAI'
-      };
-      
-      const selectedName = modelNames[state.selectedModel] || state.selectedModel;
-      const activeName = modelNames[state.activeModel] || state.activeModel;
+      const selectedName = MODEL_NAMES[state.selectedModel] || state.selectedModel;
+      const activeName = MODEL_NAMES[state.activeModel] || state.activeModel;
       
       // Create a simple toast notification
       const toast = document.createElement('div');

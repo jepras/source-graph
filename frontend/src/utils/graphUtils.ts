@@ -40,16 +40,20 @@ export const extractNodesAndRelationships = (
   // Check if main item already exists
   const existingMainNode = existingGraph?.nodes.get(graphResponse.main_item.id);
   const mainNodeCategory = existingMainNode ? existingMainNode.category : 'main';
-  const mainNodeClusters = existingMainNode?.clusters || [];
+  
+  // For main item, derive clusters from its incoming influences
+  const mainItemClusters = graphResponse.influences
+    .flatMap(influence => influence.clusters || [])
+    .filter(Boolean);
 
-  // Add main item with preserved category
+  // Add main item with derived clusters
   nodes.set(graphResponse.main_item.id, {
     id: graphResponse.main_item.id,
     name: graphResponse.main_item.name,
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
     category: mainNodeCategory,
-    clusters: mainNodeClusters,
+    clusters: mainItemClusters, // ✅ Use derived clusters from relationships
     x: existingMainNode?.x,
     y: existingMainNode?.y
   });
@@ -67,7 +71,7 @@ export const extractNodesAndRelationships = (
         type: influence.from_item.auto_detected_type || 'unknown',
         year: influence.from_item.year,
         category: 'influence',
-        clusters: influence.clusters || [] // ✅ Use API clusters or empty array
+        clusters: influence.clusters || [] // ✅ Use relationship clusters
       });
     }
 

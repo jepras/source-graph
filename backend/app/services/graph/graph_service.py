@@ -50,54 +50,55 @@ class GraphService:
     def create_item(
         self,
         name: str,
-        description: str = None,
-        year: int = None,
         auto_detected_type: str = None,
+        year: int = None,
+        description: str = None,
         confidence_score: float = None,
+        verification_status: str = "ai_generated",
     ) -> Item:
         """Create a new item in the database"""
-        item_id = self.generate_id(name, auto_detected_type)
+        try:
+            item_id = self.generate_id(name, auto_detected_type)
 
-        with neo4j_db.driver.session() as session:
-            result = session.run(
-                """
-                CREATE (i:Item {
-                    id: $id,
-                    name: $name,
-                    description: $description,
-                    year: $year,
-                    auto_detected_type: $auto_detected_type,
-                    confidence_score: $confidence_score,
-                    verification_status: $verification_status,
-                    created_at: datetime()
-                })
-                RETURN i
-                """,
-                {
-                    "id": item_id,
-                    "name": name,
-                    "description": description,
-                    "year": year,
-                    "auto_detected_type": auto_detected_type,
-                    "confidence_score": confidence_score,
-                    "verification_status": "ai_generated",
-                },
-            )
-
-            record = result.single()
-            if record:
-                node = record["i"]
-                return Item(
-                    id=node["id"],
-                    name=node["name"],
-                    description=node.get("description"),
-                    year=node.get("year"),
-                    auto_detected_type=node.get("auto_detected_type"),
-                    confidence_score=node.get("confidence_score"),
-                    verification_status=node.get("verification_status", "ai_generated"),
+            with neo4j_db.driver.session() as session:
+                result = session.run(
+                    """
+                    CREATE (i:Item {
+                        id: $id,
+                        name: $name,
+                        auto_detected_type: $auto_detected_type,
+                        year: $year,
+                        description: $description,
+                        confidence_score: $confidence_score,
+                        verification_status: $verification_status,
+                        created_at: datetime()
+                    })
+                    RETURN i
+                    """,
+                    {
+                        "id": item_id,
+                        "name": name,
+                        "auto_detected_type": auto_detected_type,
+                        "year": year,
+                        "description": description,
+                        "confidence_score": confidence_score,
+                        "verification_status": verification_status,
+                    },
                 )
 
-        raise Exception("Failed to create item")
+                item_data = result.single()["i"]
+                return Item(
+                    id=item_data["id"],
+                    name=item_data["name"],
+                    auto_detected_type=item_data.get("auto_detected_type"),
+                    year=item_data.get("year"),
+                    description=item_data.get("description"),
+                    confidence_score=item_data.get("confidence_score"),
+                    verification_status=item_data.get("verification_status"),
+                )
+
+        except Exception as e:
+            raise Exception(f"Failed to create item: {str(e)}")
 
     def get_item_by_id(self, item_id: str) -> Optional[Item]:
         """Get single item by ID"""
@@ -1073,7 +1074,7 @@ class GraphService:
                 scope=influence.scope,  # Now includes scope
                 source=influence.source,
                 year_of_influence=influence.year,
-                clusters=influence.clusters,  # ADD THIS LINE
+                clusters=influence.clusters,
             )
 
             # Ensure category exists

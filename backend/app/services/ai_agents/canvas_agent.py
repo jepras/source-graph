@@ -161,6 +161,11 @@ Return only the JSON array of new sections. Maximum 6 influences."""
             # Clean JSON issues (same as other parsing)
             json_str = json_str.replace(",}", "}")
             json_str = json_str.replace(",]", "]")
+
+            # Remove JSON comments (which are not valid in JSON)
+            if "//" in json_str:
+                json_str = re.sub(r"\s*//.*$", "", json_str, flags=re.MULTILINE)
+
             json_str = re.sub(r'"year":\s*"[^"]*"', '"year": null', json_str)
             json_str = re.sub(r'"year":\s*[a-zA-Z][^,}\]]*', '"year": null', json_str)
             json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
@@ -258,6 +263,11 @@ Return the complete updated section JSON that addresses their request."""
             # Clean JSON issues (same as other parsing)
             json_str = json_str.replace(",}", "}")
             json_str = json_str.replace(",]", "]")
+
+            # Remove JSON comments (which are not valid in JSON)
+            if "//" in json_str:
+                json_str = re.sub(r"\s*//.*$", "", json_str, flags=re.MULTILINE)
+
             json_str = re.sub(r'"year":\s*"[^"]*"', '"year": null', json_str)
             json_str = re.sub(r'"year":\s*[a-zA-Z][^,}\]]*', '"year": null', json_str)
             json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)

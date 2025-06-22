@@ -10,9 +10,11 @@ interface ModelSelectorProps {
 }
 
 const AVAILABLE_MODELS = [
-  { key: 'perplexity', name: 'Perplexity' },
-  { key: 'gemini', name: 'Gemini' },
-  { key: 'openai', name: 'OpenAI' }
+  { key: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+  { key: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+  { key: 'perplexity', name: 'Perplexity Sonar Large' },
+  { key: 'perplexity-sonar-reasoning', name: 'Perplexity Sonar Reasoning' },
+  { key: 'openai', name: 'GPT-4o' }
 ];
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({

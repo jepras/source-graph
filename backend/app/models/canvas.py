@@ -32,7 +32,7 @@ class CanvasResearchRequest(BaseModel):
     item_type: Optional[str] = None
     scope: Optional[str] = "highlights"  # 'highlights' or 'comprehensive'
     selected_model: Optional[str] = (
-        None  # 'perplexity', 'gemini', 'openai', or 'default'
+        None  # 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     )
     use_two_agent: Optional[bool] = (
         False  # Use two-agent system instead of single-agent
@@ -53,7 +53,7 @@ class CanvasChatRequest(BaseModel):
     current_document: CanvasDocument
     context: Optional[Dict[str, Any]] = None
     selected_model: Optional[str] = (
-        None  # 'perplexity', 'gemini', 'openai', or 'default'
+        None  # 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     )
     use_two_agent: Optional[bool] = (
         False  # Use two-agent system instead of single-agent

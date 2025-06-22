@@ -124,3 +124,6 @@ How nature influences tech? Everything?
 
 5. 
 What everything in Zelda is influenced by. With images, etc. 
+
+6. 
+Rakim's influence on hip hop. Rick Rubin's on hip hop + Rock. Dre, Grandmaster Flash, Slick Rick, Public Enemy, Run DMC

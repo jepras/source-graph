@@ -25,8 +25,8 @@ const initialState: CanvasState = {
   error: null,
   chatHistory: [],
   sectionLoadingStates: {},
-  selectedModel: 'perplexity', // Default model
-  activeModel: 'perplexity',    // Currently active model (may differ due to fallback)
+  selectedModel: 'gemini-2.5-flash', // Default model
+  activeModel: 'gemini-2.5-flash',    // Currently active model (may differ due to fallback)
   use_two_agent: false,         // Use two-agent system instead of single-agent
   loading_stage: null,          // 'analyzing' | 'structuring' | null
 };

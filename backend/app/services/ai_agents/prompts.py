@@ -324,7 +324,7 @@ CANVAS_FREE_FORM_PROMPT = """You are an elite Cultural Forensics Analyst. Your m
   * WEAK: "Influenced by *The Dam Busters*."
   * STRONG: "*The Dam Busters* (1955): Provided the direct shot-for-shot template for the Death Star trench run, including similar pilot dialogue and tactical objectives."
 
-* **RULE 4: NO INTRO/OUTRO.** Your response must begin immediately with the first bullet point and end with the last. Do not include headers, introductory sentences, or concluding summaries.
+* **RULE 4: NO OUTRO.** Your response must begin immediately with the first bullet point and end with the last. Do not include headers, introductory sentences, or concluding summaries.
 
 **OUTPUT FORMAT:**
 - Your entire response must be a bulleted list.
@@ -364,9 +364,9 @@ Your task is to:
 - Explanations in influence_data should be specific about HOW it influenced the main item
 
 **SCOPE DEFINITIONS:**
-- MACRO: Major foundational influences (genres, movements, major cultural phenomena)
-- MICRO: Specific techniques and elements (particular methods, regional scenes, specific works)  
-- NANO: Tiny details and specifics (sounds, visual elements, phrases, personal experiences)
+- macro: Major foundational influences (genres, movements, major cultural phenomena)
+- micro: Specific techniques and elements (particular methods, regional scenes, specific works)  
+- nano: Tiny details and specifics (sounds, visual elements, phrases, personal experiences)
 
 **JSON FORMATTING REQUIREMENTS:**
 - YEAR VALUES: Use only integers (1994, 1975, 2001) NEVER strings ("1990s", "mid-80s")

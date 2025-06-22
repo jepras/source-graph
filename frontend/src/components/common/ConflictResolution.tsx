@@ -47,6 +47,44 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
     }));
   };
 
+  // Determine the overall resolution type based on user selections
+  const getOverallResolutionType = (): 'create_new' | 'merge' => {
+    // If there are main item conflicts and one is selected, it's always a merge
+    if (conflicts.main_item_conflicts.length > 0 && selectedMainItem) {
+      return 'merge';
+    }
+    
+    // If there are only influence conflicts, check if all are set to create_new
+    if (conflicts.main_item_conflicts.length === 0 && Object.keys(conflicts.influence_conflicts).length > 0) {
+      const allInfluenceResolutions = Object.values(influenceResolutions);
+      const allCreateNew = allInfluenceResolutions.length > 0 && 
+        allInfluenceResolutions.every(resolution => resolution.resolution === 'create_new');
+      
+      if (allCreateNew) {
+        return 'create_new';
+      }
+    }
+    
+    // Default to merge for mixed scenarios or when no clear pattern
+    return 'merge';
+  };
+
+  // Check if all conflicts are resolved
+  const areAllConflictsResolved = (): boolean => {
+    // Check main item conflicts
+    if (conflicts.main_item_conflicts.length > 0 && !selectedMainItem) {
+      return false;
+    }
+    
+    // Check influence conflicts
+    const influenceConflictKeys = Object.keys(conflicts.influence_conflicts);
+    if (influenceConflictKeys.length > 0) {
+      return influenceConflictKeys.every(key => influenceResolutions[key]);
+    }
+    
+    return true;
+  };
+
   const getConflictSummary = () => {
     const mainConflicts = conflicts.main_item_conflicts.length;
     const influenceConflicts = Object.keys(conflicts.influence_conflicts).length;
@@ -182,11 +220,11 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 pt-2 border-t border-yellow-300">
         <button
-          onClick={() => onResolve('merge', selectedMainItem || undefined, influenceResolutions)}
-          disabled={!selectedMainItem && Object.keys(influenceResolutions).length === 0}
+          onClick={() => onResolve(getOverallResolutionType(), selectedMainItem || undefined, influenceResolutions)}
+          disabled={!areAllConflictsResolved()}
           className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          🔀 Apply Resolutions
+          {getOverallResolutionType() === 'create_new' ? '➕ Create New Items' : '🔀 Apply Resolutions'}
         </button>
         <button
           onClick={onCancel}
@@ -226,7 +264,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
           )}
           
           <div className="mt-2 text-blue-600">
-            💡 <strong>"Apply Resolutions"</strong> will use your selections above
+            💡 <strong>"{getOverallResolutionType() === 'create_new' ? 'Create New Items' : 'Apply Resolutions'}"</strong> will use your selections above
           </div>
         </div>
       )}

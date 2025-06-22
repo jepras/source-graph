@@ -41,7 +41,7 @@ export interface CanvasDocument {
     error: string | null;
     chatHistory: ChatMessage[];
     sectionLoadingStates: Record<string, boolean>;
-    selectedModel: string;  // User-selected model: 'perplexity', 'gemini', 'openai'
+    selectedModel: string;  // User-selected model: 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai'
     activeModel: string;    // Currently active model (may differ due to fallback)
     use_two_agent: boolean; // Use two-agent system instead of single-agent
     loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
@@ -60,7 +60,7 @@ export interface CanvasDocument {
     creator?: string;
     item_type?: string;
     scope?: 'highlights' | 'comprehensive';
-    selected_model?: string;  // 'perplexity', 'gemini', 'openai', or 'default'
+    selected_model?: string;  // 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     use_two_agent?: boolean;  // Use two-agent system instead of single-agent
   }
   
@@ -76,7 +76,7 @@ export interface CanvasDocument {
     message: string;
     current_document: CanvasDocument;
     context?: Record<string, any>;
-    selected_model?: string;  // 'perplexity', 'gemini', 'openai', or 'default'
+    selected_model?: string;  // 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     use_two_agent?: boolean;  // Use two-agent system instead of single-agent
   }
   

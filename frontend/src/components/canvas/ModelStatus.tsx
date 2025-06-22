@@ -8,9 +8,11 @@ interface ModelStatusProps {
 }
 
 const MODEL_NAMES: Record<string, string> = {
-  'perplexity': 'Perplexity',
-  'gemini': 'Gemini',
-  'openai': 'OpenAI'
+  'perplexity': 'Perplexity Sonar Large',
+  'perplexity-sonar-reasoning': 'Perplexity Sonar Reasoning',
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gemini-2.5-pro': 'Gemini 2.5 Pro',
+  'openai': 'GPT-4o'
 };
 
 export const ModelStatus: React.FC<ModelStatusProps> = ({
