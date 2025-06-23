@@ -11,10 +11,12 @@ class ConflictService(BaseGraphService):
     merge operations between similar items.
     """
 
-    def __init__(self, item_service=None):
-        """Initialize with optional item service dependency"""
+    def __init__(self, item_service=None, creator_service=None, influence_service=None):
+        """Initialize with optional service dependencies"""
         super().__init__()
         self.item_service = item_service
+        self.creator_service = creator_service
+        self.influence_service = influence_service
 
     def find_comprehensive_conflicts(self, new_data: StructuredOutput) -> Dict:
         """Find conflicts for main item AND all influences"""
@@ -128,7 +130,9 @@ class ConflictService(BaseGraphService):
                             creator_type=new_data.main_item_creator_type or "person",
                         )
                         self._link_creator_to_item(
-                            existing_item_id, creator.id, "primary_creator"
+                            item_id=existing_item_id,
+                            creator_id=creator.id,
+                            role="primary_creator",
                         )
 
             # Add new influences (avoid duplicates)
@@ -200,9 +204,9 @@ class ConflictService(BaseGraphService):
                                     creator_type=influence.creator_type or "person",
                                 )
                                 self._link_creator_to_item(
-                                    influence_item.id,
-                                    influence_creator.id,
-                                    "primary_creator",
+                                    item_id=influence_item.id,
+                                    creator_id=influence_creator.id,
+                                    role="primary_creator",
                                 )
 
                         # Create influence relationship with cleaned explanation
@@ -274,15 +278,24 @@ class ConflictService(BaseGraphService):
 
     def _create_creator(self, **kwargs):
         """Helper method to create creator"""
-        # This would need to be implemented or delegated
-        return None
+        if self.creator_service:
+            return self.creator_service.create_creator(**kwargs)
+        else:
+            # Fallback implementation would go here
+            return None
 
     def _link_creator_to_item(self, **kwargs):
         """Helper method to link creator to item"""
-        # This would need to be implemented or delegated
-        pass
+        if self.creator_service:
+            return self.creator_service.link_creator_to_item(**kwargs)
+        else:
+            # Fallback implementation would go here
+            pass
 
     def _create_influence_relationship(self, **kwargs):
         """Helper method to create influence relationship"""
-        # This would need to be implemented or delegated
-        pass
+        if self.influence_service:
+            return self.influence_service.create_influence_relationship(**kwargs)
+        else:
+            # Fallback implementation would go here
+            pass

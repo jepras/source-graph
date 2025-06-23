@@ -5,27 +5,21 @@ import { extractNodesAndRelationships } from '../utils/graphUtils';
 import type { GraphNode, GraphLink } from '../types/graph';
 
 export const useGraphOperations = () => {
-  const { state: graphData, dispatch: graphDispatch } = useGraph();
   const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
 
   // Helper function
   const checkIfItemExistsInGraph = useCallback((itemName: string): string | null => {
-    if (!graphData?.data) return null;
+    if (!state.accumulatedGraph.nodes.size) return null;
     
-    // Check main item
-    if (graphData.data.main_item.name.toLowerCase() === itemName.toLowerCase()) {
-      return graphData.data.main_item.id;
-    }
-    
-    // Check influences
-    for (const influence of graphData.data.influences) {
-      if (influence.from_item.name.toLowerCase() === itemName.toLowerCase()) {
-        return influence.from_item.id;
+    // Check all nodes in the accumulated graph
+    for (const [nodeId, node] of state.accumulatedGraph.nodes.entries()) {
+      if (node.name.toLowerCase() === itemName.toLowerCase()) {
+        return nodeId;
       }
     }
     
     return null;
-  }, [graphData]);
+  }, [state.accumulatedGraph.nodes]);
 
   // Used in MainLayout
   const loadItemInfluences = useCallback(async (itemId: string) => {
@@ -83,93 +77,66 @@ export const useGraphOperations = () => {
     setError(null);
 
     try {
-      const promises = [];
+      // Use the new getExpandedGraph API instead of separate calls
+      const includeIncoming = direction === 'incoming' || direction === 'both';
+      const includeOutgoing = direction === 'outgoing' || direction === 'both';
       
-      if (direction === 'incoming' || direction === 'both') {
-        promises.push(api.getInfluences(itemId));
-      }
-      
-      if (direction === 'outgoing' || direction === 'both') {
-        promises.push(api.getOutgoingInfluences(itemId));
-      }
+      const expandedGraph = await api.getExpandedGraph(
+        itemId, 
+        includeIncoming, 
+        includeOutgoing
+      );
 
-      const responses = await Promise.all(promises);
       const newNodes: GraphNode[] = [];
       const newLinks: GraphLink[] = [];
 
-      
-
-      responses.forEach(response => {
-        if ('influences' in response) {
-          // Incoming influences response
-          response.influences.forEach(influence => {
-            // For incoming influences:
-            if (!state.accumulatedGraph.nodes.has(influence.from_item.id)) {
-              // Generate clusters from category (same logic as initial load)
-              const clusters = influence.clusters
-              
-              newNodes.push({
-                id: influence.from_item.id,
-                name: influence.from_item.name,
-                type: influence.from_item.auto_detected_type || 'unknown',
-                year: influence.from_item.year,
-                category: 'influence',
-                clusters: clusters
-              });
-
-             
-            }
-
-            // Add link
-            const linkId = `${influence.from_item.id}-${influence.to_item.id}`;
-            if (!state.accumulatedGraph.relationships.has(linkId)) {
-              newLinks.push({
-                source: influence.from_item.id,
-                target: influence.to_item.id,
-                confidence: influence.confidence,
-                influence_type: influence.influence_type,
-                category: influence.category,
-                explanation: influence.explanation
-              });
-            }
-          });
-        } else if ('outgoing_influences' in response) {
-          // Outgoing influences response
-          response.outgoing_influences.forEach(influence => {
-            // For outgoing influences:
-            if (!state.accumulatedGraph.nodes.has(influence.to_item.id)) {
-              // Generate clusters from category (same logic as initial load)
-              const clusters = influence.clusters
-              
-              newNodes.push({
-                id: influence.to_item.id,
-                name: influence.to_item.name,
-                type: influence.to_item.auto_detected_type || 'unknown',
-                year: influence.to_item.year,
-                category: 'influence',
-                clusters: clusters
-              });
-
-             
-            }
-
-            // Add link
-            const linkId = `${influence.from_item.id}-${influence.to_item.id}`;
-            if (!state.accumulatedGraph.relationships.has(linkId)) {
-              newLinks.push({
-                source: influence.from_item.id,
-                target: influence.to_item.id,
-                confidence: influence.confidence,
-                influence_type: influence.influence_type,
-                category: influence.category,
-                explanation: influence.explanation
-              });
-            }
-          });
+      // Process nodes from expanded graph
+      expandedGraph.nodes.forEach(nodeData => {
+        const nodeId = nodeData.item.id;
+        
+        // Skip if node already exists in graph
+        if (state.accumulatedGraph.nodes.has(nodeId)) {
+          return;
         }
+
+        // Find relationships that connect to this node to get clusters
+        const nodeRelationships = expandedGraph.relationships.filter(rel => 
+          rel.from_id === nodeId || rel.to_id === nodeId
+        );
+        
+        // Extract clusters from relationships
+        const clusters = nodeRelationships
+          .flatMap(rel => rel.clusters || [])
+          .filter(Boolean);
+
+        newNodes.push({
+          id: nodeId,
+          name: nodeData.item.name,
+          type: nodeData.item.auto_detected_type || 'unknown',
+          year: nodeData.item.year,
+          category: nodeData.is_center ? 'main' : 'influence',
+          clusters: clusters
+        });
       });
 
-     
+      // Process relationships from expanded graph
+      expandedGraph.relationships.forEach(relationship => {
+        const linkId = `${relationship.from_id}-${relationship.to_id}`;
+        
+        // Skip if relationship already exists
+        if (state.accumulatedGraph.relationships.has(linkId)) {
+          return;
+        }
+
+        newLinks.push({
+          source: relationship.from_id,
+          target: relationship.to_id,
+          confidence: relationship.confidence,
+          influence_type: relationship.influence_type,
+          category: relationship.category,
+          explanation: relationship.explanation
+        });
+      });
 
       if (newNodes.length > 0 || newLinks.length > 0) {
         addNodesAndLinks(newNodes, newLinks);
@@ -185,38 +152,41 @@ export const useGraphOperations = () => {
   // Used in ProposalAction
   const loadItemWithAccumulation = useCallback(async (itemId: string, itemName: string) => {
     try {
-      graphDispatch({ type: 'SET_LOADING', payload: true });
+      setLoading(true);
       
       // Check if item already exists in current graph
       const existingItemId = checkIfItemExistsInGraph(itemName);
       const shouldPreserveLayout = existingItemId !== null;
       
       if (shouldPreserveLayout) {
-        
         // Mark this node as expanded for visual indication
-        graphDispatch({ type: 'MARK_NODE_EXPANDED', payload: existingItemId });
+        // Note: This would need to be implemented in the context if needed
       }
       
       const response = await api.getInfluences(itemId);
       
+      // Use the existing utility function to convert API response to graph format
+      const { nodes, relationships } = extractNodesAndRelationships(response, state.accumulatedGraph);
+      
+      // Convert Maps to arrays for the context
+      const nodeArray = Array.from(nodes.values());
+      const linkArray = Array.from(relationships.values());
+
       if (shouldPreserveLayout) {
-        // Accumulate with position preservation
-        graphDispatch({ 
-          type: 'ACCUMULATE_GRAPH', 
-          payload: { graphData: response, preservePositions: true }
-        });
+        // Accumulate with position preservation - just add new nodes/links
+        addNodesAndLinks(nodeArray, linkArray);
       } else {
-        // Normal load
-        graphDispatch({ type: 'SET_DATA', payload: response });
+        // Normal load - clear and set new data
+        clearGraph();
+        addNodesAndLinks(nodeArray, linkArray);
       }
       
     } catch (err) {
-      graphDispatch({ 
-        type: 'SET_ERROR', 
-        payload: err instanceof Error ? err.message : 'Failed to load item'
-      });
+      setError(err instanceof Error ? err.message : 'Failed to load item');
+    } finally {
+      setLoading(false);
     }
-  }, [checkIfItemExistsInGraph, graphDispatch]);
+  }, [checkIfItemExistsInGraph, setLoading, setError, state.accumulatedGraph, addNodesAndLinks, clearGraph]);
 
   return {
     loadItemInfluences,

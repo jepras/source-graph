@@ -305,6 +305,7 @@ class GraphQueryService(BaseGraphService):
                                 "explanation": relationship["explanation"],
                                 "category": relationship["category"],
                                 "source": relationship.get("source"),
+                                "clusters": relationship.get("clusters"),
                             }
                         )
 
@@ -376,6 +377,7 @@ class GraphQueryService(BaseGraphService):
                                 "explanation": relationship["explanation"],
                                 "category": relationship["category"],
                                 "source": relationship.get("source"),
+                                "clusters": relationship.get("clusters"),
                             }
                         )
 

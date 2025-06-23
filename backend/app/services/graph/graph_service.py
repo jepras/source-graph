@@ -37,7 +37,11 @@ class GraphService(BaseGraphService):
         self.creator_service = CreatorService()
         self.influence_service = InfluenceService()
         self.graph_query_service = GraphQueryService(item_service=self.item_service)
-        self.conflict_service = ConflictService(item_service=self.item_service)
+        self.conflict_service = ConflictService(
+            item_service=self.item_service,
+            creator_service=self.creator_service,
+            influence_service=self.influence_service,
+        )
         self.bulk_service = BulkService(
             item_service=self.item_service,
             creator_service=self.creator_service,

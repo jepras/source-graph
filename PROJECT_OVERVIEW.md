@@ -9,27 +9,45 @@ influence-graph/
 │   │   ├── 📁 api/
 │   │   │   └── 📁 routes/
 │   │   │       ├── ai.py
-│   │   │       ├── items.py
-│   │   │       └── influences.py
+│   │   │       ├── canvas.py
+│   │   │       ├── enhancement.py
+│   │   │       ├── influences.py
+│   │   │       └── items.py
 │   │   ├── 📁 core/
 │   │   │   └── 📁 database/
 │   │   │       ├── neo4j.py
 │   │   │       └── schema.py
-│   │   ├── 📁 mcps/ (empty)
+│   │   ├── 📁 mcps/
+│   │   │   ├── __init__.py
+│   │   │   ├── mcp_client.py
+│   │   │   └── config.py
 │   │   ├── 📁 models/
+│   │   │   ├── canvas.py
+│   │   │   ├── enhancement.py
 │   │   │   ├── item.py
 │   │   │   ├── proposal.py
 │   │   │   └── structured.py
 │   │   ├── 📁 services/
 │   │   │   ├── 📁 ai_agents/
 │   │   │   │   ├── base_agent.py
+│   │   │   │   ├── canvas_agent.py
+│   │   │   │   ├── enhancement_agent.py
 │   │   │   │   ├── init.py
+│   │   │   │   ├── prompts.py
 │   │   │   │   ├── proposal_agent.py
-│   │   │   │   └── prompts.py
-│   │   │   ├── 📁 content/ (empty)
+│   │   │   │   └── two_agent_canvas_agent.py
 │   │   │   └── 📁 graph/
-│   │   │       └── graph_service.py
-│   │   ├── 📁 workers/ (empty)
+│   │   │       ├── __init__.py
+│   │   │       ├── base_service.py
+│   │   │       ├── bulk_service.py
+│   │   │       ├── conflict_service.py
+│   │   │       ├── creator_service.py
+│   │   │       ├── graph_query_service.py
+│   │   │       ├── graph_service_original.py
+│   │   │       ├── graph_service.py
+│   │   │       ├── influence_service.py
+│   │   │       ├── item_service.py
+│   │   │       └── README.md
 │   │   ├── config.py
 │   │   ├── main.py
 │   │   └── test_script.py
@@ -44,8 +62,16 @@ influence-graph/
 │   │   ├── 📁 assets/
 │   │   │   └── react.svg
 │   │   ├── 📁 components/
+│   │   │   ├── 📁 canvas/
+│   │   │   │   ├── CanvasTab.tsx
+│   │   │   │   ├── ChatInput.tsx
+│   │   │   │   ├── DocumentRenderer.tsx
+│   │   │   │   ├── ModelSelector.tsx
+│   │   │   │   ├── ModelStatus.tsx
+│   │   │   │   └── SectionComponent.tsx
 │   │   │   ├── 📁 common/
 │   │   │   │   ├── ConflictResolution.tsx
+│   │   │   │   ├── EnhancementPanel.tsx
 │   │   │   │   ├── ResizableGraphLayout.tsx
 │   │   │   │   ├── ResizablePanels.tsx
 │   │   │   │   ├── SearchBar.tsx
@@ -66,14 +92,18 @@ influence-graph/
 │   │   │       └── ProposalResults.tsx
 │   │   ├── 📁 contexts/
 │   │   │   ├── AppStateProvider.tsx
+│   │   │   ├── CanvasContext.tsx
 │   │   │   ├── GraphContext.tsx
 │   │   │   └── ResearchContext.tsx
 │   │   ├── 📁 hooks/
+│   │   │   ├── useCanvas.ts
+│   │   │   ├── useEnhancement.ts
 │   │   │   ├── useGraphOperations.ts
 │   │   │   └── useProposals.ts
 │   │   ├── 📁 services/
 │   │   │   └── api.ts
 │   │   ├── 📁 types/
+│   │   │   ├── canvas.ts
 │   │   │   └── graph.ts
 │   │   ├── 📁 utils/
 │   │   │   └── graphUtils.ts
@@ -117,17 +147,18 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
 
 ## 🏗️ Architecture Overview
 
-### Backend (FastAPI + Neo4j + AI Agents)
+### Backend (FastAPI + Neo4j + AI Agents + MCP)
 - **FastAPI**: RESTful API with structured endpoints for graph operations
-- **Neo4j**: Graph database storing items, creators, and influence relationships
-- **AI Agents**: LangChain-based agents for research, structuring, and proposal generation
-- **MCPs**: Model Context Protocol integration for enhanced data gathering
+- **Neo4j**: Graph database storing items, creators, influence relationships, and enhanced content
+- **AI Agents**: LangChain-based agents for research, structuring, proposal generation, and content enhancement
+- **MCP Integration**: Model Context Protocol servers for dynamic content discovery (YouTube, Spotify, Wikipedia)
 
 ### Frontend (React + TypeScript + D3.js)
 - **React + TypeScript**: Modern component-based UI with type safety
 - **D3.js**: Interactive graph visualization with timeline and categorical layouts
 - **Tailwind CSS**: Responsive styling with consistent design system
 - **Resizable Panels**: Flexible layout system for research and visualization
+- **Enhancement Panel**: Interactive content enhancement interface with media display
 
 ## 🎯 Core Features
 
@@ -139,18 +170,25 @@ Think of it as a universal "influence map" - like MusicMap but for everything. F
 - **Structure Agent**: Converts free-text research into structured data
 - **Source Tracking**: Tracks information sources and verification status
 
-### 4. Canvas Research (Interactive Document Mode)
+### 2. MCP-Based Content Enhancement
+- **Dynamic Content Discovery**: Uses Model Context Protocol (MCP) servers to find relevant media and context for items
+- **Intelligent Tool Selection**: Automatically chooses appropriate MCP tools based on item type and context
+- **Content Scoring & Filtering**: AI-powered relevance scoring to select the best 2-4 content pieces
+- **Multi-Source Integration**: Currently YouTube MCP, with Spotify and Wikipedia MCP planned
+- **Enhanced Content Storage**: Stores rich media content with metadata in Neo4j database
+
+### 3. Canvas Research (Interactive Document Mode)
 - **Canvas Research**: Provides an interactive, document-based research mode where users can iteratively refine, edit, and structure AI-generated research about an item before saving influences to the graph.
 - **Section Editing & Refinement**: Users can edit any section, prompt the AI to refine content, and select which influences to add to the graph.
 - **Flexible Workflow**: Enables deeper, more controlled research and curation before graph integration.
 
-### 2. Interactive Graph Visualization
+### 4. Interactive Graph Visualization
 - **Timeline Layout**: Chronological arrangement showing influence flow
 - **Categorical Layout**: Grouped by influence categories
 - **Multi-level Expansion**: Click nodes to expand influence networks
 - **Accumulative Graph**: Builds comprehensive networks over time
 
-### 3. Smart Data Management
+### 5. Smart Data Management
 - **Conflict Resolution**: Merges duplicate items and creators
 - **Year Validation**: Ensures influences predate influenced items
 - **Confidence Scoring**: AI-assigned confidence levels for relationships
@@ -189,6 +227,20 @@ InfluenceRelation {
   clusters?: string[]
 }
 
+EnhancedContent {
+  id: string
+  item_id: string
+  content_type: string  // video, audio, text, image
+  source: string  // youtube, spotify, wikipedia
+  title: string
+  url: string
+  thumbnail?: string
+  relevance_score: float  // 0-10
+  context_explanation: string
+  embedded_data: Record<string, any>  // Full MCP response data
+  created_at: datetime
+}
+
 InfluenceProposal {
   name: string
   type?: string  // auto-detected by LLM
@@ -221,6 +273,7 @@ GraphResponse {
 // Node Labels
 (:Item) - Creative works, cultural artifacts, innovations
 (:Creator) - People, organizations, collectives who create items
+(:EnhancedContent) - Rich media content from MCP sources
 (:Category) - Influence categories (for usage tracking only)
 (:User) - Future: user accounts for community features
 
@@ -237,6 +290,7 @@ GraphResponse {
   clusters: string[],
   created_at: datetime
 }]->(Item)
+(Item)-[:HAS_ENHANCED_CONTENT]->(EnhancedContent)
 
 // Note: Categories are stored as string properties on INFLUENCES relationships
 // Category nodes exist only for usage tracking, not for direct relationships
@@ -244,13 +298,14 @@ GraphResponse {
 // Constraints & Indexes
 CREATE CONSTRAINT item_id FOR (i:Item) REQUIRE i.id IS UNIQUE
 CREATE CONSTRAINT creator_id FOR (c:Creator) REQUIRE c.id IS UNIQUE
+CREATE CONSTRAINT enhanced_content_id FOR (ec:EnhancedContent) REQUIRE ec.id IS UNIQUE
 
 CREATE INDEX item_name FOR (i:Item) ON (i.name)
 CREATE INDEX item_year FOR (i:Item) ON (i.year)
 CREATE INDEX item_type FOR (i:Item) ON (i.auto_detected_type)
 CREATE INDEX creator_name FOR (c:Creator) ON (c.name)
 CREATE INDEX creator_type FOR (c:Creator) ON (c.type)
-
+CREATE INDEX enhanced_content_item_id FOR (ec:EnhancedContent) ON (ec.item_id)
 ```
 
 ## 🔄 User Workflow
@@ -264,17 +319,27 @@ CREATE INDEX creator_type FOR (c:Creator) ON (c.type)
 6. Ask follow-up questions for deeper analysis
 7. Save confirmed influences to database
 
-### 2. Explore Existing Graph
+### 2. Enhance Existing Items
+1. Select an item in the graph to view details
+2. Click "Enhance [Item Name]" button in the Enhancement Panel
+3. AI analyzes item context and selects appropriate MCP tools
+4. System generates targeted queries and retrieves relevant content
+5. Content is scored and filtered for relevance (2-4 pieces selected)
+6. Enhanced content is displayed with thumbnails, explanations, and source links
+7. Users can delete irrelevant content or enhance with different parameters
+
+### 3. Explore Existing Graph
 1. Search for items in the database
 2. View influence relationships in interactive graph
 3. Click nodes to expand influence networks
 4. Toggle between timeline and categorical layouts
-5. View detailed item information in side panel
+5. View detailed item information and enhanced content in side panel
 
-### 3. Build Comprehensive Networks
+### 4. Build Comprehensive Networks
 - Accumulate items and influences over multiple sessions
 - Create rich networks showing complex influence chains
 - Discover unexpected connections between different domains
+- Enhance items with relevant media and context from multiple sources
 
 ## 🛠️ Technical Implementation
 
@@ -283,15 +348,24 @@ app/
 ├── api/routes/ # FastAPI endpoints
 │ ├── ai.py # AI research and proposal endpoints
 │ ├── items.py # Item CRUD operations
-│ └── influences.py # Influence relationship endpoints
+│ ├── influences.py # Influence relationship endpoints
+│ └── enhancement.py # MCP-based content enhancement endpoints
 ├── services/
 │ ├── ai_agents/ # LangChain-based AI agents
 │ │ ├── research_agent.py
 │ │ ├── structure_agent.py
-│ │ └── proposal_agent.py
+│ │ ├── proposal_agent.py
+│ │ └── enhancement_agent.py # MCP-based content enhancement
 │ ├── graph/ # Neo4j database operations
 │ └── content/ # Content processing services
+├── mcps/ # Model Context Protocol integration
+│ ├── mcp_client.py # Base MCP client functionality
+│ └── config.py # MCP server configurations
 ├── models/ # Pydantic data models
+│ ├── item.py
+│ ├── proposal.py
+│ ├── structured.py
+│ └── enhancement.py # Enhanced content models
 └── core/ # Database connections and config
 
 ### Frontend Components
@@ -300,7 +374,7 @@ src/
 │ ├── panels/ # Main application panels
 │ │ ├── ResearchPanel.tsx
 │ │ ├── GraphPanel.tsx
-│ │ └── ItemDetailsPanel.tsx
+│ │ └── ItemDetailsPanel.tsx # Includes EnhancementPanel
 │ ├── canvas/ # Canvas research document mode
 │ │ ├── CanvasTab.tsx
 │ │ ├── DocumentRenderer.tsx
@@ -308,13 +382,21 @@ src/
 │ ├── graph/ # D3.js graph visualization
 │ ├── research/ # AI research interface
 │ └── common/ # Reusable UI components
+│   ├── ConflictResolution.tsx
+│   ├── ResizableGraphLayout.tsx
+│   ├── ResizablePanels.tsx
+│   ├── SearchBar.tsx
+│   ├── YearValidation.tsx
+│   └── EnhancementPanel.tsx # MCP-based content enhancement
 ├── contexts/ # React context providers
 │ └── CanvasContext.tsx # Canvas document state management
 ├── hooks/ # Custom React hooks
 │ ├── useCanvasOperations.ts # Canvas research logic (start, refine, update sections)
 │ ├── useGraphOperations.ts # Graph loading and expansion logic
-│ └── useProposals.ts # AI proposal management
+│ ├── useProposals.ts # AI proposal management
+│ └── useEnhancement.ts # MCP enhancement operations
 ├── services/ # API client and utilities
+│ └── api.ts # Includes enhancement API methods
 ├── types/ # TypeScript type definitions
 └── utils/ # Utility functions
   └── graphUtils.ts # Graph data processing and positioning
@@ -341,18 +423,26 @@ src/
 - **Proposal System**: AI-generated influence proposals with user confirmation
 - **Follow-up Questions**: Interactive research with targeted AI analysis
 - **Database Management**: UI-based cleanup and merge operations
+- **MCP Enhancement System**: Complete content enhancement with YouTube MCP integration
+  - Dynamic content discovery via Model Context Protocol
+  - Intelligent tool selection based on item context
+  - Content scoring and filtering (2-4 pieces per enhancement)
+  - Rich media display with thumbnails and metadata
+  - Complete frontend/backend integration with database storage
 
 ### 🔄 In Progress
 - **Clustering**: Semantic grouping of related influences
-- **MCP Integration**: Enhanced data gathering with external tools
+- **Additional MCP Tools**: Spotify and Wikipedia MCP integration
 - **Community Features**: User verification and voting systems
 - **Advanced Filtering**: Scope-based and confidence-based filtering
 
 ### 📋 Planned Features
-- **Media Embedding**: Images, videos, and audio integration
+- **Media Embedding**: Enhanced media integration beyond MCP content
 - **Background Processing**: Automated influence discovery
 - **Export/Import**: Graph data sharing and backup
 - **Mobile Support**: Responsive design for mobile devices
+- **Content Caching**: Performance optimization for MCP responses
+- **User Preferences**: Customizable enhancement settings
 
 ## 🎨 Design Philosophy
 

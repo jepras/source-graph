@@ -93,6 +93,7 @@ export interface ExpandedGraph {
     explanation: string;
     category: string;
     source?: string;
+    clusters?: string[];
   }>;
   center_item_id: string;
 }
