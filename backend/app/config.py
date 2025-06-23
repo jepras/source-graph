@@ -19,9 +19,27 @@ class Settings(BaseSettings):
     # REDIS_URL: str  # Commented out - will add later
 
     # External APIs
-    SPOTIFY_CLIENT_ID: str
-    SPOTIFY_CLIENT_SECRET: str
+    SPOTIFY_CLIENT_ID: str | None = None  # Make optional for now
+    SPOTIFY_CLIENT_SECRET: str | None = None  # Make optional for now
     YOUTUBE_API_KEY: str | None = None  # Make Youtube optional for now
+
+    # MCP Settings
+    spotify_mcp_url: str = "http://localhost:3000"
+    youtube_mcp_url: str = "http://localhost:3001"
+    wikipedia_mcp_url: str = "http://localhost:3002"
+    spotify_mcp_enabled: str = "true"
+    youtube_mcp_enabled: str = "true"
+    wikipedia_mcp_enabled: str = "true"
+
+    # MCP Server Paths (for stdio clients)
+    YOUTUBE_MCP_SERVER_PATH: str = (
+        "/Users/jepperasmussen/Documents/workspace/mcp-servers/youtube-mcp-server"
+    )
+    SPOTIFY_MCP_SERVER_PATH: str = "./spotify-mcp-server.js"
+    WIKIPEDIA_MCP_SERVER_PATH: str = "./wikipedia-mcp-server.js"
+
+    # MCP Configuration
+    MCP_MAX_RETRIES: int = 3
 
     # Backend specific settings
     BACKEND_PORT: int = 8000  # Default port
