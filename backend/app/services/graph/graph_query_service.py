@@ -177,6 +177,7 @@ class GraphQueryService(BaseGraphService):
                     explanation=relation["explanation"],
                     category=relation["category"],
                     source=relation.get("source"),
+                    clusters=relation.get("clusters"),
                 )
                 influences.append(influence_relation)
 

@@ -5,6 +5,7 @@ import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { GraphExpansionControls } from '../graph/GraphExpansionControls';
 import { EnhancementPanel } from '../common/EnhancementPanel';
 import type { Item, InfluenceRelation } from '../../services/api';
+import type { GraphNode, GraphLink } from '../../types/graph';
 
 interface InfluenceData {
   incoming: InfluenceRelation[];
@@ -14,7 +15,7 @@ interface InfluenceData {
 }
 
 export const ItemDetailsPanel: React.FC = () => {
-  const { state, selectNode, removeNodeFromGraph } = useGraph();
+  const { state, selectNode, removeNodeFromGraph, addNodesAndLinks } = useGraph();
   const { expandNode } = useGraphOperations();
   const [itemDetails, setItemDetails] = useState<Item | null>(null);
   const [influenceData, setInfluenceData] = useState<InfluenceData>({
@@ -139,6 +140,72 @@ export const ItemDetailsPanel: React.FC = () => {
       console.error('Merge failed:', error);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleAddInfluenceToGraph = async (influence: InfluenceRelation) => {
+    try {
+      // Get the full item details for the influence
+      const influenceItem = await api.getItem(influence.from_item.id);
+      
+      // Create a graph node for the influence
+      const newNode: GraphNode = {
+        id: influenceItem.id,
+        name: influenceItem.name,
+        type: influenceItem.auto_detected_type || 'unknown',
+        year: influenceItem.year,
+        category: 'influence',
+        clusters: influence.clusters || []
+      };
+
+      // Create a link from the influence to the current item
+      const newLink: GraphLink = {
+        source: influenceItem.id,
+        target: state.selectedNodeId!,
+        confidence: influence.confidence,
+        influence_type: influence.influence_type,
+        category: influence.category,
+        explanation: influence.explanation
+      };
+
+      // Add to graph
+      addNodesAndLinks([newNode], [newLink]);
+      
+    } catch (error) {
+      console.error('Failed to add influence to graph:', error);
+    }
+  };
+
+  const handleAddOutgoingInfluenceToGraph = async (influence: any) => {
+    try {
+      // Get the full item details for the influence
+      const influenceItem = await api.getItem(influence.to_item.id);
+      
+      // Create a graph node for the influence
+      const newNode: GraphNode = {
+        id: influenceItem.id,
+        name: influenceItem.name,
+        type: influenceItem.auto_detected_type || 'unknown',
+        year: influenceItem.year,
+        category: 'influence',
+        clusters: influence.clusters || []
+      };
+
+      // Create a link from the current item to the influence
+      const newLink: GraphLink = {
+        source: state.selectedNodeId!,
+        target: influenceItem.id,
+        confidence: influence.confidence,
+        influence_type: influence.influence_type,
+        category: influence.category,
+        explanation: influence.explanation
+      };
+
+      // Add to graph
+      addNodesAndLinks([newNode], [newLink]);
+      
+    } catch (error) {
+      console.error('Failed to add outgoing influence to graph:', error);
     }
   };
 
@@ -339,23 +406,34 @@ export const ItemDetailsPanel: React.FC = () => {
               ) : (
                 influenceData.incoming.map((influence, index) => (
                   <div key={index} className="bg-gray-50 rounded p-3">
-                    <button
-                      onClick={() => selectNode(influence.from_item.id)}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-1"
-                    >
-                      {influence.from_item.name}
-                    </button>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {influence.category} • {influence.influence_type}
-                    </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {influence.explanation}
-                    </p>
-                    {influence.confidence && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Confidence: {Math.round(influence.confidence * 100)}%
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => selectNode(influence.from_item.id)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-1"
+                        >
+                          {influence.from_item.name}
+                        </button>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {influence.category} • {influence.influence_type}
+                        </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {influence.explanation}
+                        </p>
+                        {influence.confidence && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Confidence: {Math.round(influence.confidence * 100)}%
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <button
+                        onClick={() => handleAddInfluenceToGraph(influence)}
+                        className="ml-2 px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                        title="Add this influence to the graph"
+                      >
+                        Add to graph
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -386,23 +464,34 @@ export const ItemDetailsPanel: React.FC = () => {
               ) : (
                 influenceData.outgoing.map((influence: any, index: number) => (
                   <div key={index} className="bg-gray-50 rounded p-3">
-                    <button
-                      onClick={() => selectNode(influence.to_item.id)}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-1"
-                    >
-                      {influence.to_item.name}
-                    </button>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {influence.category} • {influence.influence_type}
-                    </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {influence.explanation}
-                    </p>
-                    {influence.confidence && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Confidence: {Math.round(influence.confidence * 100)}%
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => selectNode(influence.to_item.id)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 mb-1"
+                        >
+                          {influence.to_item.name}
+                        </button>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {influence.category} • {influence.influence_type}
+                        </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {influence.explanation}
+                        </p>
+                        {influence.confidence && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Confidence: {Math.round(influence.confidence * 100)}%
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <button
+                        onClick={() => handleAddOutgoingInfluenceToGraph(influence)}
+                        className="ml-2 px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                        title="Add this influence to the graph"
+                      >
+                        Add to graph
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

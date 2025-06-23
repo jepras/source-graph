@@ -77,6 +77,7 @@ async def get_outgoing_influences(item_id: str):
                     "influence_type": inf.influence_type,
                     "explanation": inf.explanation,
                     "category": inf.category,
+                    "clusters": inf.clusters,
                 }
                 for inf in influences
             ],
