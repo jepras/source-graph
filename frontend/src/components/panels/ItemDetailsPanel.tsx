@@ -3,6 +3,7 @@ import { api } from '../../services/api';
 import { useGraph } from '../../contexts/GraphContext';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { GraphExpansionControls } from '../graph/GraphExpansionControls';
+import { EnhancementPanel } from '../common/EnhancementPanel';
 import type { Item, InfluenceRelation } from '../../services/api';
 
 interface InfluenceData {
@@ -306,6 +307,14 @@ export const ItemDetailsPanel: React.FC = () => {
           onExpand={handleExpand}
           loading={state.loading}
         />
+
+        {/* Enhancement Panel */}
+        <div className="border-t border-gray-200 pt-4">
+          <EnhancementPanel
+            itemId={state.selectedNodeId!}
+            itemName={itemDetails.name}
+          />
+        </div>
 
         {/* Incoming Influences Section */}
         <div>

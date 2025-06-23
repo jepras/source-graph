@@ -7,6 +7,7 @@ def create_constraints(session: Session):
         "CREATE CONSTRAINT item_id IF NOT EXISTS FOR (i:Item) REQUIRE i.id IS UNIQUE",
         "CREATE CONSTRAINT creator_id IF NOT EXISTS FOR (c:Creator) REQUIRE c.id IS UNIQUE",
         "CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE",  # Keep for future
+        "CREATE CONSTRAINT enhanced_content_id IF NOT EXISTS FOR (ec:EnhancedContent) REQUIRE ec.id IS UNIQUE",
     ]
 
     for constraint in constraints:
@@ -21,6 +22,9 @@ def create_indexes(session: Session):
         "CREATE INDEX item_type IF NOT EXISTS FOR (i:Item) ON (i.auto_detected_type)",  # Updated field name
         "CREATE INDEX creator_name IF NOT EXISTS FOR (c:Creator) ON (c.name)",
         "CREATE INDEX creator_type IF NOT EXISTS FOR (c:Creator) ON (c.type)",
+        "CREATE INDEX enhanced_content_item_id IF NOT EXISTS FOR (ec:EnhancedContent) ON (ec.item_id)",
+        "CREATE INDEX enhanced_content_source IF NOT EXISTS FOR (ec:EnhancedContent) ON (ec.source)",
+        "CREATE INDEX enhanced_content_type IF NOT EXISTS FOR (ec:EnhancedContent) ON (ec.content_type)",
     ]
 
     for index in indexes:

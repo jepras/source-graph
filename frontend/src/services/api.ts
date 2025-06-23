@@ -192,13 +192,52 @@ export interface UnifiedQuestionResponse {
 }
 
 // ============================================================================
-// SECTION 6: CONFIGURATION
+// SECTION 6: ENHANCEMENT TYPES
+// ============================================================================
+
+export interface EnhancedContent {
+  id: string;
+  item_id: string;
+  content_type: string;
+  source: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  relevance_score: number;
+  context_explanation: string;
+  embedded_data: Record<string, any>;
+  created_at: string;
+}
+
+export interface EnhancementRequest {
+  item_id: string;
+  model_name?: string;
+  max_content_pieces?: number;
+}
+
+export interface EnhancementResponse {
+  item_id: string;
+  analysis: Record<string, any>;
+  enhanced_content: EnhancedContent[];
+  enhancement_summary: string;
+  error?: string;
+}
+
+export interface EnhancementStatus {
+  status: string;
+  progress: number;
+  message: string;
+  result?: EnhancementResponse;
+}
+
+// ============================================================================
+// SECTION 7: CONFIGURATION
 // ============================================================================
 
 const API_BASE = 'http://localhost:8000/api';
 
 // ============================================================================
-// SECTION 7: CORE API OPERATIONS
+// SECTION 8: CORE API OPERATIONS
 // ============================================================================
 
 export const api = {
@@ -278,12 +317,12 @@ export const api = {
 };
 
 // ============================================================================
-// SECTION 8: AI STRUCTURING OPERATIONS -- redundant?
+// SECTION 9: AI STRUCTURING OPERATIONS -- redundant?
 // ============================================================================
 
 
 // ============================================================================
-// SECTION 9: INFLUENCE SAVING OPERATIONS 
+// SECTION 10: INFLUENCE SAVING OPERATIONS 
 // ============================================================================
 
 export const influenceApi = {
@@ -344,7 +383,7 @@ export const influenceApi = {
 };
 
 // ============================================================================
-// SECTION 10: AI PROPOSAL OPERATIONS
+// SECTION 11: AI PROPOSAL OPERATIONS
 // ============================================================================
 
 export const proposalApi = {
@@ -380,7 +419,7 @@ export const proposalApi = {
 };
 
 // ============================================================================
-// SECTION 11: CANVAS API OPERATIONS
+// SECTION 12: CANVAS API OPERATIONS
 // ============================================================================
 
 export const canvasApi = {
@@ -469,6 +508,44 @@ export const canvasApi = {
       body: JSON.stringify(request),
     });
     if (!response.ok) throw new Error('Failed to refine section');
+    return response.json();
+  },
+};
+
+// ============================================================================
+// SECTION 13: ENHANCEMENT API OPERATIONS
+// ============================================================================
+
+export const enhancementApi = {
+  enhanceItem: async (request: EnhancementRequest): Promise<EnhancementResponse> => {
+    const response = await fetch(`${API_BASE}/enhancement/items/${request.item_id}/enhance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error('Failed to enhance item');
+    return response.json();
+  },
+
+  getEnhancedContent: async (itemId: string): Promise<EnhancedContent[]> => {
+    const response = await fetch(`${API_BASE}/enhancement/items/${itemId}/enhanced-content`);
+    if (!response.ok) throw new Error('Failed to get enhanced content');
+    return response.json();
+  },
+
+  deleteEnhancedContent: async (contentId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch(`${API_BASE}/enhancement/content/${contentId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete enhanced content');
+    return response.json();
+  },
+
+  deleteAllEnhancedContent: async (itemId: string): Promise<{ success: boolean; deleted_count: number; message: string }> => {
+    const response = await fetch(`${API_BASE}/enhancement/items/${itemId}/enhanced-content`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete all enhanced content');
     return response.json();
   },
 };

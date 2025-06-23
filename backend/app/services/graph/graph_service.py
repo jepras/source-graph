@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 from app.models.item import Item, Creator, InfluenceRelation, GraphResponse
 from app.models.structured import StructuredOutput
+from app.models.enhancement import EnhancedContent
 from .base_service import BaseGraphService
 from .item_service import ItemService
 from .creator_service import CreatorService
@@ -8,6 +9,7 @@ from .influence_service import InfluenceService
 from .graph_query_service import GraphQueryService
 from .conflict_service import ConflictService
 from .bulk_service import BulkService
+import json
 
 
 class GraphService(BaseGraphService):
@@ -149,6 +151,152 @@ class GraphService(BaseGraphService):
     def save_structured_influences(self, structured_data: StructuredOutput) -> str:
         """Save complete structured influence data to database with scope support"""
         return self.bulk_service.save_structured_influences(structured_data)
+
+    # ============================================================================
+    # SECTION 8: ENHANCED CONTENT OPERATIONS
+    # ============================================================================
+
+    def save_enhanced_content(self, enhanced_content: EnhancedContent) -> str:
+        """Save enhanced content to database"""
+        from app.core.database.neo4j import neo4j_db
+
+        # Convert embedded_data to JSON string to avoid Neo4j nested object issues
+        embedded_data_json = (
+            json.dumps(enhanced_content.embedded_data)
+            if enhanced_content.embedded_data
+            else None
+        )
+
+        with neo4j_db.driver.session() as session:
+            # Create EnhancedContent node
+            session.run(
+                """
+                CREATE (ec:EnhancedContent {
+                    id: $id,
+                    item_id: $item_id,
+                    content_type: $content_type,
+                    source: $source,
+                    title: $title,
+                    url: $url,
+                    thumbnail: $thumbnail,
+                    relevance_score: $relevance_score,
+                    context_explanation: $context_explanation,
+                    embedded_data: $embedded_data,
+                    created_at: datetime()
+                })
+                """,
+                {
+                    "id": enhanced_content.id,
+                    "item_id": enhanced_content.item_id,
+                    "content_type": enhanced_content.content_type,
+                    "source": enhanced_content.source,
+                    "title": enhanced_content.title,
+                    "url": enhanced_content.url,
+                    "thumbnail": enhanced_content.thumbnail,
+                    "relevance_score": enhanced_content.relevance_score,
+                    "context_explanation": enhanced_content.context_explanation,
+                    "embedded_data": embedded_data_json,
+                },
+            )
+
+            # Create relationship to item
+            session.run(
+                """
+                MATCH (i:Item {id: $item_id})
+                MATCH (ec:EnhancedContent {id: $content_id})
+                CREATE (i)-[:HAS_ENHANCED_CONTENT]->(ec)
+                """,
+                {
+                    "item_id": enhanced_content.item_id,
+                    "content_id": enhanced_content.id,
+                },
+            )
+
+        return enhanced_content.id
+
+    def get_enhanced_content(self, item_id: str) -> List[EnhancedContent]:
+        """Get all enhanced content for an item"""
+        from app.core.database.neo4j import neo4j_db
+
+        with neo4j_db.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (i:Item {id: $item_id})-[:HAS_ENHANCED_CONTENT]->(ec:EnhancedContent)
+                RETURN ec
+                ORDER BY ec.created_at DESC
+                """,
+                {"item_id": item_id},
+            )
+
+            enhanced_content = []
+            for record in result:
+                node = record["ec"]
+
+                # Parse embedded_data back from JSON string
+                embedded_data = {}
+                if node.get("embedded_data"):
+                    try:
+                        embedded_data = json.loads(node["embedded_data"])
+                    except (json.JSONDecodeError, TypeError):
+                        # If parsing fails, use empty dict
+                        embedded_data = {}
+
+                # Convert Neo4j DateTime to Python datetime
+                created_at = node["created_at"]
+                if hasattr(created_at, "to_native"):
+                    created_at = created_at.to_native()
+
+                enhanced_content.append(
+                    EnhancedContent(
+                        id=node["id"],
+                        item_id=node["item_id"],
+                        content_type=node["content_type"],
+                        source=node["source"],
+                        title=node["title"],
+                        url=node["url"],
+                        thumbnail=node.get("thumbnail"),
+                        relevance_score=node["relevance_score"],
+                        context_explanation=node["context_explanation"],
+                        embedded_data=embedded_data,
+                        created_at=created_at,
+                    )
+                )
+
+            return enhanced_content
+
+    def delete_enhanced_content(self, content_id: str) -> bool:
+        """Delete a specific piece of enhanced content"""
+        from app.core.database.neo4j import neo4j_db
+
+        with neo4j_db.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (ec:EnhancedContent {id: $content_id})
+                DETACH DELETE ec
+                RETURN count(ec) as deleted
+                """,
+                {"content_id": content_id},
+            )
+
+            deleted_count = result.single()["deleted"]
+            return deleted_count > 0
+
+    def delete_all_enhanced_content(self, item_id: str) -> int:
+        """Delete all enhanced content for an item"""
+        from app.core.database.neo4j import neo4j_db
+
+        with neo4j_db.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (i:Item {id: $item_id})-[:HAS_ENHANCED_CONTENT]->(ec:EnhancedContent)
+                DETACH DELETE ec
+                RETURN count(ec) as deleted
+                """,
+                {"item_id": item_id},
+            )
+
+            deleted_count = result.single()["deleted"]
+            return deleted_count
 
 
 # Global instance (maintains backward compatibility)

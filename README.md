@@ -7,11 +7,12 @@ This project aims to create a universal influence tracking system that generates
 Refer to TASKS.md and PLANNING.md for detailed setup instructions and project plans. 
 
 ## How to use this
-- Test frontend: cd frontend npm run dev
+- Run MCPs. Open MCP servers (npm start)
 - Start & open database from Neo4j Desktop. Run queries through the browser: http://localhost:7474/browser/
-- Test FastAPI: cd backend python run.py
+- Run backend FastAPI: cd backend python run.py
     - Go to http://localhost:8000/docs
     - To kill whatever is on 8000: lsof -i :8000 | grep LISTEN | awk '{print $2}' | xargs kill -9
+- Start frontend: cd frontend npm run dev
 
 ## Security stuff to fix
 CORS
