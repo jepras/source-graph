@@ -97,7 +97,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {/* Model Selection and Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Model:</label>
+          <label className="text-sm font-medium text-design-gray-300">Model:</label>
           <ModelSelector
             selectedModel={state.selectedModel}
             onModelChange={setSelectedModel}
@@ -124,11 +124,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={loading ? "AI is thinking..." : placeholder}
             disabled={loading}
-            className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
+            className="w-full p-3 border border-design-gray-800 rounded-lg resize-none focus:ring-2 focus:ring-design-green focus:border-design-green disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-design-gray-900 bg-design-gray-900 text-design-gray-100 placeholder-design-gray-500"
             rows={1}
             style={{ minHeight: '44px', maxHeight: '120px' }}
           />
-          <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+          <div className="absolute bottom-2 right-2 text-xs text-design-gray-500">
             {loading ? "Generating..." : (
               <>
                 {message.length > 0 && `${message.length} chars • `}
@@ -142,7 +142,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {selectedCount > 0 && !loading && (
           <button
             onClick={onSave}
-            className="p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+            className="p-3 bg-design-green text-white rounded-lg hover:bg-design-green-hover focus:ring-2 focus:ring-design-green focus:ring-offset-2 focus:ring-offset-design-gray-950 transition-colors"
             title={`Save ${selectedCount} selected influences to graph`}
           >
             <Save className="w-4 h-4" />
@@ -153,7 +153,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <button
           onClick={handleSubmit}
           disabled={!message.trim() || loading}
-          className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-3 bg-design-green text-white rounded-lg hover:bg-design-green-hover focus:ring-2 focus:ring-design-green focus:ring-offset-2 focus:ring-offset-design-gray-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

@@ -33,28 +33,28 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
       {/* Document Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-design-gray-100">
             {document.item_name}
           </h1>
           {/* Use the proper document.item_year */}
           {document.item_year && (
-            <span className="text-lg text-gray-600 bg-gray-100 px-3 py-1 rounded">
+            <span className="text-lg text-design-gray-300 bg-design-gray-900 px-3 py-1 rounded border border-design-gray-800">
               {document.item_year}
             </span>
           )}
         </div>
         {document.creator && (
-          <p className="text-gray-600">by {document.creator}</p>
+          <p className="text-design-gray-400">by {document.creator}</p>
         )}
         {document.item_type && (
-          <p className="text-sm text-gray-500 capitalize">{document.item_type}</p>
+          <p className="text-sm text-design-gray-500 capitalize">{document.item_type}</p>
         )}
         <div className="flex items-center gap-4 mt-4">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-design-gray-500">
             {document.sections.length} sections
           </span>
           {selectedCount > 0 && (
-            <span className="text-sm text-blue-600">
+            <span className="text-sm text-design-green">
               {selectedCount} selected for graph
             </span>
           )}
@@ -78,8 +78,8 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           ref={loadingRef}
           className="flex items-center justify-center py-8"
         >
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Generating content...</span>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-design-green"></div>
+          <span className="ml-2 text-design-gray-400">Generating content...</span>
         </div>
       )}
     </div>

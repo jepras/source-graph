@@ -42,9 +42,9 @@ export const GraphExpansionControls: React.FC<GraphExpansionControlsProps> = ({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <h4 className="text-sm font-semibold text-gray-800 mb-3">
-        🔍 Expand Graph
+    <div className="bg-design-gray-900 border border-design-gray-800 rounded-lg p-4 shadow-sm">
+      <h4 className="text-sm font-semibold text-design-gray-200 mb-3">
+        🔍 Graph Expansion
       </h4>
       
       {countsLoading ? (

@@ -46,7 +46,7 @@ export const MainLayout: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-design-green rounded-full flex items-center justify-center">
-                <span className="text-black text-xs font-bold">IG</span>
+                <span className="text-white text-xs font-bold">IG</span>
               </div>
               <h1 className="text-xl font-semibold text-white">Influence Graph</h1>
               <span className="text-sm text-design-gray-400">Explore how everything influences everything</span>

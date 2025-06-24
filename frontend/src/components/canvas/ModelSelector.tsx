@@ -35,34 +35,34 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           onChange={(e) => onModelChange(e.target.value)}
           disabled={disabled}
           className={`
-            appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+            appearance-none bg-design-gray-900 border border-design-gray-800 rounded-md px-3 py-2 pr-8 text-sm text-design-gray-100
+            focus:outline-none focus:ring-2 focus:ring-design-green focus:border-design-green
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-design-gray-700'}
           `}
         >
           {AVAILABLE_MODELS.map((model) => (
-            <option key={model.key} value={model.key}>
+            <option key={model.key} value={model.key} className="bg-design-gray-900 text-design-gray-100">
               {model.name}
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-design-gray-400 pointer-events-none" />
       </div>
 
       {/* Two-Agent Toggle */}
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-design-gray-400 cursor-pointer">
           <input
             type="checkbox"
             checked={useTwoAgent}
             onChange={(e) => onTwoAgentChange(e.target.checked)}
             disabled={disabled}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            className="w-4 h-4 text-design-green bg-design-gray-900 border-design-gray-700 rounded focus:ring-design-green focus:ring-2"
           />
           <span className="text-xs">Two-Agent</span>
         </label>
         {useTwoAgent && (
-          <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+          <span className="text-xs text-design-green bg-design-green/10 px-2 py-1 rounded border border-design-green/20">
             Enhanced
           </span>
         )}

@@ -133,11 +133,11 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .attr("text-anchor", "middle")
       .style("font-size", "12px")
       .style("font-weight", "bold")
-      .style("fill", "#374151")
+      .style("fill", "#ffffff")
       .text(d => d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name);
 
     // Add year labels
-    nodeGroups.filter(d => d.year)
+    nodeGroups.filter(d => d.year !== undefined && d.year !== null)
       .append("text")
       .attr("dy", -35)
       .attr("text-anchor", "middle")
@@ -186,8 +186,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("y", topPadding) // Changed from 'padding' to 'topPadding'
         .attr("width", columnWidth - 20)
         .attr("height", height - topPadding - padding) // Adjusted height
-        .attr("fill", "#f3f4f6")
-        .attr("stroke", "#9ca3af")
+        .attr("fill", "#1f2937")
+        .attr("stroke", "#374151")
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", "5,5")
         .attr("rx", 8)
@@ -227,8 +227,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("text-anchor", "middle")
         .style("font-size", "14px")
         .style("font-weight", "bold")
-        .style("fill", "#374151")
-        .style("text-shadow", "2px 2px 4px rgba(255,255,255,0.8)")
+        .style("fill", "#ffffff")
+        .style("text-shadow", "2px 2px 4px rgba(0,0,0,0.8)")
         .text(clusterName);
       
       labelPositions.push({
@@ -259,10 +259,10 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       <div className="absolute top-4 right-4 z-10 flex space-x-2">
         <button
           onClick={handleClusteringToggle}
-          className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
+          className={`px-3 py-2 border border-design-gray-800 rounded shadow text-sm ${
             isClusteringEnabled 
-              ? 'bg-blue-500 text-white hover:bg-blue-600' 
-              : 'bg-white hover:bg-gray-50'
+              ? 'bg-design-green text-white hover:bg-design-green-hover' 
+              : 'bg-design-gray-900 text-design-gray-300 hover:bg-design-gray-800 hover:text-white'
           }`}
           title="Toggle cluster layout (columns by semantic clusters)"
         >
@@ -271,10 +271,10 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         
         <button
           onClick={handleChronologicalToggle}
-          className={`px-3 py-2 border border-gray-300 rounded shadow text-sm ${
+          className={`px-3 py-2 border border-design-gray-800 rounded shadow text-sm ${
             isChronologicalOrder 
-              ? 'bg-green-500 text-white hover:bg-green-600' 
-              : 'bg-white hover:bg-gray-50'
+              ? 'bg-design-green text-white hover:bg-design-green-hover' 
+              : 'bg-design-gray-900 text-design-gray-300 hover:bg-design-gray-800 hover:text-white'
           }`}
           title="Toggle chronological ordering (sort by year)"
         >
@@ -284,7 +284,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         {onClearGraph && (
           <button
             onClick={onClearGraph}
-            className="px-3 py-2 bg-red-500 text-white border border-red-600 rounded shadow text-sm hover:bg-red-600"
+            className="px-3 py-2 bg-red-600 text-white border border-red-700 rounded shadow text-sm hover:bg-red-700"
             title="Clear entire graph"
           >
             🗑️ Clear
@@ -296,41 +296,41 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       <svg 
         ref={svgRef} 
         className="w-full h-full"
-        style={{ background: '#f9fafb' }}
+        style={{ background: '#111827' }}
       />
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white border border-gray-300 rounded p-3 shadow text-sm">
-        <div className="font-semibold mb-2">Layout Mode</div>
-        <div className="text-xs text-gray-600 mb-1">
+      <div className="absolute bottom-4 left-4 bg-design-gray-900 border border-design-gray-800 rounded p-3 shadow text-sm">
+        <div className="font-semibold mb-2 text-white">Layout Mode</div>
+        <div className="text-xs text-design-gray-400 mb-1">
           {isClusteringEnabled ? '🏛️ Cluster Mode' : '🌐 Default Mode'}
         </div>
-        <div className="text-xs text-gray-600">
+        <div className="text-xs text-design-gray-400">
           {isChronologicalOrder ? '📅 Chronological' : '🎲 Natural'}
         </div>
         
-        <div className="mt-3 pt-2 border-t border-gray-200">
+        <div className="mt-3 pt-2 border-t border-design-gray-800">
           <div className="flex items-center mb-1">
             <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-            <span className="text-xs">Main Item</span>
+            <span className="text-xs text-design-gray-300">Main Item</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-            <span className="text-xs">Influences</span>
+            <span className="text-xs text-design-gray-300">Influences</span>
           </div>
         </div>
       </div>
 
       {/* Graph Stats */}
-      <div className="absolute top-4 left-4 bg-white border border-gray-300 rounded p-2 shadow text-sm">
-        <div className="font-semibold">
+      <div className="absolute top-4 left-4 bg-design-gray-900 border border-design-gray-800 rounded p-2 shadow text-sm">
+        <div className="font-semibold text-white">
           {accumulatedGraph.nodes.size} nodes
         </div>
-        <div className="text-gray-600 text-xs">
+        <div className="text-design-gray-400 text-xs">
           {accumulatedGraph.relationships.size} connections
         </div>
         {isClusteringEnabled && (
-          <div className="text-blue-600 text-xs">
+          <div className="text-design-green text-xs">
             {extractClusters(Array.from(accumulatedGraph.nodes.values())).length} clusters
           </div>
         )}
