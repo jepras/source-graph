@@ -160,9 +160,9 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-design-gray-950">
+    <div className="h-full flex flex-col bg-design-gray-950 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-design-gray-800">
+      <div className="p-4 border-b border-design-gray-800 flex-shrink-0">
         <div className="flex items-center justify-between">
           <p className="text-xs text-design-gray-400">
             Research influences through conversation
@@ -180,8 +180,8 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
         </div>
       </div>
 
-      {/* Document Area */}
-      <div className="flex-1 overflow-y-auto relative">
+      {/* Document Area - Scrollable */}
+      <div className="flex-1 overflow-hidden">
         {/* Loading Overlay - ONLY for initial research, not follow-up questions */}
         {state.loading && !state.currentDocument && (
           <div className="absolute inset-0 bg-design-gray-950 bg-opacity-80 flex items-center justify-center z-10">

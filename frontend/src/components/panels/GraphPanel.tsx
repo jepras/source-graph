@@ -17,7 +17,7 @@ export const GraphPanel: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-design-gray-950">
+    <div className="h-full flex flex-col bg-design-gray-950 overflow-hidden">
       {state.loading && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-design-gray-900 border border-design-gray-800 rounded px-3 py-2 shadow-sm">
           <div className="flex items-center space-x-2">
@@ -36,7 +36,7 @@ export const GraphPanel: React.FC = () => {
         </div>
       )}
       
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
         {state.accumulatedGraph.nodes.size > 0 ? (
           <InfluenceGraph
             accumulatedGraph={state.accumulatedGraph}

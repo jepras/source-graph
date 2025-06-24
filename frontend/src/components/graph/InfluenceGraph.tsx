@@ -287,9 +287,9 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   };
 
   return (
-    <div className="h-full flex bg-design-gray-950 relative">
+    <div className="h-full flex bg-design-gray-950 relative overflow-hidden">
       {/* Main Graph Area */}
-      <div className={`transition-all duration-300 ${showSelectedPanel ? "flex-1" : "w-full"}`}>
+      <div className={`transition-all duration-300 overflow-hidden ${showSelectedPanel ? "flex-1" : "w-full"}`}>
         <div className="h-full relative overflow-hidden">
           <svg ref={svgRef} className="w-full h-full" />
 
@@ -439,8 +439,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
       {/* Collapsible Selected Item Panel */}
       <div
-        className={`transition-all duration-300 border-l border-design-gray-800 bg-design-gray-950 ${
-          showSelectedPanel ? "w-96" : "w-0 overflow-hidden"
+        className={`transition-all duration-300 border-l border-design-gray-800 bg-design-gray-950 overflow-hidden ${
+          showSelectedPanel ? "w-96" : "w-0"
         }`}
       >
         {showSelectedPanel && (

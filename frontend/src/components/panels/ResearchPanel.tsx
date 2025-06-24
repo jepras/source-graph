@@ -304,7 +304,7 @@ Your responses should be well-structured, informative, and suitable for academic
   // Show conflict resolution if needed
   if (conflictData) {
     return (
-      <div className="h-full flex flex-col bg-design-gray-950 p-4">
+      <div className="h-full flex flex-col bg-design-gray-950">
         <ConflictResolution
           conflicts={conflictData.conflicts}
           previewData={conflictData.previewData}
@@ -317,8 +317,8 @@ Your responses should be well-structured, informative, and suitable for academic
   }
 
   return (
-    <div className="h-full flex flex-col bg-design-gray-950">
-      {/* Document Area - 90% */}
+    <div className="h-full flex flex-col bg-design-gray-950 overflow-hidden">
+      {/* Document Area - Scrollable */}
       <div className="flex-1 overflow-hidden">
         {isDocumentMode ? (
           <CanvasTab onItemSaved={onItemSaved} />
@@ -332,8 +332,8 @@ Your responses should be well-structured, informative, and suitable for academic
         )}
       </div>
 
-      {/* Chat Input with Controls - 10% */}
-      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-design-gray-950">
+      {/* Chat Input with Controls - Fixed at bottom */}
+      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-design-gray-950 flex-shrink-0">
         {/* Control Buttons */}
         <div className="flex items-center justify-start space-x-2">
           {/* System Prompt Dropdown */}
