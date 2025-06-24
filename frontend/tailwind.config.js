@@ -23,6 +23,14 @@ module.exports = {
         'border': "var(--border)",
         'input': "var(--input)",
         'ring': "var(--ring)",
+        // Custom design colors
+        'design-green': "var(--design-green)",
+        'design-green-hover': "var(--design-green-hover)",
+        'design-gray-800': "var(--design-gray-800)",
+        'design-gray-900': "var(--design-gray-900)",
+        'design-gray-950': "var(--design-gray-950)",
+        'design-gray-400': "var(--design-gray-400)",
+        'design-gray-500': "var(--design-gray-500)",
         // Add more as needed from your index.css
       },
       borderRadius: {

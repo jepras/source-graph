@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import type { Item } from '../../services/api';
 
 interface SearchBarProps {
@@ -34,37 +36,38 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
-      <input
+    <div className="relative w-full">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-design-gray-400 w-4 h-4 z-10" />
+      <Input
         type="text"
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder="Search for items..."
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="pl-10 bg-design-gray-900 border-design-gray-800 text-white placeholder-design-gray-500 focus:border-design-green focus:ring-design-green/20"
       />
       
       {showResults && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-20 w-full mt-1 bg-design-gray-950 border border-design-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-center text-gray-500">Searching...</div>
+            <div className="p-4 text-center text-design-gray-400">Searching...</div>
           ) : searchResults.length > 0 ? (
             searchResults.map((item) => (
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                className="p-3 hover:bg-design-gray-900 cursor-pointer border-b border-design-gray-800 last:border-b-0"
               >
-                <div className="font-medium">{item.name}</div>
+                <div className="font-medium text-white">{item.name}</div>
                 {item.auto_detected_type && (
-                  <div className="text-sm text-gray-600">{item.auto_detected_type}</div>
+                  <div className="text-sm text-design-gray-400">{item.auto_detected_type}</div>
                 )}
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-design-gray-500">
                   {item.year} • {item.verification_status}
                 </div>
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-gray-500">No results found</div>
+            <div className="p-4 text-center text-design-gray-400">No results found</div>
           )}
         </div>
       )}
