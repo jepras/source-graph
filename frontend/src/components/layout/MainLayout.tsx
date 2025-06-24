@@ -5,6 +5,7 @@ import { ResearchPanel } from '../panels/ResearchPanel';
 import { GraphPanel } from '../panels/GraphPanel';
 import { ItemDetailsPanel } from '../panels/ItemDetailsPanel';
 import { SearchBar } from '../common/SearchBar';
+import { Button } from '@/components/ui/button';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { useGraph } from '../../contexts/GraphContext';
 import type { Item } from '../../services/api';
@@ -60,6 +61,7 @@ export const MainLayout: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            <Button classname="default">Hey</Button>
             <div className="text-xs text-gray-500">
               v1.0.0
             </div>
@@ -71,6 +73,7 @@ export const MainLayout: React.FC = () => {
       <div className="flex-1 overflow-hidden">
         <ResizablePanels
           leftPanel={
+            
             <ResearchPanel onItemSaved={handleItemSaved} />
           }
           rightPanel={
