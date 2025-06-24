@@ -317,7 +317,7 @@ Your responses should be well-structured, informative, and suitable for academic
   }
 
   return (
-    <div className="h-full flex flex-col bg-design-gray-950 overflow-hidden">
+    <div className="h-full flex flex-col bg-black overflow-hidden">
       {/* Document Area - Scrollable */}
       <div className="flex-1 overflow-hidden">
         {isDocumentMode ? (
@@ -333,7 +333,7 @@ Your responses should be well-structured, informative, and suitable for academic
       </div>
 
       {/* Chat Input with Controls - Fixed at bottom */}
-      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-design-gray-950 flex-shrink-0">
+      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-black flex-shrink-0">
         {/* Control Buttons */}
         <div className="flex items-center justify-start space-x-2">
           {/* System Prompt Dropdown */}

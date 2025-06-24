@@ -173,22 +173,22 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
                 {section.influence_data && (
                   <div className="flex flex-wrap gap-2">
                     {section.influence_data.year && (
-                      <Badge variant="outline" className="bg-design-gray-900 text-design-gray-300 border-design-gray-800">
+                      <Badge variant="outline" className="bg-black text-design-gray-300 border-design-gray-800 text-xs font-medium">
                         {section.influence_data.year}
                       </Badge>
                     )}
-                    <Badge variant="outline" className="bg-design-gray-900 text-design-gray-300 border-design-gray-800">
+                    <Badge variant="outline" className="bg-black text-design-gray-300 border-design-gray-800 text-xs font-medium">
                       {section.influence_data.category}
                     </Badge>
-                    <Badge className="bg-design-red/20 text-design-red border-design-red/30">
+                    <Badge className="bg-design-red/20 text-design-red border-design-red/30 text-xs font-medium">
                       {section.influence_data.scope}
                     </Badge>
-                    <Badge className="bg-design-red/20 text-design-red border-design-red/30">
+                    <Badge className="bg-design-red/20 text-design-red border-design-red/30 text-xs font-medium">
                       {Math.round(section.influence_data.confidence * 100)}% confidence
                     </Badge>
                     {section.influence_data.clusters && section.influence_data.clusters.length > 0 && (
                       section.influence_data.clusters.map((cluster, index) => (
-                        <Badge key={index} variant="outline" className="bg-design-gray-900 text-design-gray-300 border-design-gray-800">
+                        <Badge key={index} variant="outline" className="bg-black text-design-gray-300 border-design-gray-800 text-xs font-medium">
                           {cluster}
                         </Badge>
                       ))
@@ -217,20 +217,20 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
         <div className="absolute -right-2 top-2">
           <button
             onClick={() => setShowHoverMenu(!showHoverMenu)}
-            className="w-8 h-8 bg-design-gray-900 border border-design-gray-800 rounded-full shadow-lg flex items-center justify-center hover:bg-design-gray-800 transition-colors"
+            className="w-8 h-8 bg-black border border-design-gray-800 rounded-full shadow-lg flex items-center justify-center hover:bg-design-gray-800 transition-colors"
           >
             <Plus className="w-4 h-4 text-design-gray-400" />
           </button>
 
           {/* Hover Menu Dropdown */}
           {showHoverMenu && (
-            <div className="absolute right-0 top-10 bg-design-gray-950 border border-design-gray-800 rounded-lg shadow-lg py-1 z-20 min-w-40">
+            <div className="absolute right-0 top-10 bg-black border border-design-gray-800 rounded-lg shadow-lg py-1 z-20 min-w-40">
               <button
                 onClick={() => {
                   setShowRefineInput(true);
                   setShowHoverMenu(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
+                className="w-full px-3 py-2 text-left text-sm font-medium hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
               >
                 <RefreshCw className="w-3 h-3" />
                 Refine section
@@ -239,7 +239,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
               {section.influence_data && (
                 <button
                   onClick={handleToggleGraph}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
+                  className="w-full px-3 py-2 text-left text-sm font-medium hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
                 >
                   <Check className={`w-3 h-3 ${section.selectedForGraph ? 'text-design-red' : 'text-design-gray-500'}`} />
                   Add to graph
@@ -248,7 +248,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
               
               <button
                 onClick={handleStartEdit}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
+                className="w-full px-3 py-2 text-left text-sm font-medium hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
               >
                 <Edit3 className="w-3 h-3" />
                 Edit text
@@ -256,7 +256,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
               
               <button
                 onClick={handleDelete}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-design-gray-900 text-red-400 flex items-center gap-2"
+                className="w-full px-3 py-2 text-left text-sm font-medium hover:bg-design-gray-900 text-red-400 flex items-center gap-2"
               >
                 <Trash2 className="w-3 h-3" />
                 Delete
@@ -268,24 +268,24 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
 
       {/* Refine Input */}
       {showRefineInput && (
-        <div className="mt-4 p-4 bg-design-gray-900 border border-design-gray-800 rounded-lg">
+        <div className="space-y-2 mt-2">
           <textarea
             value={refinePrompt}
             onChange={(e) => setRefinePrompt(e.target.value)}
-            placeholder="How would you like to refine this section?"
-            className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-red focus:border-design-red bg-design-gray-950 text-design-gray-100 mb-3"
-            rows={3}
+            className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-red focus:border-design-red bg-black text-design-gray-100 text-sm font-medium"
+            rows={2}
+            placeholder="Enter refinement prompt..."
           />
           <div className="flex gap-2">
             <button
               onClick={handleRefine}
-              className="px-3 py-1 bg-design-red text-white text-sm rounded hover:bg-design-red-hover"
+              className="px-3 py-1 bg-design-red text-white text-sm font-medium rounded hover:bg-design-red-hover"
             >
               Refine
             </button>
             <button
               onClick={() => setShowRefineInput(false)}
-              className="px-3 py-1 bg-design-gray-800 text-design-gray-300 text-sm rounded hover:bg-design-gray-700"
+              className="px-3 py-1 bg-black text-design-gray-300 text-sm font-medium rounded border border-design-gray-800 hover:bg-design-gray-900"
             >
               Cancel
             </button>

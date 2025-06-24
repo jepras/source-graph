@@ -95,9 +95,9 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-design-gray-950">
+    <div className="h-screen flex flex-col bg-black">
       {/* Top Panel */}
-      <div className="bg-design-gray-950 border-b border-design-gray-800 px-6 py-4">
+      <div className="bg-black border-b border-design-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ export const MainLayout: React.FC = () => {
       <div className="flex-1 flex relative overflow-hidden">
         {/* Left Research Panel - Resizable and Collapsible */}
         <div 
-          className={`transition-all duration-300 border-r border-design-gray-800 bg-design-gray-950 flex flex-col ${
+          className={`transition-all duration-300 border-r border-design-gray-800 bg-black flex flex-col ${
             isResearchPanelCollapsed ? 'w-12' : ''
           }`}
           style={!isResearchPanelCollapsed ? { width: `${researchPanelWidth}%` } : undefined}
@@ -154,7 +154,7 @@ export const MainLayout: React.FC = () => {
               
               {/* Resize Handle */}
               <div
-                className={`w-2 bg-design-gray-800 hover:bg-design-red cursor-col-resize flex items-center justify-center group transition-colors ${
+                className={`w-2 bg-black hover:bg-design-red cursor-col-resize flex items-center justify-center group transition-colors ${
                   isDragging ? 'bg-design-red' : ''
                 }`}
                 onMouseDown={handleDragStart}

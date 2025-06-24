@@ -174,7 +174,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-medium text-design-gray-400">
-              Enhanced Content ({enhancedContent.length})
+              Enhan ({enhancedContent.length})
             </h4>
             <button
               onClick={() => setShowContent(!showContent)}

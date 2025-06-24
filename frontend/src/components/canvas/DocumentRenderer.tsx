@@ -30,7 +30,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   }, [state.loading]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-black">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-6">
           {/* Document Header */}
@@ -45,17 +45,17 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                 </span>
               )}
               {document.item_type && (
-                <Badge variant="outline" className="bg-design-gray-900 text-design-gray-400 border-design-gray-800 capitalize">
+                <Badge variant="outline" className="bg-black text-design-gray-300 border-design-gray-800 capitalize text-xs font-medium">
                   {document.item_type}
                 </Badge>
               )}
               {selectedCount > 0 && (
-                <Badge className="bg-design-red/20 text-design-red border-design-red/30">
+                <Badge className="bg-design-red/20 text-design-red border-design-red/30 text-xs font-medium">
                   {selectedCount} selected for graph
                 </Badge>
               )}
               {document.item_year && (
-                <Badge variant="outline" className="bg-design-gray-900 text-design-gray-300 border-design-gray-800">
+                <Badge variant="outline" className="bg-black text-design-gray-300 border-design-gray-800 text-xs font-medium">
                   {document.item_year}
                 </Badge>
               )}

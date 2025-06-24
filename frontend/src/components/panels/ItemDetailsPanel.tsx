@@ -464,7 +464,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
   if (!state.selectedNodeId || !itemDetails) {
     return (
-      <div className="h-full flex flex-col bg-design-gray-950">
+      <div className="h-full flex flex-col bg-black">
         <div className="p-4 border-b border-design-gray-800">
           <h4 className="text-sm font-semibold text-design-gray-200">
             Selected Item
@@ -517,7 +517,7 @@ export const ItemDetailsPanel: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-design-gray-950">
+    <div className="h-full flex flex-col bg-black">
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-design-gray-800">
         <h3 className="font-medium text-design-gray-100">Item Details</h3>

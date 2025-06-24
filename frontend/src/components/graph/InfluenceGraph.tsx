@@ -236,7 +236,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("y", topPadding) // Changed from 'padding' to 'topPadding'
         .attr("width", columnWidth - 20)
         .attr("height", height - topPadding - padding) // Adjusted height
-        .attr("fill", "#1f2937") // Updated to design-gray-800
+        .attr("fill", "#121212") // Updated to match dark theme
         .attr("stroke", "#374151") // Updated to design-gray-700
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", "5,5")
@@ -287,7 +287,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   };
 
   return (
-    <div className="h-full flex bg-design-gray-950 relative overflow-hidden">
+    <div className="h-full flex bg-black relative overflow-hidden">
       {/* Main Graph Area */}
       <div className={`transition-all duration-300 overflow-hidden ${showSelectedPanel ? "flex-1" : "w-full"}`}>
         <div className="h-full relative overflow-hidden">
@@ -306,7 +306,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
             {/* Floating Controls Panel */}
             {showControls && (
-              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-design-gray-950 border-design-gray-800">
+              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-black border-design-gray-800">
                 <CardContent className="p-3">
                   <div className="space-y-3">
                     <div>
