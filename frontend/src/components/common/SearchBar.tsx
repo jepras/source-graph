@@ -43,11 +43,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder="Search for items..."
-        className="pl-10 bg-design-gray-900 border-design-gray-800 text-white placeholder-design-gray-500 focus:border-design-green focus:ring-design-green/20"
+        className="pl-10 bg-design-gray-1200 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-red focus:ring-design-red/20 [&::placeholder]:text-design-gray-500"
       />
       
       {showResults && (
-        <div className="absolute z-20 w-full mt-1 bg-design-gray-950 border border-design-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-20 w-full mt-1 bg-[#121212] border border-design-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-design-gray-400">Searching...</div>
           ) : searchResults.length > 0 ? (
@@ -55,7 +55,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="p-3 hover:bg-design-gray-900 cursor-pointer border-b border-design-gray-800 last:border-b-0"
+                className="p-3 hover:bg-design-red/10 hover:border-design-red/30 cursor-pointer border-b border-design-gray-800 last:border-b-0 transition-colors"
               >
                 <div className="font-medium text-white">{item.name}</div>
                 {item.auto_detected_type && (

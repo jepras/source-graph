@@ -101,7 +101,7 @@ export const MainLayout: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-design-green rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-design-red rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-bold">IG</span>
               </div>
               <h1 className="text-xl font-semibold text-white">Influence Graph</h1>
@@ -154,8 +154,8 @@ export const MainLayout: React.FC = () => {
               
               {/* Resize Handle */}
               <div
-                className={`w-2 bg-design-gray-800 hover:bg-design-green cursor-col-resize flex items-center justify-center group transition-colors ${
-                  isDragging ? 'bg-design-green' : ''
+                className={`w-2 bg-design-gray-800 hover:bg-design-red cursor-col-resize flex items-center justify-center group transition-colors ${
+                  isDragging ? 'bg-design-red' : ''
                 }`}
                 onMouseDown={handleDragStart}
               >

@@ -345,7 +345,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowActivityLog(false);
                 setShowSuggestions(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-green bg-design-gray-900 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-green/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -375,7 +375,7 @@ Your responses should be well-structured, informative, and suitable for academic
                   <textarea
                     value={tempPrompt}
                     onChange={(e) => setTempPrompt(e.target.value)}
-                    className="w-full h-32 p-3 bg-design-gray-900 border border-design-gray-800 rounded-md resize-none focus:ring-1 focus:ring-design-green/50 focus:border-design-green/50 text-design-gray-100 placeholder-design-gray-500 text-xs"
+                    className="w-full h-32 p-3 bg-design-gray-1200 border border-design-gray-800 rounded-md resize-none focus:ring-1 focus:ring-design-red/50 focus:border-design-red/50 text-design-gray-100 placeholder-design-gray-500 text-xs"
                     placeholder="Enter your system prompt..."
                   />
                   <div className="flex justify-end space-x-2 mt-3">
@@ -393,7 +393,7 @@ Your responses should be well-structured, informative, and suitable for academic
                         setSystemPrompt(tempPrompt);
                         setShowPromptEditor(false);
                       }}
-                      className="bg-design-green hover:bg-design-green-hover text-white border-0 text-xs"
+                      className="bg-design-red hover:bg-design-red-hover text-white border-0 text-xs"
                     >
                       Save
                     </Button>
@@ -411,7 +411,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowPromptEditor(false);
                 setShowSuggestions(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-green bg-design-gray-900 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-green/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <Activity className="w-3 h-3" />
               <span>Research Log</span>
@@ -440,7 +440,7 @@ Your responses should be well-structured, informative, and suitable for academic
                         >
                           {/* Timeline thread */}
                           <div className="flex flex-col items-center">
-                            <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-green flex items-center justify-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-red flex items-center justify-center flex-shrink-0">
                               <span className="text-xs">{getLogEntryIcon(entry.type)}</span>
                             </div>
                             {index < logEntries.length - 1 && <div className="w-0.5 h-6 bg-design-gray-800 mt-1"></div>}
@@ -483,7 +483,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowPromptEditor(false);
                 setShowActivityLog(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-green bg-design-gray-900 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-green/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <Lightbulb className="w-3 h-3" />
               <span>Suggestions</span>
@@ -505,7 +505,7 @@ Your responses should be well-structured, informative, and suitable for academic
                           // We'll handle this through the ChatInput component
                           setShowSuggestions(false);
                         }}
-                        className="w-full text-left p-2 text-xs text-design-gray-300 hover:text-white hover:bg-design-gray-800 rounded-md transition-colors border border-design-gray-800 hover:border-design-green/30"
+                        className="w-full text-left p-2 text-xs text-design-gray-300 hover:text-white hover:bg-design-gray-800 rounded-md transition-colors border border-design-gray-800 hover:border-design-red/30"
                       >
                         {suggestion}
                       </button>
@@ -522,7 +522,7 @@ Your responses should be well-structured, informative, and suitable for academic
           onSubmit={handleChatSubmit}
           onSave={handleSaveToGraph}
           loading={state.loading || saveLoading}
-          placeholder="Research influences for Shaft (1971)..."
+          placeholder="Enter the item you want to research..."
         />
       </div>
 

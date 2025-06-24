@@ -318,7 +318,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
                           onClick={handleClusteringToggle}
                           className={`flex-1 text-xs py-1 h-7 ${
                             isClusteringEnabled
-                              ? "bg-design-green hover:bg-design-green-hover text-white border-0"
+                              ? "bg-design-red hover:bg-design-red-hover text-white border-0"
                               : "bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900"
                           }`}
                         >
@@ -330,7 +330,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
                           onClick={handleChronologicalToggle}
                           className={`flex-1 text-xs py-1 h-7 ${
                             isChronologicalOrder
-                              ? "bg-design-green hover:bg-design-green-hover text-white border-0"
+                              ? "bg-design-red hover:bg-design-red-hover text-white border-0"
                               : "bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900"
                           }`}
                         >
@@ -377,7 +377,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
                         <Button
                           size="sm"
                           onClick={handleRetrieveClusters}
-                          className="w-full justify-start bg-design-green hover:bg-design-green-hover text-white text-xs py-1 h-7"
+                          className="w-full justify-start bg-design-red hover:bg-design-red-hover text-white text-xs py-1 h-7"
                         >
                           <Wand2 className="w-3 h-3 mr-1" />
                           Retrieve clusters

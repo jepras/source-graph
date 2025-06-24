@@ -108,7 +108,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
   };
 
   return (
-    <div className="bg-design-gray-900 border border-design-gray-800 rounded-lg p-4 space-y-4 max-h-96 overflow-y-auto">
+    <div className="bg-design-gray-1200 border border-design-gray-800 rounded-lg p-4 space-y-4 max-h-96 overflow-y-auto">
       <div>
         <h4 className="text-sm font-semibold text-design-gray-200 mb-2">
           ⚠️ Conflicts Detected
@@ -132,7 +132,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                   name="main-item"
                   value={item.id}
                   onChange={() => handleMainItemSelect(item.id)}
-                  className="mt-1 text-design-green"
+                  className="mt-1 text-design-red"
                 />
                 <div className="flex-1 text-sm">
                   <div className="flex justify-between items-start">
@@ -186,7 +186,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                           value={item.id}
                           onChange={() => handleInfluenceResolution(influenceIndex, 'merge', item.id)}
                           checked={currentResolution?.resolution === 'merge' && currentResolution?.selectedItemId === item.id}
-                          className="mt-1 text-design-green"
+                          className="mt-1 text-design-red"
                         />
                         <div className="flex-1 text-xs">
                           <div className="flex justify-between items-start">
@@ -211,10 +211,10 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                         value="create_new"
                         onChange={() => handleInfluenceResolution(influenceIndex, 'create_new')}
                         checked={currentResolution?.resolution === 'create_new'}
-                        className="mt-1 text-design-green"
+                        className="mt-1 text-design-red"
                       />
                       <div className="flex-1 text-xs">
-                        <div className="font-medium text-design-green">➕ Create New Item</div>
+                        <div className="font-medium text-design-red">➕ Create New Item</div>
                         <div className="text-design-gray-400">Create a new influence item</div>
                       </div>
                     </label>
@@ -231,7 +231,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
         <button
           onClick={() => onResolve(getOverallResolutionType(), selectedMainItem || undefined, influenceResolutions)}
           disabled={!areAllConflictsResolved()}
-          className="px-3 py-2 text-sm bg-design-green text-white rounded hover:bg-design-green-hover disabled:opacity-50"
+          className="px-3 py-2 text-sm bg-design-red text-white rounded hover:bg-design-red-hover disabled:opacity-50"
         >
           {getOverallResolutionType() === 'create_new' ? '➕ Create New Items' : '🔀 Apply Resolutions'}
         </button>

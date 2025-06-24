@@ -96,7 +96,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
   return (
     <div 
       className={`relative group transition-all duration-200 ${
-        section.selectedForGraph ? 'border-l-4 border-l-design-green pl-4' : ''
+        section.selectedForGraph ? 'border-l-4 border-l-design-red pl-4' : ''
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
@@ -108,7 +108,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
       {isLoading && (
         <div className="absolute inset-0 bg-design-gray-950 bg-opacity-90 flex items-center justify-center z-20 rounded">
           <div className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-design-green" />
+            <RefreshCw className="w-4 h-4 animate-spin text-design-red" />
             <span className="text-sm text-design-gray-400">Refining...</span>
           </div>
         </div>
@@ -134,14 +134,14 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
               ref={textareaRef}
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-green focus:border-design-green bg-design-gray-900 text-design-gray-100"
+              className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-red focus:border-design-red bg-design-gray-900 text-design-gray-100"
               rows={Math.max(3, editedContent.split('\n').length)}
               style={{ minHeight: '80px' }}
             />
             <div className="flex gap-2">
               <button
                 onClick={handleSaveEdit}
-                className="px-3 py-1 bg-design-green text-white text-sm rounded hover:bg-design-green-hover"
+                className="px-3 py-1 bg-design-red text-white text-sm rounded hover:bg-design-red-hover"
               >
                 Save
               </button>
@@ -180,10 +180,10 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
                     <Badge variant="outline" className="bg-design-gray-900 text-design-gray-300 border-design-gray-800">
                       {section.influence_data.category}
                     </Badge>
-                    <Badge className="bg-design-green/20 text-design-green border-design-green/30">
+                    <Badge className="bg-design-red/20 text-design-red border-design-red/30">
                       {section.influence_data.scope}
                     </Badge>
-                    <Badge className="bg-design-green/20 text-design-green border-design-green/30">
+                    <Badge className="bg-design-red/20 text-design-red border-design-red/30">
                       {Math.round(section.influence_data.confidence * 100)}% confidence
                     </Badge>
                     {section.influence_data.clusters && section.influence_data.clusters.length > 0 && (
@@ -207,7 +207,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
         {/* Selected for Graph Indicator */}
         {section.selectedForGraph && (
           <div className="absolute -left-2 top-2">
-            <Check className="w-4 h-4 text-design-green bg-design-gray-950 rounded-full border border-design-green" />
+            <Check className="w-4 h-4 text-design-red bg-design-gray-950 rounded-full border border-design-red" />
           </div>
         )}
       </div>
@@ -241,7 +241,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
                   onClick={handleToggleGraph}
                   className="w-full px-3 py-2 text-left text-sm hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
                 >
-                  <Check className={`w-3 h-3 ${section.selectedForGraph ? 'text-design-green' : 'text-design-gray-500'}`} />
+                  <Check className={`w-3 h-3 ${section.selectedForGraph ? 'text-design-red' : 'text-design-gray-500'}`} />
                   Add to graph
                 </button>
               )}
@@ -273,13 +273,13 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
             value={refinePrompt}
             onChange={(e) => setRefinePrompt(e.target.value)}
             placeholder="How would you like to refine this section?"
-            className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-green focus:border-design-green bg-design-gray-950 text-design-gray-100 mb-3"
+            className="w-full p-3 border border-design-gray-800 rounded-md resize-none focus:ring-2 focus:ring-design-red focus:border-design-red bg-design-gray-950 text-design-gray-100 mb-3"
             rows={3}
           />
           <div className="flex gap-2">
             <button
               onClick={handleRefine}
-              className="px-3 py-1 bg-design-green text-white text-sm rounded hover:bg-design-green-hover"
+              className="px-3 py-1 bg-design-red text-white text-sm rounded hover:bg-design-red-hover"
             >
               Refine
             </button>

@@ -35,13 +35,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           onChange={(e) => onModelChange(e.target.value)}
           disabled={disabled}
           className={`
-            appearance-none bg-design-gray-900 border border-design-gray-800 rounded-md px-3 py-2 pr-8 text-sm text-design-gray-100
-            focus:outline-none focus:ring-2 focus:ring-design-green focus:border-design-green
+            appearance-none bg-design-gray-1200 border border-design-gray-800 rounded-md px-3 py-2 pr-8 text-sm text-design-gray-100
+            focus:outline-none focus:ring-2 focus:ring-design-red focus:border-design-red
             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-design-gray-700'}
           `}
         >
           {AVAILABLE_MODELS.map((model) => (
-            <option key={model.key} value={model.key} className="bg-design-gray-900 text-design-gray-100">
+            <option key={model.key} value={model.key} className="bg-design-gray-1200 text-design-gray-100">
               {model.name}
             </option>
           ))}
@@ -57,12 +57,12 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             checked={useTwoAgent}
             onChange={(e) => onTwoAgentChange(e.target.checked)}
             disabled={disabled}
-            className="w-4 h-4 text-design-green bg-design-gray-900 border-design-gray-700 rounded focus:ring-design-green focus:ring-2"
+            className="w-4 h-4 text-design-red bg-design-gray-1200 border-design-gray-700 rounded focus:ring-design-red focus:ring-2"
           />
           <span className="text-xs">Two-Agent</span>
         </label>
         {useTwoAgent && (
-          <span className="text-xs text-design-green bg-design-green/10 px-2 py-1 rounded border border-design-green/20">
+          <span className="text-xs text-design-red bg-design-red/10 px-2 py-1 rounded border border-design-red/20">
             Enhanced
           </span>
         )}

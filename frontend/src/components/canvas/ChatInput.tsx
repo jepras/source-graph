@@ -25,7 +25,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSubmit, 
   onSave,
   loading, 
-  placeholder = "Ask about influences..." 
+  placeholder = "Enter the item you want to research..." 
 }) => {
   const [message, setMessage] = useState('');
   const { state, setSelectedModel, setUseTwoAgent } = useCanvas();
@@ -87,7 +87,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="bg-design-gray-1200 p-4 rounded-lg">
       {/* Model Selection and Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -109,14 +109,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       </div>
 
       {/* Chat Input - Using the simpler design from ResearchPanel */}
-      <div className="flex space-x-2">
+      <div className="flex space-x-2 mt-3">
         <Input
           placeholder={loading ? "AI is thinking..." : placeholder}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
           disabled={loading}
-          className="flex-1 bg-design-gray-900 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-green/50 focus:ring-design-green/20 [&::placeholder]:text-design-gray-500"
+          className="flex-1 bg-design-gray-1200 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-red focus:ring-design-red/20 [&::placeholder]:text-design-gray-500"
         />
         
         {/* Save Button */}
@@ -124,7 +124,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <Button
             onClick={onSave}
             size="sm"
-            className="bg-design-green hover:bg-design-green-hover text-white border-0"
+            className="bg-design-red hover:bg-design-red-hover text-white border-0 focus:ring-2 focus:ring-design-red/30"
             title={`Save ${selectedCount} selected influences to graph`}
           >
             <Save className="w-4 h-4" />
@@ -136,7 +136,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onClick={handleSubmit}
           disabled={!message.trim() || loading}
           size="sm"
-          className="bg-design-green hover:bg-design-green-hover text-white border-0"
+          className="bg-design-red hover:bg-design-red-hover text-white border-0 focus:ring-2 focus:ring-design-red/30"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

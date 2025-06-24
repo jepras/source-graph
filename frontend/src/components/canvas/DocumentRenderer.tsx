@@ -50,7 +50,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
                 </Badge>
               )}
               {selectedCount > 0 && (
-                <Badge className="bg-design-green/20 text-design-green border-design-green/30">
+                <Badge className="bg-design-red/20 text-design-red border-design-red/30">
                   {selectedCount} selected for graph
                 </Badge>
               )}
@@ -77,7 +77,7 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           {state.loading && (
             <div ref={loadingRef} className="mt-6 p-4 bg-design-gray-900 border border-design-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
-                <RefreshCw className="w-5 h-5 animate-spin text-design-green" />
+                <RefreshCw className="w-5 h-5 animate-spin text-design-red" />
                 <div>
                   <p className="text-sm font-medium text-design-gray-200">
                     {state.use_two_agent && state.loading_stage === 'analyzing' 

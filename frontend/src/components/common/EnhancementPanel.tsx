@@ -140,7 +140,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
           <select
             value={maxContentPieces}
             onChange={(e) => setMaxContentPieces(Number(e.target.value))}
-            className="text-xs border border-design-gray-800 rounded px-2 py-1 bg-design-gray-900 text-design-gray-100"
+            className="text-xs border border-design-gray-800 rounded px-2 py-1 bg-design-gray-1200 text-design-gray-100"
           >
             <option value={2}>2</option>
             <option value={4}>4</option>
@@ -154,8 +154,8 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
           disabled={loading}
           className={`w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
             loading
-              ? 'bg-design-gray-800 text-design-gray-500 cursor-not-allowed'
-              : 'bg-design-green text-white hover:bg-design-green-hover'
+              ? 'bg-design-gray-800 text-design-gray-400 cursor-not-allowed'
+              : 'bg-design-red text-white hover:bg-design-red-hover'
           }`}
         >
           {loading ? (
@@ -178,7 +178,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
             </h4>
             <button
               onClick={() => setShowContent(!showContent)}
-              className="text-xs text-design-green hover:text-design-green-hover"
+              className="text-xs text-design-red hover:text-design-red-hover"
             >
               {showContent ? 'Hide' : 'Show'}
             </button>
@@ -189,7 +189,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
               {enhancedContent.map((content) => (
                 <div
                   key={content.id}
-                  className="p-3 border border-design-gray-800 rounded-md bg-design-gray-900"
+                  className="p-3 border border-design-gray-800 rounded-md bg-design-gray-1200"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
                           href={content.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-design-green hover:text-design-green-hover"
+                          className="text-xs text-design-red hover:text-design-red-hover"
                         >
                           View Source →
                         </a>
@@ -257,7 +257,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
           <p className="text-xs text-design-gray-300">{lastEnhancement.enhancement_summary}</p>
           {lastEnhancement.analysis?.enhancement_strategy && (
             <details className="mt-2">
-              <summary className="text-xs text-design-green cursor-pointer hover:text-design-green-hover">
+              <summary className="text-xs text-design-red cursor-pointer hover:text-design-red-hover">
                 View Strategy
               </summary>
               <p className="text-xs text-design-gray-300 mt-1 whitespace-pre-wrap">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import type { ExpansionCounts } from '../../services/api';
+import { Button } from '../ui/button';
+import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 
 interface GraphExpansionControlsProps {
   selectedItemId: string | null;
@@ -42,52 +44,61 @@ export const GraphExpansionControls: React.FC<GraphExpansionControlsProps> = ({
   }
 
   return (
-    <div className="bg-design-gray-900 border border-design-gray-800 rounded-lg p-4 shadow-sm">
+    <div className="bg-design-gray-1200 border border-design-gray-800 rounded-lg p-4 shadow-sm">
       <h4 className="text-sm font-semibold text-design-gray-200 mb-3">
         🔍 Graph Expansion
       </h4>
       
       {countsLoading ? (
-        <div className="text-sm text-gray-500">Loading expansion options...</div>
+        <div className="text-sm text-design-gray-400">Loading expansion options...</div>
       ) : (
         <div className="space-y-2">
           {/* Expand incoming influences */}
           {expansionCounts.incoming_influences > 0 && (
-            <button
+            <Button
               onClick={() => onExpand(selectedItemId, 'incoming')}
               disabled={loading}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm bg-blue-50 border border-blue-200 text-blue-700 rounded hover:bg-blue-100 disabled:opacity-50"
+              variant="outline"
+              className="w-full justify-between bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 hover:text-design-gray-100"
             >
-              <span>⬅️ Show what influences this</span>
-              <span className="font-medium">{expansionCounts.incoming_influences}</span>
-            </button>
+              <span className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Show what influences this
+              </span>
+              <span className="font-medium text-design-red">{expansionCounts.incoming_influences}</span>
+            </Button>
           )}
           
           {/* Expand outgoing influences */}
           {expansionCounts.outgoing_influences > 0 && (
-            <button
+            <Button
               onClick={() => onExpand(selectedItemId, 'outgoing')}
               disabled={loading}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm bg-green-50 border border-green-200 text-green-700 rounded hover:bg-green-100 disabled:opacity-50"
+              variant="outline"
+              className="w-full justify-between bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 hover:text-design-gray-100"
             >
-              <span>➡️ Show what this influences</span>
-              <span className="font-medium">{expansionCounts.outgoing_influences}</span>
-            </button>
+              <span className="flex items-center gap-2">
+                <ArrowRight className="w-4 h-4" />
+                Show what this influences
+              </span>
+              <span className="font-medium text-design-red">{expansionCounts.outgoing_influences}</span>
+            </Button>
           )}
           
           {/* Expand both directions */}
           {(expansionCounts.incoming_influences > 0 || expansionCounts.outgoing_influences > 0) && (
-            <button
+            <Button
               onClick={() => onExpand(selectedItemId, 'both')}
               disabled={loading}
-              className="w-full flex items-center justify-center px-3 py-2 text-sm bg-purple-50 border border-purple-200 text-purple-700 rounded hover:bg-purple-100 disabled:opacity-50"
+              className="w-full justify-center bg-design-red hover:bg-design-red-hover text-white"
             >
-              <span>🔄 Expand All Directions</span>
-            </button>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Expand All Directions
+            </Button>
           )}
           
           {expansionCounts.incoming_influences === 0 && expansionCounts.outgoing_influences === 0 && (
-            <div className="text-sm text-gray-500 text-center py-2">
+            <div className="text-sm text-design-gray-400 text-center py-2">
               No additional influences to expand
             </div>
           )}

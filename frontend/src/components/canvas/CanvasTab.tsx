@@ -186,7 +186,7 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
         {state.loading && !state.currentDocument && (
           <div className="absolute inset-0 bg-design-gray-950 bg-opacity-80 flex items-center justify-center z-10">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-design-green" />
+              <Loader2 className="w-8 h-8 animate-spin text-design-red" />
               <div className="text-sm text-design-gray-300 font-medium">
                 {state.use_two_agent && state.loading_stage === 'analyzing' 
                   ? 'Analyzing influences...' 

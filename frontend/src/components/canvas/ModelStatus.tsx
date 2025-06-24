@@ -27,7 +27,7 @@ export const ModelStatus: React.FC<ModelStatusProps> = ({
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-design-gray-400">
-        <Loader2 className="w-4 h-4 animate-spin text-design-green" />
+        <Loader2 className="w-4 h-4 animate-spin text-design-red" />
         <span>AI thinking...</span>
       </div>
     );
@@ -40,7 +40,7 @@ export const ModelStatus: React.FC<ModelStatusProps> = ({
         <span className="text-design-gray-400">Selected: {selectedName}</span>
         <span className="text-amber-400 font-medium">→</span>
         <span className="text-amber-400">Using: {activeName}</span>
-        <span className="text-xs text-design-gray-400 bg-design-gray-900 px-2 py-1 rounded border border-design-gray-800">
+        <span className="text-xs text-design-gray-400 bg-design-gray-1200 px-2 py-1 rounded border border-design-gray-800">
           fallback
         </span>
       </div>
@@ -49,7 +49,7 @@ export const ModelStatus: React.FC<ModelStatusProps> = ({
 
   return (
     <div className="flex items-center gap-2 text-sm text-design-gray-400">
-      <CheckCircle className="w-4 h-4 text-design-green" />
+      <CheckCircle className="w-4 h-4 text-design-red" />
       <span>Using: {activeName}</span>
     </div>
   );

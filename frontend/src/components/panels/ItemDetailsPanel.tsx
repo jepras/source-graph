@@ -7,9 +7,9 @@ import { api } from '../../services/api';
 import { useGraph } from '../../contexts/GraphContext';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { GraphExpansionControls } from '../graph/GraphExpansionControls';
-import { EnhancementPanel } from '../common/EnhancementPanel';
 import type { Item, InfluenceRelation } from '../../services/api';
 import type { GraphNode, GraphLink } from '../../types/graph';
+import { EnhancementPanel } from '../common/EnhancementPanel';
 
 interface InfluenceData {
   incoming: InfluenceRelation[];
@@ -59,7 +59,7 @@ export const ItemDetailsPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiContent, setAiContent] = useState<AIContentItem[]>([]);
-  const [showFullDetails, setShowFullDetails] = useState<{ [key: string]: boolean }>({});
+  const [showFullDetails, setShowFullDetails] = useState<Record<string, boolean>>({});
 
   // Mock research log data
   const researchLog: ResearchLogItem[] = [
@@ -278,11 +278,8 @@ export const ItemDetailsPanel: React.FC = () => {
 
   const handleGenerateContent = () => {
     setIsGenerating(true);
-
-    // Simulate API call delay
     setTimeout(() => {
       if (itemDetails) {
-        // Mock AI-generated content based on the selected item
         const mockContent: AIContentItem[] = [
           {
             id: "1",
@@ -299,28 +296,6 @@ export const ItemDetailsPanel: React.FC = () => {
             thumbnail: "/placeholder.svg?height=200&width=300",
           },
         ];
-
-        // Add type-specific content
-        if (itemDetails.auto_detected_type?.toLowerCase().includes('film')) {
-          mockContent.push({
-            id: "3",
-            type: "imdb",
-            title: `${itemDetails.name}`,
-            description: "Film details and ratings",
-            url: "https://www.imdb.com/",
-            thumbnail: "/placeholder.svg?height=120&width=80",
-          });
-        } else if (itemDetails.auto_detected_type?.toLowerCase().includes('music')) {
-          mockContent.push({
-            id: "4",
-            type: "spotify",
-            title: `${itemDetails.name}`,
-            description: "Music streaming and details",
-            url: "https://open.spotify.com/",
-            thumbnail: "/placeholder.svg?height=80&width=80",
-          });
-        }
-
         setAiContent(mockContent);
       }
       setIsGenerating(false);
@@ -353,7 +328,7 @@ export const ItemDetailsPanel: React.FC = () => {
     switch (item.type) {
       case "spotify":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800">
             <div className="flex items-center p-3">
               <div className="flex-shrink-0 mr-3">
                 <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-12 h-12 rounded" />
@@ -362,7 +337,7 @@ export const ItemDetailsPanel: React.FC = () => {
                 <h4 className="text-sm font-medium text-design-gray-100 truncate">{item.title}</h4>
                 <p className="text-xs text-design-gray-400">{item.description}</p>
               </div>
-              <Button size="sm" variant="ghost" className="ml-2 text-design-green hover:text-design-green-hover hover:bg-design-gray-800">
+              <Button size="sm" variant="ghost" className="ml-2 text-design-red hover:text-design-red-hover hover:bg-design-gray-800">
                 <Music className="w-4 h-4" />
               </Button>
             </div>
@@ -371,7 +346,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
       case "youtube":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800">
             <div className="aspect-video bg-black relative">
               <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -389,7 +364,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
       case "imdb":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800 p-3">
             <div className="flex">
               <div className="flex-shrink-0 mr-3">
                 <img
@@ -423,7 +398,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
       case "wikipedia":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800 p-3">
             <div className="flex items-center">
               <BookOpen className="w-4 h-4 text-design-gray-400 mr-2 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -446,7 +421,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
       case "image":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800">
             <div className="aspect-video bg-black">
               <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-full h-full object-cover" />
             </div>
@@ -459,7 +434,7 @@ export const ItemDetailsPanel: React.FC = () => {
 
       case "genius":
         return (
-          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+          <div className="bg-design-gray-1200 rounded-md overflow-hidden border border-design-gray-800 p-3">
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0 mr-3">
                 <span className="text-black font-bold text-xs">G</span>
@@ -550,7 +525,7 @@ export const ItemDetailsPanel: React.FC = () => {
           size="sm"
           variant="ghost"
           onClick={() => selectNode(null)}
-          className="w-6 h-6 p-0 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800 rounded-full"
+          className="w-6 h-6 p-0 text-design-red hover:text-design-red-hover hover:bg-design-gray-800 rounded-full"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -560,22 +535,22 @@ export const ItemDetailsPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="px-4 pt-4">
-            <TabsList className="w-full bg-design-gray-900">
+            <TabsList className="w-full bg-design-gray-1200">
               <TabsTrigger
                 value="overview"
-                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+                className="flex-1 data-[state=active]:bg-design-red data-[state=active]:text-white"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="connections"
-                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+                className="flex-1 data-[state=active]:bg-design-red data-[state=active]:text-white"
               >
                 Connections
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+                className="flex-1 data-[state=active]:bg-design-red data-[state=active]:text-white"
               >
                 History
               </TabsTrigger>
@@ -590,13 +565,13 @@ export const ItemDetailsPanel: React.FC = () => {
                 {itemDetails.year && (
                   <span className="text-sm text-design-gray-400">{itemDetails.year}</span>
                 )}
-                <Badge variant="outline" className="bg-design-green/10 text-design-green border-design-green/20">
+                <Badge variant="outline" className="bg-design-red/10 text-design-red border-design-red/20">
                   {itemDetails.auto_detected_type || 'unknown'}
                 </Badge>
                 {itemDetails.verification_status && (
                   <>
                     <span className="text-design-gray-500">•</span>
-                    <Badge variant="outline" className="bg-design-green/10 text-design-green border-design-green/20">
+                    <Badge variant="outline" className="bg-design-red/10 text-design-red border-design-red/20">
                       {itemDetails.verification_status}
                     </Badge>
                   </>
@@ -651,25 +626,6 @@ export const ItemDetailsPanel: React.FC = () => {
               </p>
             </div>
 
-            {/* Graph Expansion Controls */}
-            <div>
-              <h3 className="text-sm font-medium text-design-gray-300 mb-2">Graph Actions</h3>
-              <GraphExpansionControls
-                selectedItemId={state.selectedNodeId}
-                onExpand={handleExpand}
-                loading={state.loading}
-              />
-            </div>
-
-            {/* Enhancement Panel */}
-            <div>
-              <h3 className="text-sm font-medium text-design-gray-300 mb-2">AI Enhancement</h3>
-              <EnhancementPanel
-                itemId={state.selectedNodeId!}
-                itemName={itemDetails.name}
-              />
-            </div>
-
             {/* AI Content Generator */}
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -680,7 +636,7 @@ export const ItemDetailsPanel: React.FC = () => {
                   size="sm"
                   onClick={handleGenerateContent}
                   disabled={isGenerating}
-                  className="h-7 text-xs bg-design-green hover:bg-design-green-hover text-white"
+                  className="h-7 text-xs bg-design-red hover:bg-design-red-hover text-white"
                 >
                   {isGenerating ? "Generating..." : "Generate"}
                 </Button>
@@ -688,9 +644,9 @@ export const ItemDetailsPanel: React.FC = () => {
 
               {isGenerating ? (
                 <div className="space-y-3">
-                  <div className="h-20 w-full bg-design-gray-900" />
-                  <div className="h-40 w-full bg-design-gray-900" />
-                  <div className="h-20 w-full bg-design-gray-900" />
+                  <div className="h-20 w-full bg-design-gray-1200" />
+                  <div className="h-40 w-full bg-design-gray-1200" />
+                  <div className="h-20 w-full bg-design-gray-1200" />
                 </div>
               ) : aiContent.length > 0 ? (
                 <div className="space-y-3">
@@ -699,7 +655,7 @@ export const ItemDetailsPanel: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="bg-design-gray-900 border border-design-gray-800 rounded-md p-4 text-center">
+                <div className="bg-design-gray-1200 border border-design-gray-800 rounded-md p-4 text-center">
                   <Wand2 className="w-5 h-5 text-design-gray-500 mx-auto mb-2" />
                   <p className="text-sm text-design-gray-400">
                     Click "Generate" to discover related content from various sources
@@ -708,22 +664,41 @@ export const ItemDetailsPanel: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Enhancement Panel */}
+            <div>
+              
+              <EnhancementPanel
+                itemId={state.selectedNodeId!}
+                itemName={itemDetails.name}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="connections" className="p-4">
             <div className="space-y-4">
+              {/* Graph Expansion Controls */}
+              <div>
+                <h3 className="text-sm font-medium text-design-gray-300 mb-2">Graph Actions</h3>
+                <GraphExpansionControls
+                  selectedItemId={state.selectedNodeId}
+                  onExpand={handleExpand}
+                  loading={state.loading}
+                />
+              </div>
+
               {/* Incoming Influences */}
               <div>
                 <h3 className="text-sm font-medium text-design-gray-300 mb-2">Influenced By</h3>
                 {influenceData.incoming.length > 0 ? (
                   <div className="space-y-3">
                     {influenceData.incoming.map((influence, index) => (
-                      <div key={index} className="bg-design-gray-900 rounded p-3 border border-design-gray-800">
+                      <div key={index} className="bg-design-gray-1200 rounded p-3 border border-design-gray-800">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <button
                               onClick={() => selectNode(influence.from_item.id)}
-                              className="text-sm font-medium text-design-green hover:text-design-green-hover mb-1"
+                              className="text-sm font-medium text-design-red hover:text-design-red-hover mb-1"
                             >
                               {influence.from_item.name}
                             </button>
@@ -741,7 +716,7 @@ export const ItemDetailsPanel: React.FC = () => {
                           </div>
                           <button
                             onClick={() => handleAddInfluenceToGraph(influence)}
-                            className="ml-2 px-3 py-1 text-xs bg-design-green text-design-gray-100 rounded hover:bg-design-green-hover transition-colors"
+                            className="ml-2 px-3 py-1 text-xs bg-design-red text-design-gray-100 rounded hover:bg-design-red-hover transition-colors"
                             title="Add this influence to the graph"
                           >
                             Add to graph
@@ -761,12 +736,12 @@ export const ItemDetailsPanel: React.FC = () => {
                 {influenceData.outgoing.length > 0 ? (
                   <div className="space-y-3">
                     {influenceData.outgoing.map((influence: any, index: number) => (
-                      <div key={index} className="bg-design-gray-900 rounded p-3 border border-design-gray-800">
+                      <div key={index} className="bg-design-gray-1200 rounded p-3 border border-design-gray-800">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <button
                               onClick={() => selectNode(influence.to_item.id)}
-                              className="text-sm font-medium text-design-green hover:text-design-green-hover mb-1"
+                              className="text-sm font-medium text-design-red hover:text-design-red-hover mb-1"
                             >
                               {influence.to_item.name}
                             </button>
@@ -784,7 +759,7 @@ export const ItemDetailsPanel: React.FC = () => {
                           </div>
                           <button
                             onClick={() => handleAddOutgoingInfluenceToGraph(influence)}
-                            className="ml-2 px-3 py-1 text-xs bg-design-green text-design-gray-100 rounded hover:bg-design-green-hover transition-colors"
+                            className="ml-2 px-3 py-1 text-xs bg-design-red text-design-gray-100 rounded hover:bg-design-red-hover transition-colors"
                             title="Add this influence to the graph"
                           >
                             Add to graph
@@ -821,7 +796,7 @@ export const ItemDetailsPanel: React.FC = () => {
                     </div>
                     
                     {mergeCandidates.length === 0 ? (
-                      <div className="text-xs text-design-gray-500 italic p-2 bg-design-gray-900 rounded border border-design-gray-800">
+                      <div className="text-xs text-design-gray-500 italic p-2 bg-design-gray-1200 rounded border border-design-gray-800">
                         No similar items found for merging
                       </div>
                     ) : (
@@ -829,7 +804,7 @@ export const ItemDetailsPanel: React.FC = () => {
                         <div
                           key={candidate.id}
                           onClick={() => handleMergeConfirm(candidate.id)}
-                          className="p-2 border border-design-gray-800 rounded cursor-pointer hover:border-design-green/50 hover:bg-design-gray-900"
+                          className="p-2 border border-design-gray-800 rounded cursor-pointer hover:border-design-red/50 hover:bg-design-gray-1200"
                         >
                           <div className="text-xs font-medium text-design-gray-200">{candidate.name}</div>
                           <div className="text-xs text-design-gray-400">
@@ -861,7 +836,7 @@ export const ItemDetailsPanel: React.FC = () => {
                 <div className="flex items-center justify-between mb-3 border-b border-design-gray-800 pb-2">
                   <h4 className="text-sm font-medium text-design-gray-100">Item History</h4>
                   <div className="flex space-x-2">
-                    <span className="text-xs text-design-gray-400 bg-design-gray-900 px-2 py-1 rounded">Latest</span>
+                    <span className="text-xs text-design-gray-400 bg-design-gray-1200 px-2 py-1 rounded">Latest</span>
                     <span className="text-xs text-design-gray-500 bg-design-gray-950 px-2 py-1 rounded border border-design-gray-800">
                       Viewing
                     </span>
@@ -872,11 +847,11 @@ export const ItemDetailsPanel: React.FC = () => {
                     <div key={entry.id}>
                       <button
                         onClick={() => toggleHistoryEntry(entry.id)}
-                        className="w-full flex items-start space-x-3 py-2 hover:bg-design-gray-900 rounded transition-colors"
+                        className="w-full flex items-start space-x-3 py-2 hover:bg-design-gray-1200 rounded transition-colors"
                       >
                         {/* Timeline thread */}
                         <div className="flex flex-col items-center">
-                          <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-green flex items-center justify-center flex-shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-red flex items-center justify-center flex-shrink-0">
                             <span className="text-xs">{getHistoryIcon(entry.action)}</span>
                           </div>
                           {index < researchLog.length - 1 && <div className="w-0.5 h-6 bg-design-gray-800 mt-1"></div>}
