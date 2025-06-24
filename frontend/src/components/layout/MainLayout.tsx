@@ -1,21 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { SearchBar } from '../common/SearchBar';
 import { ResearchPanel } from '../panels/ResearchPanel';
 import { GraphPanel } from '../panels/GraphPanel';
 import { ItemDetailsPanel } from '../panels/ItemDetailsPanel';
-import { SearchBar } from '../common/SearchBar';
-import { Button } from '@/components/ui/button';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { useGraph } from '../../contexts/GraphContext';
 import type { Item } from '../../services/api';
 
 export const MainLayout: React.FC = () => {
   const { loadItemInfluences, searchAndLoadItem } = useGraphOperations();
-  const [searchResults, setSearchResults] = React.useState<Item[]>([]);
-  const [searchLoading, setSearchLoading] = React.useState(false);
-  const [selectedItem, setSelectedItem] = React.useState("Shaft");
-  const [documentContent, setDocumentContent] = React.useState("");
+  const { state } = useGraph();
+  const [searchResults, setSearchResults] = useState<Item[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedItem, setSelectedItem] = useState("Shaft");
 
   const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
     setSearchLoading(true);
     try {
       const results = await searchAndLoadItem(query);
@@ -39,9 +40,9 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-black">
+    <div className="h-screen flex flex-col bg-design-gray-950">
       {/* Top Panel */}
-      <div className="bg-black border-b border-design-gray-800 px-6 py-4">
+      <div className="bg-design-gray-950 border-b border-design-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -55,15 +56,13 @@ export const MainLayout: React.FC = () => {
 
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
-            <div className="relative">
-              <div className="w-80">
-                <SearchBar
-                  onItemSelect={handleItemSelect}
-                  onSearch={handleSearch}
-                  searchResults={searchResults}
-                  loading={searchLoading}
-                />
-              </div>
+            <div className="w-80">
+              <SearchBar
+                onItemSelect={handleItemSelect}
+                onSearch={handleSearch}
+                searchResults={searchResults}
+                loading={searchLoading}
+              />
             </div>
             <span className="text-xs text-design-gray-500">v1.0.0</span>
           </div>
