@@ -174,7 +174,7 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
               onClick={() => clearCanvas()}
               className="px-3 py-1 text-xs border border-design-gray-800 text-design-gray-400 rounded hover:bg-design-gray-900 transition-colors"
             >
-              🔄 New Research
+              New Research
             </button>
           )}
         </div>
@@ -213,7 +213,6 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
         ) : (
           <div className="flex items-center justify-center h-full text-design-gray-400">
             <div className="text-center">
-              <div className="text-4xl mb-4">📝</div>
               <h3 className="text-lg font-medium mb-2 text-design-gray-300">Canvas Research</h3>
               <p className="text-sm text-design-gray-400 mb-4 max-w-sm">
                 Start by asking about influences for any creative work, innovation, or cultural artifact
