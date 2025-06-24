@@ -3,9 +3,13 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Send, ChevronDown, ChevronUp, Activity, Lightbulb } from 'lucide-react';
 import { CanvasTab } from '../canvas/CanvasTab';
-import { ModelSelector } from '../canvas/ModelSelector';
+import { ChatInput } from '../canvas/ChatInput';
+import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { useCanvasOperations } from '../../hooks/useCanvas';
+import { useGraphOperations } from '../../hooks/useGraphOperations';
+import { proposalApi } from '../../services/api';
+import type { AcceptProposalsRequest, StructuredOutput } from '../../services/api';
 
 interface ResearchPanelProps {
   onItemSaved: (itemId: string) => void;
@@ -86,11 +90,21 @@ const suggestions = [
 ];
 
 export const ResearchPanel: React.FC<ResearchPanelProps> = ({ onItemSaved }) => {
-  const { state, clearCanvas, setSelectedModel, setUseTwoAgent } = useCanvas();
+  const { state, clearCanvas } = useCanvas();
   const { startResearch, sendChatMessage } = useCanvasOperations();
+  const { loadItemWithAccumulation } = useGraphOperations();
   
-  const [chatInput, setChatInput] = useState("");
   const [isDocumentMode, setIsDocumentMode] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  
+  // Add conflict resolution state
+  const [conflictData, setConflictData] = useState<{
+    conflicts: any;
+    previewData: any;
+    newData: StructuredOutput;
+  } | null>(null);
+  
   const [systemPrompt, setSystemPrompt] = useState(
     `You are an AI research assistant specializing in influence mapping and cultural analysis. When researching influences:
 
@@ -134,13 +148,6 @@ Your responses should be well-structured, informative, and suitable for academic
     setIsDocumentMode(!!state.currentDocument);
   }, [state.currentDocument]);
 
-  const handleResearch = async () => {
-    if (chatInput.trim()) {
-      await startResearch(chatInput);
-      setChatInput("");
-    }
-  };
-
   const handleChatSubmit = async (message: string) => {
     if (!state.currentDocument) {
       // First message - start research
@@ -171,6 +178,143 @@ Your responses should be well-structured, informative, and suitable for academic
         return "📝";
     }
   };
+
+  const handleSaveToGraph = async () => {
+    setSaveError(null); 
+    if (!state.currentDocument) return;
+
+    // Get all sections selected for graph
+    const selectedSections = state.currentDocument.sections.filter(s => s.selectedForGraph && s.influence_data);
+    
+    if (selectedSections.length === 0) {
+      alert('Please select at least one influence to save to the graph');
+      return;
+    }
+
+    setSaveLoading(true);
+
+    try {
+      // Convert Canvas sections to AcceptProposalsRequest format
+      const request: AcceptProposalsRequest = {
+        item_name: state.currentDocument.item_name,
+        item_type: state.currentDocument.item_type,
+        creator: state.currentDocument.creator,
+        item_year: selectedSections[0]?.influence_data?.year, // Use first influence year as item year
+        item_description: state.currentDocument.sections.find(s => s.type === 'intro')?.content,
+        accepted_proposals: selectedSections.map(section => ({
+          ...section.influence_data!,
+          accepted: true,
+          parent_id: undefined,
+          children: [],
+          is_expanded: false,
+          influence_type: section.influence_data?.influence_type || 'general'
+        }))
+      };
+
+      const result = await proposalApi.acceptProposals(request);
+      
+      // Check if conflict resolution is needed
+      if (result && !result.success && result.requires_review) {
+        setConflictData({
+          conflicts: result.conflicts,
+          previewData: result.preview_data,
+          newData: result.new_data as StructuredOutput
+        });
+      } else if (result?.success && result.item_id) {
+        // Success - load item into graph
+        await loadItemWithAccumulation(result.item_id, state.currentDocument.item_name);
+        onItemSaved(result.item_id);
+      }
+    } catch (err: any) {
+      console.error('Failed to save to graph:', err);
+      
+      // Parse validation errors from API response
+      let errorMessage = 'Failed to save to graph. Please try again.';
+      
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        
+        if (typeof detail === 'string' && detail.includes('validation error')) {
+          // Parse Pydantic validation error
+          if (detail.includes('scope')) {
+            errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
+          } else if (detail.includes('year')) {
+            errorMessage = 'Error with influence. Issue with year - must be a valid number.';
+          } else if (detail.includes('confidence')) {
+            errorMessage = 'Error with influence. Issue with confidence - must be between 0 and 1.';
+          } else {
+            errorMessage = 'Error with influence data. Please refine sections and try again.';
+          }
+        }
+      } else if (err?.message) {
+        // Handle other error formats
+        if (err.message.includes('scope')) {
+          errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
+        } else if (err.message.includes('validation error')) {
+          errorMessage = 'Error with influence data. Please refine sections and try again.';
+        }
+      }
+      
+      setSaveError(errorMessage);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string, influenceResolutions?: Record<string, any>) => {
+    if (!conflictData) return;
+    
+    try {
+      const { influenceApi } = await import('../../services/api');
+      
+      // Special case: influence conflicts set to merge but no main item conflicts
+      if (resolution === 'merge' && !selectedItemId && conflictData.conflicts.main_item_conflicts.length === 0) {
+        // Create a new main item but with the influence resolutions applied
+        const result = await influenceApi.forceSaveAsNew(conflictData.newData);
+        
+        if (result.success && result.item_id) {
+          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+          onItemSaved(result.item_id);
+        }
+      } else if (resolution === 'create_new') {
+        const result = await influenceApi.forceSaveAsNew(conflictData.newData);
+        
+        if (result.success && result.item_id) {
+          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+          onItemSaved(result.item_id);
+        }
+      } else if (resolution === 'merge' && selectedItemId) {
+        const result = await influenceApi.mergeWithComprehensiveResolutions(
+          selectedItemId, 
+          conflictData.newData, 
+          influenceResolutions || {}
+        );
+        
+        if (result.success && result.item_id) {
+          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+          onItemSaved(result.item_id);
+        }
+      }
+      setConflictData(null);
+    } catch (error) {
+      console.error('Error resolving conflicts:', error);
+    }
+  };
+
+  // Show conflict resolution if needed
+  if (conflictData) {
+    return (
+      <div className="h-full flex flex-col bg-design-gray-950 p-4">
+        <ConflictResolution
+          conflicts={conflictData.conflicts}
+          previewData={conflictData.previewData}
+          newData={conflictData.newData}
+          onResolve={handleConflictResolve}
+          onCancel={() => setConflictData(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-design-gray-950">
@@ -358,7 +502,7 @@ Your responses should be well-structured, informative, and suitable for academic
                       <button
                         key={index}
                         onClick={() => {
-                          setChatInput(suggestion);
+                          // We'll handle this through the ChatInput component
                           setShowSuggestions(false);
                         }}
                         className="w-full text-left p-2 text-xs text-design-gray-300 hover:text-white hover:bg-design-gray-800 rounded-md transition-colors border border-design-gray-800 hover:border-design-green/30"
@@ -373,25 +517,31 @@ Your responses should be well-structured, informative, and suitable for academic
           </div>
         </div>
 
-        {/* Chat Input */}
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Research influences for Shaft (1971)..."
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleResearch()}
-            className="flex-1 bg-design-gray-900 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-green/50 focus:ring-design-green/20 [&::placeholder]:text-design-gray-500"
-          />
-          <Button 
-            onClick={handleResearch} 
-            size="sm" 
-            className="bg-design-green hover:bg-design-green-hover text-white border-0"
-            disabled={state.loading}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
+        {/* Chat Input Component */}
+        <ChatInput 
+          onSubmit={handleChatSubmit}
+          onSave={handleSaveToGraph}
+          loading={state.loading || saveLoading}
+          placeholder="Research influences for Shaft (1971)..."
+        />
       </div>
+
+      {/* Error Display */}
+      {(state.error || saveError) && (
+        <div className="bg-red-900/20 border-l-4 border-red-400 p-4 m-4 border-design-gray-800">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-300">{state.error || saveError}</p>
+            {saveError && (
+              <button
+                onClick={() => setSaveError(null)}
+                className="text-red-400 hover:text-red-300 text-sm"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

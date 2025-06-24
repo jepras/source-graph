@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { DocumentRenderer } from './DocumentRenderer';
-import { ChatInput } from './ChatInput';
 import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { useCanvasOperations } from '../../hooks/useCanvas';
@@ -15,9 +14,8 @@ interface CanvasTabProps {
 
 export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   const { state, clearCanvas, updateSection} = useCanvas();
-  const { startResearch, sendChatMessage } = useCanvasOperations();
   const { loadItemWithAccumulation } = useGraphOperations();
-  const [saveError, setSaveError] = useState<string | null>(null); // Add this line
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   // Add conflict resolution state
   const [conflictData, setConflictData] = useState<{
@@ -27,16 +25,6 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   } | null>(null);
   
   const [saveLoading, setSaveLoading] = useState(false);
-
-  const handleChatSubmit = async (message: string) => {
-    if (!state.currentDocument) {
-      // First message - start research
-      await startResearch(message);
-    } else {
-      // Subsequent messages - chat interaction
-      await sendChatMessage(message);
-    }
-  };
 
   const handleSaveToGraph = async () => {
     setSaveError(null); 
@@ -86,7 +74,7 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
         
         // Clear selected sections
         selectedSections.forEach(section => {
-          updateSection(section.id, { selectedForGraph: false }); // ✅ Use the one from top level
+          updateSection(section.id, { selectedForGraph: false });
         });
       }
     } catch (err: any) {
@@ -237,20 +225,6 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Chat Input */}
-      <div className="border-t border-design-gray-800 p-4">
-        <ChatInput 
-          onSubmit={handleChatSubmit}
-          onSave={handleSaveToGraph}
-          loading={state.loading || saveLoading}
-          placeholder={
-            state.currentDocument 
-              ? "Ask about specific influences, request refinements, or explore deeper..."
-              : "What would you like to research? (e.g., 'What influenced Shaft (1971)?')"
-          }
-        />
       </div>
 
       {/* Error Display */}

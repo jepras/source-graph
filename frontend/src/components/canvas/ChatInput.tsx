@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Save, Loader2 } from 'lucide-react'; // ADD Loader2
+import { Send, Save, Loader2 } from 'lucide-react';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { ModelSelector } from './ModelSelector';
 import { ModelStatus } from './ModelStatus';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 interface ChatInputProps {
   onSubmit: (message: string) => void;
@@ -26,7 +28,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   placeholder = "Ask about influences..." 
 }) => {
   const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { state, setSelectedModel, setUseTwoAgent } = useCanvas();
   const [lastActiveModel, setLastActiveModel] = useState(state.activeModel);
 
@@ -71,13 +72,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setLastActiveModel(state.activeModel);
   }, [state.activeModel, state.selectedModel, lastActiveModel]);
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
-  }, [message]);
-
   const handleSubmit = () => {
     if (!message.trim() || loading) return;
     
@@ -114,53 +108,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         />
       </div>
 
-      {/* Chat Input */}
-      <div className="flex gap-3 items-end">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={loading ? "AI is thinking..." : placeholder}
-            disabled={loading}
-            className="w-full p-3 border border-design-gray-800 rounded-lg resize-none focus:ring-2 focus:ring-design-green focus:border-design-green disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-design-gray-900 bg-design-gray-900 text-design-gray-100 placeholder-design-gray-500"
-            rows={1}
-            style={{ minHeight: '44px', maxHeight: '120px' }}
-          />
-          <div className="absolute bottom-2 right-2 text-xs text-design-gray-500">
-            {loading ? "Generating..." : (
-              <>
-                {message.length > 0 && `${message.length} chars • `}
-                ⌘↵ to send
-              </>
-            )}
-          </div>
-        </div>
+      {/* Chat Input - Using the simpler design from ResearchPanel */}
+      <div className="flex space-x-2">
+        <Input
+          placeholder={loading ? "AI is thinking..." : placeholder}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+          disabled={loading}
+          className="flex-1 bg-design-gray-900 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-green/50 focus:ring-design-green/20 [&::placeholder]:text-design-gray-500"
+        />
         
         {/* Save Button */}
         {selectedCount > 0 && !loading && (
-          <button
+          <Button
             onClick={onSave}
-            className="p-3 bg-design-green text-white rounded-lg hover:bg-design-green-hover focus:ring-2 focus:ring-design-green focus:ring-offset-2 focus:ring-offset-design-gray-950 transition-colors"
+            size="sm"
+            className="bg-design-green hover:bg-design-green-hover text-white border-0"
             title={`Save ${selectedCount} selected influences to graph`}
           >
             <Save className="w-4 h-4" />
-          </button>
+          </Button>
         )}
         
-        {/* Send Button with Loading State */}
-        <button
+        {/* Send Button */}
+        <Button
           onClick={handleSubmit}
           disabled={!message.trim() || loading}
-          className="p-3 bg-design-green text-white rounded-lg hover:bg-design-green-hover focus:ring-2 focus:ring-design-green focus:ring-offset-2 focus:ring-offset-design-gray-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          size="sm"
+          className="bg-design-green hover:bg-design-green-hover text-white border-0"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Send className="w-4 h-4" />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

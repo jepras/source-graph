@@ -54,19 +54,28 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
       return 'merge';
     }
     
-    // If there are only influence conflicts, check if all are set to create_new
+    // If there are only influence conflicts, check the resolutions
     if (conflicts.main_item_conflicts.length === 0 && Object.keys(conflicts.influence_conflicts).length > 0) {
       const allInfluenceResolutions = Object.values(influenceResolutions);
+      
+      // If all influences are set to create_new, use create_new
       const allCreateNew = allInfluenceResolutions.length > 0 && 
         allInfluenceResolutions.every(resolution => resolution.resolution === 'create_new');
       
       if (allCreateNew) {
         return 'create_new';
       }
+      
+      // If any influence is set to merge, we need to use merge strategy
+      // but we'll need to handle this differently since there's no main item conflict
+      const anyMerge = allInfluenceResolutions.some(resolution => resolution.resolution === 'merge');
+      if (anyMerge) {
+        return 'merge';
+      }
     }
     
-    // Default to merge for mixed scenarios or when no clear pattern
-    return 'merge';
+    // Default to create_new for safety
+    return 'create_new';
   };
 
   // Check if all conflicts are resolved
