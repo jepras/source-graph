@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from '../ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Badge } from '../ui/badge';
+import { X, Wand2, ExternalLink, Music, Film, BookOpen, Info, Share2, Edit, Trash2, ChevronDown } from 'lucide-react';
 import { api } from '../../services/api';
 import { useGraph } from '../../contexts/GraphContext';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
@@ -12,6 +16,26 @@ interface InfluenceData {
   outgoing: any[];
   loading: boolean;
   error: string | null;
+}
+
+interface AIContentItem {
+  id: string;
+  type: "spotify" | "youtube" | "wikipedia" | "image" | "imdb" | "genius";
+  title: string;
+  description?: string;
+  url?: string;
+  thumbnail?: string;
+  isLoading?: boolean;
+}
+
+interface ResearchLogItem {
+  id: string;
+  timestamp: string;
+  user: string;
+  action: string;
+  details: string;
+  status: "Added" | "Generated" | "Edited" | "Completed";
+  expanded?: boolean;
 }
 
 export const ItemDetailsPanel: React.FC = () => {
@@ -32,6 +56,50 @@ export const ItemDetailsPanel: React.FC = () => {
   const [mergeMode, setMergeMode] = useState(false);
   const [mergeCandidates, setMergeCandidates] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiContent, setAiContent] = useState<AIContentItem[]>([]);
+  const [showFullDetails, setShowFullDetails] = useState<{ [key: string]: boolean }>({});
+
+  // Mock research log data
+  const researchLog: ResearchLogItem[] = [
+    {
+      id: "1",
+      timestamp: "2024-01-20 14:30",
+      user: "System",
+      action: "Created",
+      details: "Initial item creation with basic details.",
+      status: "Added",
+      expanded: false,
+    },
+    {
+      id: "2",
+      timestamp: "2024-01-21 09:15",
+      user: "AI",
+      action: "Updated",
+      details: "Added a more detailed description and influence categories.",
+      status: "Edited",
+      expanded: false,
+    },
+    {
+      id: "3",
+      timestamp: "2024-01-22 16:45",
+      user: "AI",
+      action: "Generated",
+      details: "AI-generated content added to the overview.",
+      status: "Generated",
+      expanded: false,
+    },
+    {
+      id: "4",
+      timestamp: "2024-01-23 11:00",
+      user: "System",
+      action: "Linked",
+      details: "Connected to related items in the knowledge graph.",
+      status: "Completed",
+      expanded: false,
+    },
+  ];
 
   // Load item details and influence data when selectedNodeId changes
   useEffect(() => {
@@ -74,9 +142,8 @@ export const ItemDetailsPanel: React.FC = () => {
     loadItemData();
   }, [state.selectedNodeId]);
 
-  // Add this useEffect right after your existing useEffect for loading item data
+  // Clear action states when selection changes
   useEffect(() => {
-    // Clear action states when selection changes
     setDeleteConfirm(false);
     setMergeMode(false);
     setMergeCandidates([]);
@@ -209,6 +276,217 @@ export const ItemDetailsPanel: React.FC = () => {
     }
   };
 
+  const handleGenerateContent = () => {
+    setIsGenerating(true);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      if (itemDetails) {
+        // Mock AI-generated content based on the selected item
+        const mockContent: AIContentItem[] = [
+          {
+            id: "1",
+            type: "wikipedia",
+            title: `${itemDetails.name}`,
+            description: `Information about ${itemDetails.name}`,
+            url: "https://en.wikipedia.org/wiki/Main_Page",
+          },
+          {
+            id: "2",
+            type: "image",
+            title: `${itemDetails.name} Visualization`,
+            description: "AI-generated representation of this concept",
+            thumbnail: "/placeholder.svg?height=200&width=300",
+          },
+        ];
+
+        // Add type-specific content
+        if (itemDetails.auto_detected_type?.toLowerCase().includes('film')) {
+          mockContent.push({
+            id: "3",
+            type: "imdb",
+            title: `${itemDetails.name}`,
+            description: "Film details and ratings",
+            url: "https://www.imdb.com/",
+            thumbnail: "/placeholder.svg?height=120&width=80",
+          });
+        } else if (itemDetails.auto_detected_type?.toLowerCase().includes('music')) {
+          mockContent.push({
+            id: "4",
+            type: "spotify",
+            title: `${itemDetails.name}`,
+            description: "Music streaming and details",
+            url: "https://open.spotify.com/",
+            thumbnail: "/placeholder.svg?height=80&width=80",
+          });
+        }
+
+        setAiContent(mockContent);
+      }
+      setIsGenerating(false);
+    }, 2000);
+  };
+
+  const toggleHistoryEntry = (id: string) => {
+    setShowFullDetails((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const getHistoryIcon = (action: string) => {
+    switch (action.toLowerCase()) {
+      case "created":
+        return "➕";
+      case "updated":
+        return "✏️";
+      case "generated":
+        return "🤖";
+      case "linked":
+        return "🔗";
+      default:
+        return "📝";
+    }
+  };
+
+  const renderContentItem = (item: AIContentItem) => {
+    switch (item.type) {
+      case "spotify":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+            <div className="flex items-center p-3">
+              <div className="flex-shrink-0 mr-3">
+                <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-12 h-12 rounded" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-design-gray-100 truncate">{item.title}</h4>
+                <p className="text-xs text-design-gray-400">{item.description}</p>
+              </div>
+              <Button size="sm" variant="ghost" className="ml-2 text-design-green hover:text-design-green-hover hover:bg-design-gray-800">
+                <Music className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        );
+
+      case "youtube":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+            <div className="aspect-video bg-black relative">
+              <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
+                  <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[16px] border-l-white border-b-[8px] border-b-transparent ml-1"></div>
+                </div>
+              </div>
+            </div>
+            <div className="p-3">
+              <h4 className="text-sm font-medium text-design-gray-100">{item.title}</h4>
+              <p className="text-xs text-design-gray-400 mt-1">{item.description}</p>
+            </div>
+          </div>
+        );
+
+      case "imdb":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+            <div className="flex">
+              <div className="flex-shrink-0 mr-3">
+                <img
+                  src={item.thumbnail || "/placeholder.svg"}
+                  alt={item.title}
+                  className="w-12 h-18 rounded object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center">
+                  <h4 className="text-sm font-medium text-design-gray-100">{item.title}</h4>
+                  <Badge
+                    variant="outline"
+                    className="ml-2 bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]"
+                  >
+                    IMDb
+                  </Badge>
+                </div>
+                <p className="text-xs text-design-gray-400 mt-1">{item.description}</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-2 h-7 text-xs text-design-gray-300 hover:text-design-gray-100 hover:bg-design-gray-800"
+                >
+                  <Film className="w-3 h-3 mr-1" /> View details
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "wikipedia":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+            <div className="flex items-center">
+              <BookOpen className="w-4 h-4 text-design-gray-400 mr-2 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-design-gray-100">{item.title}</h4>
+                <p className="text-xs text-design-gray-400 mt-1">{item.description}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800"
+                asChild
+              >
+                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case "image":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800">
+            <div className="aspect-video bg-black">
+              <img src={item.thumbnail || "/placeholder.svg"} alt={item.title} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-3">
+              <h4 className="text-sm font-medium text-design-gray-100">{item.title}</h4>
+              <p className="text-xs text-design-gray-400 mt-1">{item.description}</p>
+            </div>
+          </div>
+        );
+
+      case "genius":
+        return (
+          <div className="bg-design-gray-900 rounded-md overflow-hidden border border-design-gray-800 p-3">
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0 mr-3">
+                <span className="text-black font-bold text-xs">G</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium text-design-gray-100">{item.title}</h4>
+                <p className="text-xs text-design-gray-400 mt-1">{item.description}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800"
+                asChild
+              >
+                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   if (!state.selectedNodeId || !itemDetails) {
     return (
       <div className="h-full flex flex-col bg-design-gray-950">
@@ -265,239 +543,374 @@ export const ItemDetailsPanel: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-design-gray-950">
-      <div className="p-4 border-b border-design-gray-800">
-        <h4 className="text-sm font-semibold text-design-gray-200">
-          Selected Item
-        </h4>
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between border-b border-design-gray-800">
+        <h3 className="font-medium text-design-gray-100">Item Details</h3>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => selectNode(null)}
+          className="w-6 h-6 p-0 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800 rounded-full"
+        >
+          <X className="w-4 h-4" />
+        </Button>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Item Name and Basic Info */}
-        <div>
-          <h5 className="text-sm font-medium text-design-gray-100 mb-1">
-            {itemDetails.name}
-          </h5>
-          {itemDetails.year && (
-            <div className="text-xs text-design-gray-400 mb-2">
-              {itemDetails.year}
-            </div>
-          )}
-          {itemDetails.auto_detected_type && (
-            <div className="text-xs text-design-gray-400 mb-2">
-              Type: {itemDetails.auto_detected_type}
-            </div>
-          )}
-          {itemDetails.description && (
-            <p className="text-sm text-design-gray-300 leading-relaxed">
-              {itemDetails.description}
-            </p>
-          )}
-        </div>
 
-        {/* Graph Actions Section */}
-        <div className="border-t border-design-gray-800 pt-4">
-          <h6 className="text-xs font-medium text-design-gray-400 mb-3">🔍 Graph Actions</h6>
-          
-          <div className="flex space-x-2 mb-3">
-            <button
-              onClick={() => {/* placeholder */}}
-              className="px-3 py-1 text-xs bg-design-gray-900 text-design-gray-400 rounded hover:bg-design-gray-800 border border-design-gray-800"
-              disabled
-            >
-              ✏️ Edit
-            </button>
-            
-            <button
-              onClick={deleteConfirm ? handleDeleteConfirm : handleDeleteClick}
-              disabled={actionLoading}
-              className={`px-3 py-1 text-xs rounded ${
-                deleteConfirm 
-                  ? 'bg-red-600 text-white hover:bg-red-700' 
-                  : 'bg-red-900/50 text-red-400 hover:bg-red-900 border border-red-800'
-              }`}
-            >
-              {actionLoading ? '...' : deleteConfirm ? 'Are you sure?' : '🗑️ Delete'}
-            </button>
-            
-            <button
-              onClick={handleMergeClick}
-              disabled={actionLoading || mergeMode}
-              className="px-3 py-1 text-xs bg-blue-900/50 text-blue-400 rounded hover:bg-blue-900 border border-blue-800"
-            >
-              {actionLoading ? '...' : '🔗 Merge'}
-            </button>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="px-4 pt-4">
+            <TabsList className="w-full bg-design-gray-900">
+              <TabsTrigger
+                value="overview"
+                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="connections"
+                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+              >
+                Connections
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="flex-1 data-[state=active]:bg-design-green data-[state=active]:text-white"
+              >
+                History
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* Merge Candidates */}
-          {mergeMode && (
-            <div className="space-y-2">
-              <div className="text-xs text-design-gray-400 mb-2">
-                Merge "{itemDetails.name}" into:
+          <TabsContent value="overview" className="p-4 pt-6 space-y-6">
+            {/* Title and Type */}
+            <div>
+              <h2 className="text-xl font-bold text-design-gray-100">{itemDetails.name}</h2>
+              <div className="flex items-center mt-1 space-x-2">
+                {itemDetails.year && (
+                  <span className="text-sm text-design-gray-400">{itemDetails.year}</span>
+                )}
+                <Badge variant="outline" className="bg-design-green/10 text-design-green border-design-green/20">
+                  {itemDetails.auto_detected_type || 'unknown'}
+                </Badge>
+                {itemDetails.verification_status && (
+                  <>
+                    <span className="text-design-gray-500">•</span>
+                    <Badge variant="outline" className="bg-design-green/10 text-design-green border-design-green/20">
+                      {itemDetails.verification_status}
+                    </Badge>
+                  </>
+                )}
               </div>
-              
-              {mergeCandidates.length === 0 ? (
-                <div className="text-xs text-design-gray-500 italic p-2 bg-design-gray-900 rounded border border-design-gray-800">
-                  No similar items found for merging
-                </div>
-              ) : (
-                mergeCandidates.map((candidate) => (
-                  <div
-                    key={candidate.id}
-                    onClick={() => handleMergeConfirm(candidate.id)}
-                    className="p-2 border border-design-gray-800 rounded cursor-pointer hover:border-design-green/50 hover:bg-design-gray-900"
-                  >
-                    <div className="text-xs font-medium text-design-gray-200">{candidate.name}</div>
-                    <div className="text-xs text-design-gray-400">
-                      {candidate.year && `${candidate.year} • `}
-                      {candidate.auto_detected_type}
-                    </div>
-                    <div className="text-xs text-design-gray-500 mt-1">
-                      {candidate.existing_influences_count} influences • {candidate.similarity_score}% match
-                    </div>
-                  </div>
-                ))
-              )}
-              
-              <button
-                onClick={() => {setMergeMode(false); setMergeCandidates([]);}}
-                className="text-xs text-design-gray-500 hover:text-design-gray-300 underline"
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-design-gray-900 border-design-gray-800 hover:bg-design-gray-800 text-xs text-design-gray-400 hover:text-design-gray-100"
+                disabled
               >
-                Cancel
-              </button>
+                <Edit className="w-3 h-3 mr-1" /> Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-design-gray-900 border-design-gray-800 hover:bg-design-gray-800 text-xs text-design-gray-400 hover:text-design-gray-100"
+                disabled
+              >
+                <Share2 className="w-3 h-3 mr-1" /> Share
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={deleteConfirm ? handleDeleteConfirm : handleDeleteClick}
+                disabled={actionLoading}
+                className={`text-xs ${
+                  deleteConfirm 
+                    ? 'bg-red-600 text-white hover:bg-red-700 border-red-600' 
+                    : 'bg-design-gray-900 border-design-gray-800 text-red-400 hover:bg-red-900/20 hover:text-red-300'
+                }`}
+              >
+                {actionLoading ? '...' : deleteConfirm ? 'Are you sure?' : (
+                  <>
+                    <Trash2 className="w-3 h-3 mr-1" /> Delete
+                  </>
+                )}
+              </Button>
             </div>
-          )}
-        </div>
 
-        {/* Graph Expansion Controls */}
-        <GraphExpansionControls
-          selectedItemId={state.selectedNodeId}
-          onExpand={handleExpand}
-          loading={state.loading}
-        />
+            {/* Description */}
+            <div>
+              <h3 className="text-sm font-medium text-design-gray-300 mb-2 flex items-center">
+                <Info className="w-3 h-3 mr-1" /> Description
+              </h3>
+              <p className="text-sm text-design-gray-400 leading-relaxed">
+                {itemDetails.description || "No description available."}
+              </p>
+            </div>
 
-        {/* Enhancement Panel */}
-        <div className="border-t border-design-gray-800 pt-4">
-          <EnhancementPanel
-            itemId={state.selectedNodeId!}
-            itemName={itemDetails.name}
-          />
-        </div>
+            {/* Graph Expansion Controls */}
+            <div>
+              <h3 className="text-sm font-medium text-design-gray-300 mb-2">Graph Actions</h3>
+              <GraphExpansionControls
+                selectedItemId={state.selectedNodeId}
+                onExpand={handleExpand}
+                loading={state.loading}
+              />
+            </div>
 
-        {/* Incoming Influences Section */}
-        <div>
-          <button
-            onClick={() => toggleSection('incoming')}
-            className="flex items-center justify-between w-full text-left text-sm font-medium text-design-gray-400 hover:text-design-gray-200"
-          >
-            <span>
-              Influenced By ({influenceData.incoming.length})
-            </span>
-            <span className="text-design-gray-500">
-              {expandedSections.incoming ? '▼' : '▶'}
-            </span>
-          </button>
-          
-          {expandedSections.incoming && (
-            <div className="mt-2 space-y-3">
-              {influenceData.incoming.length === 0 ? (
-                <div className="text-sm text-design-gray-500 italic">
-                  No known influences
+            {/* Enhancement Panel */}
+            <div>
+              <h3 className="text-sm font-medium text-design-gray-300 mb-2">AI Enhancement</h3>
+              <EnhancementPanel
+                itemId={state.selectedNodeId!}
+                itemName={itemDetails.name}
+              />
+            </div>
+
+            {/* AI Content Generator */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-design-gray-300 flex items-center">
+                  <Wand2 className="w-3 h-3 mr-1" /> AI-Generated Content
+                </h3>
+                <Button
+                  size="sm"
+                  onClick={handleGenerateContent}
+                  disabled={isGenerating}
+                  className="h-7 text-xs bg-design-green hover:bg-design-green-hover text-white"
+                >
+                  {isGenerating ? "Generating..." : "Generate"}
+                </Button>
+              </div>
+
+              {isGenerating ? (
+                <div className="space-y-3">
+                  <div className="h-20 w-full bg-design-gray-900" />
+                  <div className="h-40 w-full bg-design-gray-900" />
+                  <div className="h-20 w-full bg-design-gray-900" />
+                </div>
+              ) : aiContent.length > 0 ? (
+                <div className="space-y-3">
+                  {aiContent.map((item) => (
+                    <div key={item.id}>{renderContentItem(item)}</div>
+                  ))}
                 </div>
               ) : (
-                influenceData.incoming.map((influence, index) => (
-                  <div key={index} className="bg-design-gray-800 rounded p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <button
-                          onClick={() => selectNode(influence.from_item.id)}
-                          className="text-sm font-medium text-design-green-600 hover:text-design-green-800 mb-1"
-                        >
-                          {influence.from_item.name}
-                        </button>
-                        <div className="text-xs text-design-gray-400 mb-2">
-                          {influence.category} • {influence.influence_type}
-                        </div>
-                        <p className="text-sm text-design-gray-300 leading-relaxed">
-                          {influence.explanation}
-                        </p>
-                        {influence.confidence && (
-                          <div className="text-xs text-design-gray-500 mt-1">
-                            Confidence: {Math.round(influence.confidence * 100)}%
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAddInfluenceToGraph(influence)}
-                        className="ml-2 px-3 py-1 text-xs bg-design-green-500 text-design-gray-100 rounded hover:bg-design-green-600 transition-colors"
-                        title="Add this influence to the graph"
-                      >
-                        Add to graph
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Outgoing Influences Section */}
-        <div>
-          <button
-            onClick={() => toggleSection('outgoing')}
-            className="flex items-center justify-between w-full text-left text-sm font-medium text-design-gray-400 hover:text-design-gray-200"
-          >
-            <span>
-              Influences ({influenceData.outgoing.length})
-            </span>
-            <span className="text-design-gray-500">
-              {expandedSections.outgoing ? '▼' : '▶'}
-            </span>
-          </button>
-          
-          {expandedSections.outgoing && (
-            <div className="mt-2 space-y-3">
-              {influenceData.outgoing.length === 0 ? (
-                <div className="text-sm text-design-gray-500 italic">
-                  No known influences on other items
+                <div className="bg-design-gray-900 border border-design-gray-800 rounded-md p-4 text-center">
+                  <Wand2 className="w-5 h-5 text-design-gray-500 mx-auto mb-2" />
+                  <p className="text-sm text-design-gray-400">
+                    Click "Generate" to discover related content from various sources
+                  </p>
+                  <p className="text-xs text-design-gray-500 mt-1">Includes Spotify, YouTube, Wikipedia, IMDB, and more</p>
                 </div>
-              ) : (
-                influenceData.outgoing.map((influence: any, index: number) => (
-                  <div key={index} className="bg-design-gray-800 rounded p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <button
-                          onClick={() => selectNode(influence.to_item.id)}
-                          className="text-sm font-medium text-design-green-600 hover:text-design-green-800 mb-1"
-                        >
-                          {influence.to_item.name}
-                        </button>
-                        <div className="text-xs text-design-gray-400 mb-2">
-                          {influence.category} • {influence.influence_type}
-                        </div>
-                        <p className="text-sm text-design-gray-300 leading-relaxed">
-                          {influence.explanation}
-                        </p>
-                        {influence.confidence && (
-                          <div className="text-xs text-design-gray-500 mt-1">
-                            Confidence: {Math.round(influence.confidence * 100)}%
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAddOutgoingInfluenceToGraph(influence)}
-                        className="ml-2 px-3 py-1 text-xs bg-design-green-500 text-design-gray-100 rounded hover:bg-design-green-600 transition-colors"
-                        title="Add this influence to the graph"
-                      >
-                        Add to graph
-                      </button>
-                    </div>
-                  </div>
-                ))
               )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="connections" className="p-4">
+            <div className="space-y-4">
+              {/* Incoming Influences */}
+              <div>
+                <h3 className="text-sm font-medium text-design-gray-300 mb-2">Influenced By</h3>
+                {influenceData.incoming.length > 0 ? (
+                  <div className="space-y-3">
+                    {influenceData.incoming.map((influence, index) => (
+                      <div key={index} className="bg-design-gray-900 rounded p-3 border border-design-gray-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <button
+                              onClick={() => selectNode(influence.from_item.id)}
+                              className="text-sm font-medium text-design-green hover:text-design-green-hover mb-1"
+                            >
+                              {influence.from_item.name}
+                            </button>
+                            <div className="text-xs text-design-gray-400 mb-2">
+                              {influence.category} • {influence.influence_type}
+                            </div>
+                            <p className="text-sm text-design-gray-300 leading-relaxed">
+                              {influence.explanation}
+                            </p>
+                            {influence.confidence && (
+                              <div className="text-xs text-design-gray-500 mt-1">
+                                Confidence: {Math.round(influence.confidence * 100)}%
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleAddInfluenceToGraph(influence)}
+                            className="ml-2 px-3 py-1 text-xs bg-design-green text-design-gray-100 rounded hover:bg-design-green-hover transition-colors"
+                            title="Add this influence to the graph"
+                          >
+                            Add to graph
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-design-gray-400">No known influences.</p>
+                )}
+              </div>
+
+              {/* Outgoing Influences */}
+              <div>
+                <h3 className="text-sm font-medium text-design-gray-300 mb-2">Influences</h3>
+                {influenceData.outgoing.length > 0 ? (
+                  <div className="space-y-3">
+                    {influenceData.outgoing.map((influence: any, index: number) => (
+                      <div key={index} className="bg-design-gray-900 rounded p-3 border border-design-gray-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <button
+                              onClick={() => selectNode(influence.to_item.id)}
+                              className="text-sm font-medium text-design-green hover:text-design-green-hover mb-1"
+                            >
+                              {influence.to_item.name}
+                            </button>
+                            <div className="text-xs text-design-gray-400 mb-2">
+                              {influence.category} • {influence.influence_type}
+                            </div>
+                            <p className="text-sm text-design-gray-300 leading-relaxed">
+                              {influence.explanation}
+                            </p>
+                            {influence.confidence && (
+                              <div className="text-xs text-design-gray-500 mt-1">
+                                Confidence: {Math.round(influence.confidence * 100)}%
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleAddOutgoingInfluenceToGraph(influence)}
+                            className="ml-2 px-3 py-1 text-xs bg-design-green text-design-gray-100 rounded hover:bg-design-green-hover transition-colors"
+                            title="Add this influence to the graph"
+                          >
+                            Add to graph
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-design-gray-400">No known items influenced by this.</p>
+                )}
+              </div>
+
+              {/* Merge Section */}
+              <div>
+                <h3 className="text-sm font-medium text-design-gray-300 mb-2">Merge Options</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleMergeClick}
+                    disabled={actionLoading || mergeMode}
+                    className="bg-design-gray-900 border-design-gray-800 text-blue-400 hover:bg-blue-900/20 hover:text-blue-300"
+                  >
+                    {actionLoading ? '...' : '🔗 Merge'}
+                  </Button>
+                </div>
+
+                {/* Merge Candidates */}
+                {mergeMode && (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-xs text-design-gray-400 mb-2">
+                      Merge "{itemDetails.name}" into:
+                    </div>
+                    
+                    {mergeCandidates.length === 0 ? (
+                      <div className="text-xs text-design-gray-500 italic p-2 bg-design-gray-900 rounded border border-design-gray-800">
+                        No similar items found for merging
+                      </div>
+                    ) : (
+                      mergeCandidates.map((candidate) => (
+                        <div
+                          key={candidate.id}
+                          onClick={() => handleMergeConfirm(candidate.id)}
+                          className="p-2 border border-design-gray-800 rounded cursor-pointer hover:border-design-green/50 hover:bg-design-gray-900"
+                        >
+                          <div className="text-xs font-medium text-design-gray-200">{candidate.name}</div>
+                          <div className="text-xs text-design-gray-400">
+                            {candidate.year && `${candidate.year} • `}
+                            {candidate.auto_detected_type}
+                          </div>
+                          <div className="text-xs text-design-gray-500 mt-1">
+                            {candidate.existing_influences_count} influences • {candidate.similarity_score}% match
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    
+                    <button
+                      onClick={() => {setMergeMode(false); setMergeCandidates([]);}}
+                      className="text-xs text-design-gray-500 hover:text-design-gray-300 underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="p-4">
+            <div className="bg-design-gray-950/95 backdrop-blur-sm border border-design-gray-800 rounded-lg">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3 border-b border-design-gray-800 pb-2">
+                  <h4 className="text-sm font-medium text-design-gray-100">Item History</h4>
+                  <div className="flex space-x-2">
+                    <span className="text-xs text-design-gray-400 bg-design-gray-900 px-2 py-1 rounded">Latest</span>
+                    <span className="text-xs text-design-gray-500 bg-design-gray-950 px-2 py-1 rounded border border-design-gray-800">
+                      Viewing
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-0 max-h-60 overflow-y-auto">
+                  {researchLog.map((entry, index) => (
+                    <div key={entry.id}>
+                      <button
+                        onClick={() => toggleHistoryEntry(entry.id)}
+                        className="w-full flex items-start space-x-3 py-2 hover:bg-design-gray-900 rounded transition-colors"
+                      >
+                        {/* Timeline thread */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-green flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs">{getHistoryIcon(entry.action)}</span>
+                          </div>
+                          {index < researchLog.length - 1 && <div className="w-0.5 h-6 bg-design-gray-800 mt-1"></div>}
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-design-gray-300 truncate">
+                              {entry.user} - {entry.action}
+                            </p>
+                            <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
+                              <span className="text-xs text-design-gray-500">{entry.status}</span>
+                              <ChevronDown
+                                className={`w-3 h-3 text-design-gray-500 transition-transform ${
+                                  showFullDetails[entry.id] ? "rotate-180" : ""
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-design-gray-500">{entry.timestamp}</p>
+                        </div>
+                      </button>
+                      {showFullDetails[entry.id] && (
+                        <div className="ml-8 pb-2">
+                          <p className="text-xs text-design-gray-500 leading-relaxed">{entry.details}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

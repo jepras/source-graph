@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Wand2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ItemDetailsPanel } from '../panels/ItemDetailsPanel';
 import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
 import { positionGraphNodes, extractClusters } from '../../utils/graphUtils';
 
@@ -148,6 +149,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .style("cursor", "pointer")
       .on("click", (event, d) => {
         if (onNodeClick) onNodeClick(d.id);
+        // Automatically show the details panel when a node is clicked
+        setShowSelectedPanel(true);
       })
       .on("mouseenter", (event, d) => {
         setHoveredNode(d);
@@ -205,6 +208,13 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .attr("stroke", d => d.id === accumulatedGraph.selectedNodeId ? "#ffffff" : "#1f2937")
       .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 3 : 2);
       
+  }, [accumulatedGraph.selectedNodeId]);
+
+  // Show details panel when a node is selected
+  useEffect(() => {
+    if (accumulatedGraph.selectedNodeId) {
+      setShowSelectedPanel(true);
+    }
   }, [accumulatedGraph.selectedNodeId]);
 
   // Helper function to draw cluster areas
@@ -434,10 +444,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         }`}
       >
         {showSelectedPanel && (
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-design-gray-100 mb-4">Item Details</h3>
-            <p className="text-design-gray-400">Selected item details panel will be implemented in Phase 6.</p>
-          </div>
+          <ItemDetailsPanel />
         )}
       </div>
 
