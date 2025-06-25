@@ -6,11 +6,12 @@ import { ItemDetailsPanel } from '../panels/ItemDetailsPanel';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { useGraph } from '../../contexts/GraphContext';
 import { Button } from '../ui/button';
+import { Icon } from '../ui/icon';
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import type { Item } from '../../services/api';
 
 export const MainLayout: React.FC = () => {
-  const { loadItemInfluences, searchAndLoadItem } = useGraphOperations();
+  const { loadItemInfluences, loadItemInfluencesWithoutSelection, searchAndLoadItem } = useGraphOperations();
   const { state } = useGraph();
   const [searchResults, setSearchResults] = useState<Item[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -85,13 +86,18 @@ export const MainLayout: React.FC = () => {
   };
 
   const handleItemSelect = async (item: Item) => {
-    await loadItemInfluences(item.id);
+    // Don't automatically select the node when an item is selected from search
+    // The item details panel should only open when a node is explicitly clicked
+    await loadItemInfluencesWithoutSelection(item.id);
     setSearchResults([]); // Clear search results
     setSelectedItem(item.name);
   };
 
   const handleItemSaved = async (itemId: string) => {
-    await loadItemInfluences(itemId);
+    // Don't automatically select the node when an item is saved from research
+    // The item details panel should only open when a node is explicitly clicked
+    // Just load the item into the graph without selecting it
+    await loadItemInfluencesWithoutSelection(itemId);
   };
 
   return (
@@ -101,9 +107,7 @@ export const MainLayout: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-design-red rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">IG</span>
-              </div>
+              <Icon size={24} className="text-design-red" />
               <h1 className="text-xl font-semibold text-white">Influence Graph</h1>
               <span className="text-sm text-design-gray-400">Explore how everything influences everything</span>
             </div>

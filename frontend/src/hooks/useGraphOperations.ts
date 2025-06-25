@@ -60,6 +60,45 @@ export const useGraphOperations = () => {
     }
   }, [addNodesAndLinks, selectNode, setLoading, setError, state.accumulatedGraph.nodes, clearGraph]);
 
+  // Used in MainLayout for loading items without automatically selecting them
+  const loadItemInfluencesWithoutSelection = useCallback(async (itemId: string) => {
+    setLoading(true);
+    setError(null);
+  
+    try {
+      const response = await api.getInfluences(itemId);
+      
+      // Check if this item is already in the graph or connected to existing graph
+      const existingNodeIds = new Set(state.accumulatedGraph.nodes.keys());
+      const isConnectedToExistingGraph = 
+        existingNodeIds.has(response.main_item.id) ||
+        response.influences.some(influence => 
+          existingNodeIds.has(influence.from_item.id) || 
+          existingNodeIds.has(influence.to_item.id)
+        );
+  
+      // If not connected to existing graph, clear it first
+      if (!isConnectedToExistingGraph && state.accumulatedGraph.nodes.size > 0) {
+        clearGraph();
+      }
+  
+      // Use your existing utility function to convert API response to graph format
+      const { nodes, relationships } = extractNodesAndRelationships(response, state.accumulatedGraph);
+      
+      // Convert Maps to arrays for the context
+      const nodeArray = Array.from(nodes.values());
+      const linkArray = Array.from(relationships.values());
+  
+      addNodesAndLinks(nodeArray, linkArray);
+      // Note: We don't call selectNode here - the item details panel should only open when a node is explicitly clicked
+  
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load influences');
+    } finally {
+      setLoading(false);
+    }
+  }, [addNodesAndLinks, setLoading, setError, state.accumulatedGraph.nodes, clearGraph]);
+
   // Used in MainLayout
   const searchAndLoadItem = useCallback(async (query: string) => {
     try {
@@ -190,6 +229,7 @@ export const useGraphOperations = () => {
 
   return {
     loadItemInfluences,
+    loadItemInfluencesWithoutSelection,
     expandNode,
     searchAndLoadItem,
     loadItemWithAccumulation,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { InfluenceGraph } from '../graph/InfluenceGraph';
+import { Icon } from '../ui/icon';
 import { useGraph } from '../../contexts/GraphContext';
 
 interface GraphPanelProps {
@@ -60,7 +61,9 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
         ) : (
           <div className="h-full flex items-center justify-center bg-black">
             <div className="text-center text-design-gray-400">
-              <div className="text-6xl mb-4">🕸️</div>
+              <div className="mb-4 flex justify-center">
+                <Icon size={80} className="text-design-red" />
+              </div>
               <h3 className="text-lg font-medium text-design-gray-200 mb-2">No Graph Data</h3>
               <p className="text-sm">
                 Search for an item or generate proposals to build your influence graph
