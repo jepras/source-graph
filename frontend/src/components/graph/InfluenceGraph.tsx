@@ -292,8 +292,21 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
   return (
     <div className="h-full flex bg-black relative overflow-hidden">
+      {/* Selected Panel Toggle Button - Positioned relative to entire container */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
+          onClick={() => setShowSelectedPanel(!showSelectedPanel)}
+        >
+          {showSelectedPanel ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+          <span className="ml-1">{showSelectedPanel ? "Hide" : "Details"}</span>
+        </Button>
+      </div>
+
       {/* Main Graph Area */}
-      <div className={`transition-all duration-300 overflow-hidden ${showSelectedPanel ? "flex-1" : "w-full"}`}>
+      <div className={`overflow-hidden ${showSelectedPanel ? "flex-1" : "w-full"}`}>
         <div className="h-full relative overflow-hidden">
           <svg ref={svgRef} className="w-full h-full" />
 
@@ -441,26 +454,13 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
               </Card>
             )}
           </div>
-
-          {/* Selected Panel Toggle Button */}
-          <div className="absolute top-4 right-4">
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
-              onClick={() => setShowSelectedPanel(!showSelectedPanel)}
-            >
-              {showSelectedPanel ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-              <span className="ml-1">{showSelectedPanel ? "Hide" : "Details"}</span>
-            </Button>
-          </div>
         </div>
       </div>
 
       {/* Collapsible Selected Item Panel */}
       <div
-        className={`transition-all duration-300 border-l border-design-gray-800 bg-design-gray-950 overflow-hidden ${
-          showSelectedPanel ? "w-96" : "w-0"
+        className={`transition-all duration-300 ease-in-out border-l border-design-gray-800 bg-design-gray-950 overflow-hidden w-96 ${
+          showSelectedPanel ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {showSelectedPanel && (

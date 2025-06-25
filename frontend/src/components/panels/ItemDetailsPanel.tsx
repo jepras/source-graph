@@ -521,14 +521,6 @@ export const ItemDetailsPanel: React.FC = () => {
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-design-gray-800">
         <h3 className="font-medium text-design-gray-100">Item Details</h3>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => selectNode(null)}
-          className="w-6 h-6 p-0 text-design-red hover:text-design-red-hover hover:bg-black rounded-full"
-        >
-          <X className="w-4 h-4" />
-        </Button>
       </div>
 
       {/* Content */}
