@@ -246,13 +246,10 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     const topPadding = 150; // NEW: Extra space for main items
     const columnWidth = (width - 2 * padding) / clusters.length;
     
-    // Track label positions to avoid overlap
-    const labelPositions: { x: number; y: number; width: number; text: string }[] = [];
-  
     clusters.forEach((clusterName, index) => {
       const x = padding + (index * columnWidth);
       
-      // Draw cluster background - MOVED DOWN
+      // Draw cluster background
       graphGroup.append("rect")
         .attr("x", x + 10)
         .attr("y", topPadding) // Changed from 'padding' to 'topPadding'
@@ -265,34 +262,29 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("rx", 8)
         .attr("opacity", 0.8);
       
-      // Calculate label position - MOVED DOWN
-      const idealX = x + columnWidth / 2;
-      let finalX = idealX;
-      let finalY = topPadding - 20; // Changed from 'padding - 20' to 'topPadding - 20'
+      // Draw cluster name inside the cluster with vertical, semi-transparent text
+      const clusterCenterX = x + columnWidth / 2;
+      const clusterTopY = topPadding + 30; // Start from top of cluster with some padding
       
-      // Check for overlap with existing labels
-      const labelWidth = clusterName.length * 8; // Approximate text width
-      const hasOverlap = labelPositions.some(pos => 
-        Math.abs(finalX - pos.x) < (labelWidth + pos.width) / 2 + 10 &&
-        Math.abs(finalY - pos.y) < 20
-      );
+      // Create a group for the vertical text
+      const textGroup = graphGroup.append("g")
+        .attr("transform", `translate(${clusterCenterX}, ${clusterTopY})`);
       
-      if (hasOverlap) {
-        finalY += 20; // Move down if overlap
-      }
-      
-      // Draw cluster label
-      graphGroup.append("text")
-        .attr("x", finalX)
-        .attr("y", finalY)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .style("font-weight", "600")
-        .style("fill", "#ef4444") // Updated to red accent color
-        .text(clusterName);
-      
-      // Track this label position
-      labelPositions.push({ x: finalX, y: finalY, width: labelWidth, text: clusterName });
+      // Split the cluster name into characters for vertical display
+      const chars = clusterName.split('');
+      chars.forEach((char, charIndex) => {
+        textGroup.append("text")
+          .attr("x", 0)
+          .attr("y", charIndex * 20) // Start from top, no centering
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "16px")
+          .style("font-weight", "600")
+          .style("fill", "#ef4444") // Red accent color
+          .style("opacity", "0.3") // Semi-transparent
+          .style("pointer-events", "none") // Don't interfere with node interactions
+          .text(char);
+      });
     });
   };
 
