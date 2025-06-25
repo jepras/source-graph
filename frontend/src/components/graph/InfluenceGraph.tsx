@@ -88,6 +88,24 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     console.log('Reset graph clicked');
   };
 
+  const handleFitToView = () => {
+    // Trigger a re-render of the graph with current dimensions
+    if (svgRef.current?.parentElement) {
+      const container = svgRef.current.parentElement;
+      const newDimensions = {
+        width: container.clientWidth || 800,
+        height: container.clientHeight || 600
+      };
+      setDimensions(newDimensions);
+      
+      // Force a re-positioning of nodes with current dimensions
+      const nodes = Array.from(accumulatedGraph.nodes.values());
+      if (nodes.length > 0) {
+        positionNodes(nodes, newDimensions.width, newDimensions.height);
+      }
+    }
+  };
+
   const handleExportGraph = () => {
     // TODO: Implement graph export
     console.log('Export graph clicked');
@@ -386,10 +404,10 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={handleExportGraph}
+                            onClick={handleFitToView}
                             className="justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
                           >
-                            📊 Export
+                            🔍 Fit to View
                           </Button>
                         </div>
                       </div>
