@@ -2,7 +2,15 @@ import React from 'react';
 import { InfluenceGraph } from '../graph/InfluenceGraph';
 import { useGraph } from '../../contexts/GraphContext';
 
-export const GraphPanel: React.FC = () => {
+interface GraphPanelProps {
+  isResearchPanelCollapsed?: boolean;
+  onToggleResearchPanel?: () => void;
+}
+
+export const GraphPanel: React.FC<GraphPanelProps> = ({ 
+  isResearchPanelCollapsed = false,
+  onToggleResearchPanel
+}) => {
   const { 
     state, 
     selectNode, 
@@ -46,6 +54,8 @@ export const GraphPanel: React.FC = () => {
             isClusteringEnabled={state.isClusteringEnabled}
             onClusteringToggle={toggleClustering}
             onClearGraph={clearGraph}
+            isResearchPanelCollapsed={isResearchPanelCollapsed}
+            onToggleResearchPanel={onToggleResearchPanel}
           />
         ) : (
           <div className="h-full flex items-center justify-center bg-black">

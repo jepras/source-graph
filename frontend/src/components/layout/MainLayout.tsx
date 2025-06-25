@@ -128,60 +128,34 @@ export const MainLayout: React.FC = () => {
       <div className="flex-1 flex relative overflow-hidden">
         {/* Left Research Panel - Resizable and Collapsible */}
         <div 
-          className={`transition-all duration-300 border-r border-design-gray-800 bg-design-gray-1100 flex flex-col ${
-            isResearchPanelCollapsed ? 'w-12' : ''
+          className={`transition-all duration-300 ease-in-out border-r border-design-gray-800 bg-design-gray-1100 flex flex-col ${
+            isResearchPanelCollapsed ? 'w-0 opacity-0' : 'opacity-100'
           }`}
           style={!isResearchPanelCollapsed ? { width: `${researchPanelWidth}%` } : undefined}
         >
-          {isResearchPanelCollapsed ? (
-            // Collapsed state - just show toggle button
-            <div className="h-full flex items-center justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleResearchPanel}
-                className="p-2 hover:bg-design-gray-900"
-              >
-                <ChevronRight className="w-4 h-4 text-design-gray-400" />
-              </Button>
+          <div className="h-full flex">
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <ResearchPanel onItemSaved={handleItemSaved} />
             </div>
-          ) : (
-            // Expanded state - show panel with resize handle
-            <div className="h-full flex">
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <ResearchPanel onItemSaved={handleItemSaved} />
-              </div>
-              
-              {/* Resize Handle */}
-              <div
-                className={`w-2 bg-black hover:bg-design-red cursor-col-resize flex items-center justify-center group transition-colors ${
-                  isDragging ? 'bg-design-red' : ''
-                }`}
-                onMouseDown={handleDragStart}
-              >
-                <div className="w-0.5 h-12 bg-design-gray-600 group-hover:bg-white rounded-full transition-colors" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Collapse/Expand Button */}
-        {!isResearchPanelCollapsed && (
-          <div className="absolute left-0 top-2 z-10">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleResearchPanel}
-              className="p-1.5 bg-design-gray-950 border border-design-gray-800 hover:bg-design-gray-900"
+            
+            {/* Resize Handle */}
+            <div
+              className={`w-2 bg-black hover:bg-design-red cursor-col-resize flex items-center justify-center group transition-colors ${
+                isDragging ? 'bg-design-red' : ''
+              }`}
+              onMouseDown={handleDragStart}
             >
-              <ChevronLeft className="w-3 h-3 text-design-gray-400" />
-            </Button>
+              <div className="w-0.5 h-12 bg-design-gray-600 group-hover:bg-white rounded-full transition-colors" />
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Right Graph Panel - Takes remaining space */}
         <div className="flex-1 overflow-hidden">
-          <GraphPanel />
+          <GraphPanel 
+            isResearchPanelCollapsed={isResearchPanelCollapsed}
+            onToggleResearchPanel={toggleResearchPanel}
+          />
         </div>
       </div>
     </div>

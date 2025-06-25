@@ -15,6 +15,8 @@ interface InfluenceGraphProps {
   isClusteringEnabled?: boolean;
   onClusteringToggle?: (enabled: boolean) => void;
   onClearGraph?: () => void;
+  isResearchPanelCollapsed?: boolean;
+  onToggleResearchPanel?: () => void;
 }
 
 export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({ 
@@ -24,7 +26,9 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   onChronologicalToggle,
   isClusteringEnabled = false,
   onClusteringToggle,
-  onClearGraph
+  onClearGraph,
+  isResearchPanelCollapsed = false,
+  onToggleResearchPanel
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -295,14 +299,30 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
           {/* Floating Controls Button */}
           <div className="absolute top-4 left-4">
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
-              onClick={() => setShowControls(!showControls)}
-            >
-              Graph Controls
-            </Button>
+            <div className="flex items-center space-x-2">
+              {/* Research Panel Collapse Button */}
+              {onToggleResearchPanel && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
+                  onClick={onToggleResearchPanel}
+                >
+                  {isResearchPanelCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+                  <span className="ml-1">{isResearchPanelCollapsed ? "Research" : "Hide"}</span>
+                </Button>
+              )}
+
+              {/* Graph Controls Button */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
+                onClick={() => setShowControls(!showControls)}
+              >
+                Graph Controls
+              </Button>
+            </div>
 
             {/* Floating Controls Panel */}
             {showControls && (
