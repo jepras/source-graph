@@ -83,7 +83,7 @@ async def process_chat(request: CanvasChatRequest):
         )
 
         # Add active model info to response
-        active_model_info = canvas_agent.get_active_model_info()
+        active_model_info = agent.get_active_model_info()
         response.active_model = active_model_info["model_key"]
         response.active_model_display = active_model_info["display_name"]
 

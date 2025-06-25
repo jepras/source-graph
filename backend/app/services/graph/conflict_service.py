@@ -284,10 +284,12 @@ class ConflictService(BaseGraphService):
             # Fallback implementation would go here
             return None
 
-    def _link_creator_to_item(self, **kwargs):
+    def _link_creator_to_item(
+        self, item_id: str, creator_id: str, role: str = "creator"
+    ):
         """Helper method to link creator to item"""
         if self.creator_service:
-            return self.creator_service.link_creator_to_item(**kwargs)
+            return self.creator_service.link_creator_to_item(item_id, creator_id, role)
         else:
             # Fallback implementation would go here
             pass
