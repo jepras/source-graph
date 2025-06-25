@@ -263,12 +263,12 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("opacity", 0.8);
       
       // Draw cluster name inside the cluster with vertical, semi-transparent text
-      const clusterCenterX = x + columnWidth / 2;
+      const clusterLeftX = x + 20; // 20px from left edge of cluster
       const clusterTopY = topPadding + 30; // Start from top of cluster with some padding
       
       // Create a group for the vertical text
       const textGroup = graphGroup.append("g")
-        .attr("transform", `translate(${clusterCenterX}, ${clusterTopY})`);
+        .attr("transform", `translate(${clusterLeftX}, ${clusterTopY})`);
       
       // Split the cluster name into characters for vertical display
       const chars = clusterName.split('');
@@ -276,7 +276,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         textGroup.append("text")
           .attr("x", 0)
           .attr("y", charIndex * 20) // Start from top, no centering
-          .attr("text-anchor", "middle")
+          .attr("text-anchor", "start") // Left-aligned text
           .attr("dominant-baseline", "middle")
           .style("font-size", "16px")
           .style("font-weight", "600")

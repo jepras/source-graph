@@ -101,28 +101,29 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
     return;
   }
 
-  // Position main items at the top center
+  const padding = 80;
+  const topPadding = 180;
+  const availableWidth = width - (2 * padding);
+  const columnWidth = availableWidth / clusters.length;
+  const availableHeight = height - topPadding - padding;
+
+  // Position main items to the left of the first cluster
   mainNodes.forEach((node, index) => {
-    const spacing = 200;
-    const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
-    node.x = startX + (index * spacing);
-    node.y = 160; // CHANGED: Position underneath cluster text labels (which are at y=130)
+    const mainItemSpacing = 150; // Space between main items
+    const mainItemX = padding - 30; // Position to the left of the first cluster
+    const startX = mainItemX - ((mainNodes.length - 1) * mainItemSpacing / 2);
+    node.x = startX + (index * mainItemSpacing);
+    node.y = 160;
   });
 
   // Sort ALL influence nodes globally by year (newest first)
   const nodesWithYears = influenceNodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
   const nodesWithoutYears = influenceNodes.filter(n => !n.year);
 
-  const padding = 80;
-  const topPadding = 180; // CHANGED: Extra space for main items + cluster labels
-  const availableWidth = width - (2 * padding);
-  const columnWidth = availableWidth / clusters.length;
-  const availableHeight = height - topPadding - padding; // CHANGED: Use topPadding
-
   // Assign global Y positions based on chronological order
   nodesWithYears.forEach((node, index) => {
     const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
-    node.y = topPadding + (yProgress * availableHeight * 0.8); // CHANGED: Use topPadding
+    node.y = topPadding + (yProgress * availableHeight * 0.8);
   });
 
   // Position nodes without years at bottom
@@ -165,19 +166,20 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
     return;
   }
 
-  // Position main items at the top center
-  mainNodes.forEach((node, index) => {
-    const spacing = 200;
-    const startX = (width / 2) - ((mainNodes.length - 1) * spacing / 2);
-    node.x = startX + (index * spacing);
-    node.y = 160; // CHANGED: Position underneath cluster text labels (which are at y=130)
-  });
-
   const padding = 80;
-  const topPadding = 180; // CHANGED: Extra space for main items + cluster labels
+  const topPadding = 180;
   const availableWidth = width - (2 * padding);
   const columnWidth = availableWidth / clusters.length;
-  const availableHeight = height - topPadding - padding; // CHANGED: Use topPadding
+  const availableHeight = height - topPadding - padding;
+
+  // Position main items to the left of the first cluster
+  mainNodes.forEach((node, index) => {
+    const mainItemSpacing = 150; // Space between main items
+    const mainItemX = padding - 100; // Position to the left of the first cluster
+    const startX = mainItemX - ((mainNodes.length - 1) * mainItemSpacing / 2);
+    node.x = startX + (index * mainItemSpacing);
+    node.y = 160;
+  });
 
   clusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
@@ -186,7 +188,7 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
     // Distribute nodes naturally within the cluster column
     clusterNodes.forEach((node, nodeIndex) => {
       const yProgress = nodeIndex / Math.max(clusterNodes.length - 1, 1);
-      node.y = topPadding + (yProgress * availableHeight); // CHANGED: Use topPadding
+      node.y = topPadding + (yProgress * availableHeight);
       
       // Add some horizontal variation within the column
       const xVariation = (Math.random() - 0.5) * (columnWidth * 0.4);
