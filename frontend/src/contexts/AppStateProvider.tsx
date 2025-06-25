@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 import { GraphProvider } from './GraphContext';
-import { ResearchProvider } from './ResearchContext';
 
 interface AppStateProviderProps {
   children: ReactNode;
@@ -9,9 +9,7 @@ interface AppStateProviderProps {
 export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) => {
   return (
     <GraphProvider>
-      <ResearchProvider>
-        {children}
-      </ResearchProvider>
+      {children}
     </GraphProvider>
   );
 };

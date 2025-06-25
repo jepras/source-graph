@@ -67,15 +67,11 @@ influence-graph/
 │   │   │   │   ├── ChatInput.tsx
 │   │   │   │   ├── DocumentRenderer.tsx
 │   │   │   │   ├── ModelSelector.tsx
-│   │   │   │   ├── ModelStatus.tsx
 │   │   │   │   └── SectionComponent.tsx
 │   │   │   ├── 📁 common/
 │   │   │   │   ├── ConflictResolution.tsx
 │   │   │   │   ├── EnhancementPanel.tsx
-│   │   │   │   ├── ResizableGraphLayout.tsx
-│   │   │   │   ├── ResizablePanels.tsx
-│   │   │   │   ├── SearchBar.tsx
-│   │   │   │   └── YearValidation.tsx
+│   │   │   │   └── SearchBar.tsx
 │   │   │   ├── 📁 graph/
 │   │   │   │   ├── GraphExpansionControls.tsx
 │   │   │   │   └── InfluenceGraph.tsx
@@ -85,21 +81,22 @@ influence-graph/
 │   │   │   │   ├── GraphPanel.tsx
 │   │   │   │   ├── ItemDetailsPanel.tsx
 │   │   │   │   └── ResearchPanel.tsx
-│   │   │   └── 📁 research/
-│   │   │       ├── ProposalActions.tsx
-│   │   │       ├── ProposalForm.tsx
-│   │   │       ├── ProposalQuestions.tsx
-│   │   │       └── ProposalResults.tsx
+│   │   │   └── 📁 ui/
+│   │   │       ├── badge.tsx
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── icon.tsx
+│   │   │       ├── input.tsx
+│   │   │       └── tabs.tsx
 │   │   ├── 📁 contexts/
 │   │   │   ├── AppStateProvider.tsx
 │   │   │   ├── CanvasContext.tsx
-│   │   │   ├── GraphContext.tsx
-│   │   │   └── ResearchContext.tsx
+│   │   │   └── GraphContext.tsx
 │   │   ├── 📁 hooks/
 │   │   │   ├── useCanvas.ts
+│   │   │   ├── useConflictResolution.ts
 │   │   │   ├── useEnhancement.ts
-│   │   │   ├── useGraphOperations.ts
-│   │   │   └── useProposals.ts
+│   │   │   └── useGraphOperations.ts
 │   │   ├── 📁 services/
 │   │   │   └── api.ts
 │   │   ├── 📁 types/
