@@ -38,7 +38,11 @@ interface ResearchLogItem {
   expanded?: boolean;
 }
 
-export const ItemDetailsPanel: React.FC = () => {
+interface ItemDetailsPanelProps {
+  onClose?: () => void;
+}
+
+export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) => {
   const { state, selectNode, removeNodeFromGraph, addNodesAndLinks } = useGraph();
   const { expandNode } = useGraphOperations();
   const [itemDetails, setItemDetails] = useState<Item | null>(null);
@@ -521,6 +525,16 @@ export const ItemDetailsPanel: React.FC = () => {
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-design-gray-800">
         <h3 className="font-medium text-design-gray-100">Item Details</h3>
+        {onClose && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            className="w-6 h-6 p-0 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-900 rounded-full"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {/* Content */}

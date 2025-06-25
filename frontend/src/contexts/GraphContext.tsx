@@ -43,7 +43,7 @@ const initialState: GraphState = {
     expandedNodeIds: new Set()
   },
   selectedNodeId: null,
-  isChronologicalOrder: false,
+  isChronologicalOrder: true,
   isCategoricalLayout: false,
   isClusteringEnabled: true, // NEW: Default clustering enabled
   loading: false,
