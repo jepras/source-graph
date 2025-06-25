@@ -24,3 +24,9 @@ PLANNING.md
 TASKS.md
 worklog.md
 own_understanding.md
+
+# cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

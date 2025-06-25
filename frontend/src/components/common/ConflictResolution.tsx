@@ -49,8 +49,11 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
 
   // Determine the overall resolution type based on user selections
   const getOverallResolutionType = (): 'create_new' | 'merge' => {
-    // If there are main item conflicts and one is selected, it's always a merge
+    // If there are main item conflicts and one is selected
     if (conflicts.main_item_conflicts.length > 0 && selectedMainItem) {
+      if (selectedMainItem === 'create_new') {
+        return 'create_new';
+      }
       return 'merge';
     }
     
@@ -131,7 +134,8 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                   type="radio"
                   name="main-item"
                   value={item.id}
-                  onChange={() => handleMainItemSelect(item.id)}
+                  onChange={() => setSelectedMainItem(item.id)}
+                  checked={selectedMainItem === item.id}
                   className="mt-1 text-design-red"
                 />
                 <div className="flex-1 text-sm">
@@ -153,6 +157,21 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                 </div>
               </label>
             ))}
+            {/* Add Create New Main Item Option */}
+            <label className="flex items-start space-x-3 p-2 border border-design-gray-800 rounded hover:bg-black cursor-pointer">
+              <input
+                type="radio"
+                name="main-item"
+                value="create_new"
+                onChange={() => setSelectedMainItem('create_new')}
+                checked={selectedMainItem === 'create_new'}
+                className="mt-1 text-design-red"
+              />
+              <div className="flex-1 text-sm">
+                <div className="font-medium text-design-red">➕ Create New Item</div>
+                <div className="text-design-gray-400">Create a new main item (ignore matches)</div>
+              </div>
+            </label>
           </div>
         </div>
       )}
@@ -247,13 +266,11 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
       {(selectedMainItem || Object.keys(influenceResolutions).length > 0) && (
         <div className="mt-3 p-3 bg-design-gray-950 border border-design-gray-800 rounded text-xs">
           <h6 className="font-medium text-design-gray-200 mb-2">📋 Resolution Summary:</h6>
-          
           {selectedMainItem && (
             <div className="text-design-gray-300 mb-1">
-              🎯 <strong>Main Item:</strong> Merge with existing item
+              🎯 <strong>Main Item:</strong> {selectedMainItem === 'create_new' ? 'Create new main item' : 'Merge with existing item'}
             </div>
           )}
-          
           {Object.keys(influenceResolutions).length > 0 && (
             <div className="text-design-gray-300">
               <strong>Influences:</strong>
@@ -261,7 +278,6 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
                 {Object.entries(influenceResolutions).map(([influenceIdx, resolution]) => {
                   const influence = conflicts.influence_conflicts[influenceIdx]?.influence;
                   const influenceName = influence?.name || `Influence ${influenceIdx}`;
-                  
                   return (
                     <li key={influenceIdx} className="text-design-gray-400">
                       {resolution.resolution === 'merge' ? '🔗' : '➕'} {influenceName}: {resolution.resolution === 'merge' ? 'Merge with existing' : 'Create new'}
@@ -271,7 +287,6 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
               </ul>
             </div>
           )}
-          
           <div className="mt-2 text-design-gray-400">
             💡 <strong>"{getOverallResolutionType() === 'create_new' ? 'Create New Items' : 'Apply Resolutions'}"</strong> will use your selections above
           </div>

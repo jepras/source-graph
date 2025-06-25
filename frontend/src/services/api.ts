@@ -48,10 +48,12 @@ export interface StructuredInfluence {
   creator_type?: string;
   year?: number;
   category: string;
+  scope: string;
   influence_type: string;
   confidence: number;
   explanation: string;
   source?: string;
+  clusters?: string[];
 }
 
 export interface StructuredOutput {
@@ -415,6 +417,26 @@ export const proposalApi = {
       body: JSON.stringify(request),
     });
     if (!response.ok) throw new Error('Failed to process question');
+    return response.json();
+  },
+
+  mergeWithComprehensiveResolutions: async (
+    existingItemId: string, 
+    newData: StructuredOutput, 
+    influenceResolutions: Record<string, any>
+  ): Promise<{ success: boolean; item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/influences/merge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        existing_item_id: existingItemId,
+        new_data: newData,
+        influence_resolutions: influenceResolutions
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to merge with comprehensive resolutions');
     return response.json();
   },
 };

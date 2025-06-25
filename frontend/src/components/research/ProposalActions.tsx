@@ -49,18 +49,19 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
     
     try {
       if (resolution === 'create_new') {
-        
         const result = await influenceApi.forceSaveAsNew(conflictData.newData);
         
         if (result.success && result.item_id) {
           await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
           onItemSaved(result.item_id);
+        } else {
+          console.error('Failed to create new item:', result.message);
+          throw new Error(result.message || 'Failed to create new item');
         }
       } else if (resolution === 'merge') {
         // Handle both main item merge and influence-only merge
         if (selectedItemId) {
           // Main item merge with influence resolutions
-          
           const result = await influenceApi.mergeWithComprehensiveResolutions(
             selectedItemId, 
             conflictData.newData, 
@@ -70,25 +71,34 @@ export const ProposalActions: React.FC<ProposalActionsProps> = ({ onItemSaved })
           if (result.success && result.item_id) {
             await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
             onItemSaved(result.item_id);
+          } else {
+            console.error('Failed to merge with existing item:', result.message);
+            throw new Error(result.message || 'Failed to merge with existing item');
           }
         } else if (Object.keys(influenceResolutions || {}).length > 0) {
           // Influence-only merge - use force save since there's no existing main item
-          
           const result = await influenceApi.forceSaveAsNew(conflictData.newData);
           
           if (result.success && result.item_id) {
             await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
             onItemSaved(result.item_id);
+          } else {
+            console.error('Failed to create new item with influence resolutions:', result.message);
+            throw new Error(result.message || 'Failed to create new item with influence resolutions');
           }
         } else {
-          
+          console.error('No valid merge configuration provided');
+          throw new Error('No valid merge configuration provided');
         }
       } else {
-        
+        console.error('Invalid resolution type:', resolution);
+        throw new Error('Invalid resolution type');
       }
       setConflictData(null);
     } catch (error) {
-      
+      console.error('Error resolving conflicts:', error);
+      // You might want to show an error message to the user here
+      // For now, we'll just log the error and keep the conflict data visible
     }
   };
 

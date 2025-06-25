@@ -7,6 +7,7 @@ import { useGraphOperations } from '../../hooks/useGraphOperations';
 import { proposalApi } from '../../services/api';
 import { Loader2 } from 'lucide-react';
 import type { AcceptProposalsRequest, AcceptProposalsResponse, StructuredOutput } from '../../services/api';
+import { useConflictResolution } from '../../hooks/useConflictResolution';
 
 interface CanvasTabProps {
   onItemSaved: (itemId: string) => void;
@@ -17,12 +18,12 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
   const { loadItemWithAccumulation } = useGraphOperations();
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // Add conflict resolution state
-  const [conflictData, setConflictData] = useState<{
-    conflicts: any;
-    previewData: any;
-    newData: StructuredOutput;
-  } | null>(null);
+  // Use the shared conflict resolution hook
+  const {
+    conflictData,
+    setConflictData,
+    handleConflictResolve,
+  } = useConflictResolution({ loadItemWithAccumulation, onItemSaved });
   
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -110,37 +111,6 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
       setSaveError(errorMessage);
     } finally {
       setSaveLoading(false);
-    }
-  };
-
-  const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string, influenceResolutions?: Record<string, any>) => {
-    if (!conflictData) return;
-    
-    try {
-      const { influenceApi } = await import('../../services/api');
-      
-      if (resolution === 'create_new') {
-        const result = await influenceApi.forceSaveAsNew(conflictData.newData);
-        
-        if (result.success && result.item_id) {
-          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
-          onItemSaved(result.item_id);
-        }
-      } else if (resolution === 'merge' && selectedItemId) {
-        const result = await influenceApi.mergeWithComprehensiveResolutions(
-          selectedItemId, 
-          conflictData.newData, 
-          influenceResolutions || {}
-        );
-        
-        if (result.success && result.item_id) {
-          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
-          onItemSaved(result.item_id);
-        }
-      }
-      setConflictData(null);
-    } catch (error) {
-      console.error('Error resolving conflicts:', error);
     }
   };
 

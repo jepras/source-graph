@@ -195,10 +195,12 @@ Your responses should be well-structured, informative, and suitable for academic
             creator_type: influence?.creator_type,
             year: influence?.year,
             category: influence?.category || "General",
+            scope: influence?.scope || "macro",
             influence_type: influence?.influence_type || "direct",
             confidence: influence?.confidence || 0.8,
             explanation: influence?.explanation || section.content,
-            source: influence?.source
+            source: undefined,
+            clusters: influence?.clusters
           };
         }),
         categories: Array.from(new Set(selectedSections.map(s => s.influence_data?.category || "General")))
@@ -236,7 +238,7 @@ Your responses should be well-structured, informative, and suitable for academic
 
       if (response.success && response.item_id) {
         // Load the item into the graph
-        await loadItemWithAccumulation(response.item_id);
+        await loadItemWithAccumulation(response.item_id, state.currentDocument.item_name);
         onItemSaved(response.item_id);
         
         // Clear the canvas after successful save
@@ -318,10 +320,12 @@ Your responses should be well-structured, informative, and suitable for academic
               creator_type: influence?.creator_type,
               year: influence?.year,
               category: influence?.category || "General",
+              scope: influence?.scope || "macro",
               influence_type: influence?.influence_type || "direct",
               confidence: influence?.confidence || 0.8,
               explanation: influence?.explanation || section.content,
-              source: influence?.source
+              source: undefined,
+              clusters: influence?.clusters
             };
           }),
           categories: Array.from(new Set(selectedSections.map(s => s.influence_data?.category || "General")))
@@ -336,7 +340,7 @@ Your responses should be well-structured, informative, and suitable for academic
 
       if (response.success && response.item_id) {
         // Load the item into the graph
-        await loadItemWithAccumulation(response.item_id);
+        await loadItemWithAccumulation(response.item_id, state.currentDocument.item_name);
         onItemSaved(response.item_id);
         
         // Clear the canvas after successful save
