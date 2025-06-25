@@ -87,7 +87,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="bg-design-gray-1200 p-4 rounded-lg">
+    <div className="bg-design-gray-1100 p-4 rounded-lg">
       {/* Model Selection and Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

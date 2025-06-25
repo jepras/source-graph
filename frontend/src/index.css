@@ -57,11 +57,12 @@ body {
     --color-design-gray-400: var(--design-gray-400);
     --color-design-gray-500: var(--design-gray-500);
     --color-design-gray-1200: var(--design-gray-1200);
+    --color-design-gray-1100: var(--design-gray-1100);
 }
 
 :root {
     --radius: 0.625rem;
-    --background: oklch(1 0 0);
+    --background: #000000;
     --foreground: oklch(0.141 0.005 285.823);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.141 0.005 285.823);
@@ -101,10 +102,11 @@ body {
     --design-gray-1200: #121212;
     --design-gray-400: #9ca3af;
     --design-gray-500: #6b7280;
+    --design-gray-1100: #0a0a0a;
 }
 
 .dark {
-    --background: oklch(0.141 0.005 285.823);
+    --background: #000000;
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.21 0.006 285.885);
     --card-foreground: oklch(0.985 0 0);
@@ -144,6 +146,7 @@ body {
     --design-gray-1200: #121212;
     --design-gray-400: #9ca3af;
     --design-gray-500: #6b7280;
+    --design-gray-1100: #0a0a0a;
 }
 
 @layer base {

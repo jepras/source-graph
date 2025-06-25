@@ -32,6 +32,7 @@ module.exports = {
         'design-gray-1200': "var(--design-gray-1200)",
         'design-gray-400': "var(--design-gray-400)",
         'design-gray-500': "var(--design-gray-500)",
+        'design-gray-1100': "var(--design-gray-1100)",
         // Add more as needed from your index.css
       },
       borderRadius: {

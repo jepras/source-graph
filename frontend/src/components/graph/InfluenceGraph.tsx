@@ -298,7 +298,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
             <Button
               size="sm"
               variant="outline"
-              className="bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
+              className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
               onClick={() => setShowControls(!showControls)}
             >
               Graph Controls
@@ -306,7 +306,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
             {/* Floating Controls Panel */}
             {showControls && (
-              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-black border-design-gray-800">
+              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-design-gray-1100 border-design-gray-800">
                 <CardContent className="p-3">
                   <div className="space-y-3">
                     <div>
@@ -427,7 +427,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
             <Button
               size="sm"
               variant="outline"
-              className="bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
+              className="bg-design-gray-1100 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs px-3 py-1.5"
               onClick={() => setShowSelectedPanel(!showSelectedPanel)}
             >
               {showSelectedPanel ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}

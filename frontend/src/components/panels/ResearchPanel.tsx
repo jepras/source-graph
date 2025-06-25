@@ -333,7 +333,7 @@ Your responses should be well-structured, informative, and suitable for academic
       </div>
 
       {/* Chat Input with Controls - Fixed at bottom */}
-      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-black flex-shrink-0">
+      <div className="border-t border-design-gray-800 p-4 space-y-3 bg-design-gray-1100 flex-shrink-0">
         {/* Control Buttons */}
         <div className="flex items-center justify-start space-x-2">
           {/* System Prompt Dropdown */}
@@ -367,7 +367,7 @@ Your responses should be well-structured, informative, and suitable for academic
 
             {/* Prompt Editor Dropdown */}
             {showPromptEditor && (
-              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-950/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50">
+              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-1100/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-white">System Prompt</h4>
@@ -420,7 +420,7 @@ Your responses should be well-structured, informative, and suitable for academic
 
             {/* Research Log Dropdown */}
             {showActivityLog && (
-              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-950/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50 max-h-80 overflow-hidden">
+              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-1100/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50 max-h-80 overflow-hidden">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3 border-b border-design-gray-800 pb-2">
                     <h4 className="text-sm font-medium text-white">Research Log</h4>
@@ -492,7 +492,7 @@ Your responses should be well-structured, informative, and suitable for academic
 
             {/* Suggestions Dropdown */}
             {showSuggestions && (
-              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-950/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50">
+              <div className="absolute bottom-full left-0 mb-2 w-96 bg-design-gray-1100/95 backdrop-blur-sm border border-design-gray-800 rounded-lg shadow-xl z-50">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-white">Follow-up Questions</h4>

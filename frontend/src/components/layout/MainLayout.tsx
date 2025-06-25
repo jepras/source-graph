@@ -95,9 +95,9 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-black">
+    <div className="h-screen flex flex-col bg-background">
       {/* Top Panel */}
-      <div className="bg-black border-b border-design-gray-800 px-6 py-4">
+      <div className="bg-background border-b border-design-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -128,7 +128,7 @@ export const MainLayout: React.FC = () => {
       <div className="flex-1 flex relative overflow-hidden">
         {/* Left Research Panel - Resizable and Collapsible */}
         <div 
-          className={`transition-all duration-300 border-r border-design-gray-800 bg-black flex flex-col ${
+          className={`transition-all duration-300 border-r border-design-gray-800 bg-design-gray-1100 flex flex-col ${
             isResearchPanelCollapsed ? 'w-12' : ''
           }`}
           style={!isResearchPanelCollapsed ? { width: `${researchPanelWidth}%` } : undefined}
