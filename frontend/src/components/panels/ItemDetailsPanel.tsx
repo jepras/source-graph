@@ -337,7 +337,7 @@ export const ItemDetailsPanel: React.FC = () => {
                 <h4 className="text-sm font-medium text-design-gray-100 truncate">{item.title}</h4>
                 <p className="text-xs text-design-gray-400">{item.description}</p>
               </div>
-              <Button size="sm" variant="ghost" className="ml-2 text-design-red hover:text-design-red-hover hover:bg-design-gray-800">
+              <Button size="sm" variant="ghost" className="ml-2 text-design-red hover:text-design-red-hover hover:bg-black">
                 <Music className="w-4 h-4" />
               </Button>
             </div>
@@ -387,7 +387,7 @@ export const ItemDetailsPanel: React.FC = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="mt-2 h-7 text-xs text-design-gray-300 hover:text-design-gray-100 hover:bg-design-gray-800"
+                  className="mt-2 h-7 text-xs text-design-gray-300 hover:text-design-gray-100 hover:bg-black"
                 >
                   <Film className="w-3 h-3 mr-1" /> View details
                 </Button>
@@ -408,7 +408,7 @@ export const ItemDetailsPanel: React.FC = () => {
               <Button
                 size="sm"
                 variant="ghost"
-                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800"
+                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-black"
                 asChild
               >
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -446,7 +446,7 @@ export const ItemDetailsPanel: React.FC = () => {
               <Button
                 size="sm"
                 variant="ghost"
-                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-design-gray-800"
+                className="ml-2 text-design-gray-400 hover:text-design-gray-100 hover:bg-black"
                 asChild
               >
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -525,7 +525,7 @@ export const ItemDetailsPanel: React.FC = () => {
           size="sm"
           variant="ghost"
           onClick={() => selectNode(null)}
-          className="w-6 h-6 p-0 text-design-red hover:text-design-red-hover hover:bg-design-gray-800 rounded-full"
+          className="w-6 h-6 p-0 text-design-red hover:text-design-red-hover hover:bg-black rounded-full"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -584,7 +584,7 @@ export const ItemDetailsPanel: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-design-gray-900 border-design-gray-800 hover:bg-design-gray-800 text-xs text-design-gray-400 hover:text-design-gray-100"
+                className="bg-design-gray-900 border-design-gray-800 hover:bg-black text-xs text-design-gray-400 hover:text-design-gray-100"
                 disabled
               >
                 <Edit className="w-3 h-3 mr-1" /> Edit
@@ -592,7 +592,7 @@ export const ItemDetailsPanel: React.FC = () => {
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-design-gray-900 border-design-gray-800 hover:bg-design-gray-800 text-xs text-design-gray-400 hover:text-design-gray-100"
+                className="bg-design-gray-900 border-design-gray-800 hover:bg-black text-xs text-design-gray-400 hover:text-design-gray-100"
                 disabled
               >
                 <Share2 className="w-3 h-3 mr-1" /> Share
@@ -831,7 +831,7 @@ export const ItemDetailsPanel: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="history" className="p-4">
-            <div className="bg-design-gray-950/95 backdrop-blur-sm border border-design-gray-800 rounded-lg">
+            <div className="bg-black backdrop-blur-sm border border-design-gray-800 rounded-lg">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3 border-b border-design-gray-800 pb-2">
                   <h4 className="text-sm font-medium text-design-gray-100">Item History</h4>
@@ -851,10 +851,10 @@ export const ItemDetailsPanel: React.FC = () => {
                       >
                         {/* Timeline thread */}
                         <div className="flex flex-col items-center">
-                          <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-red flex items-center justify-center flex-shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-black border-2 border-design-red flex items-center justify-center flex-shrink-0">
                             <span className="text-xs">{getHistoryIcon(entry.action)}</span>
                           </div>
-                          {index < researchLog.length - 1 && <div className="w-0.5 h-6 bg-design-gray-800 mt-1"></div>}
+                          {index < researchLog.length - 1 && <div className="w-0.5 h-6 bg-black mt-1"></div>}
                         </div>
                         {/* Content */}
                         <div className="flex-1 min-w-0 text-left">

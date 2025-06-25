@@ -154,7 +154,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
           disabled={loading}
           className={`w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
             loading
-              ? 'bg-design-gray-800 text-design-gray-400 cursor-not-allowed'
+              ? 'bg-black text-design-gray-400 cursor-not-allowed'
               : 'bg-design-red text-white hover:bg-design-red-hover'
           }`}
         >

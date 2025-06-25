@@ -126,7 +126,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
           </h5>
           <div className="space-y-2">
             {conflicts.main_item_conflicts.map((item) => (
-              <label key={item.id} className="flex items-start space-x-3 p-2 border border-design-gray-800 rounded hover:bg-design-gray-800 cursor-pointer">
+              <label key={item.id} className="flex items-start space-x-3 p-2 border border-design-gray-800 rounded hover:bg-black cursor-pointer">
                 <input
                   type="radio"
                   name="main-item"
@@ -237,7 +237,7 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-2 text-sm border border-design-gray-800 text-design-gray-300 rounded hover:bg-design-gray-800"
+          className="px-3 py-2 text-sm border border-design-gray-800 text-design-gray-300 rounded hover:bg-black"
         >
           ❌ Cancel
         </button>

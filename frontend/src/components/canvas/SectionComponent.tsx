@@ -147,7 +147,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
               </button>
               <button
                 onClick={handleCancelEdit}
-                className="px-3 py-1 bg-design-gray-800 text-design-gray-300 text-sm rounded hover:bg-design-gray-700"
+                className="px-3 py-1 bg-black text-design-gray-300 text-sm rounded hover:bg-design-gray-700"
               >
                 Cancel
               </button>
@@ -217,7 +217,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
         <div className="absolute -right-2 top-2">
           <button
             onClick={() => setShowHoverMenu(!showHoverMenu)}
-            className="w-8 h-8 bg-black border border-design-gray-800 rounded-full shadow-lg flex items-center justify-center hover:bg-design-gray-800 transition-colors"
+            className="w-8 h-8 bg-black border border-design-gray-800 rounded-full shadow-lg flex items-center justify-center hover:bg-black transition-colors"
           >
             <Plus className="w-4 h-4 text-design-gray-400" />
           </button>

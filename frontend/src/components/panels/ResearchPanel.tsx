@@ -345,7 +345,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowActivityLog(false);
                 setShowSuggestions(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-black border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -383,7 +383,7 @@ Your responses should be well-structured, informative, and suitable for academic
                       size="sm"
                       variant="outline"
                       onClick={() => setShowPromptEditor(false)}
-                      className="border-design-gray-800 text-design-gray-400 hover:bg-design-gray-800 hover:text-white text-xs"
+                      className="border-design-gray-800 text-design-gray-400 hover:bg-black hover:text-white text-xs"
                     >
                       Cancel
                     </Button>
@@ -411,7 +411,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowPromptEditor(false);
                 setShowSuggestions(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-black border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <Activity className="w-3 h-3" />
               <span>Research Log</span>
@@ -440,10 +440,10 @@ Your responses should be well-structured, informative, and suitable for academic
                         >
                           {/* Timeline thread */}
                           <div className="flex flex-col items-center">
-                            <div className="w-5 h-5 rounded-full bg-design-gray-800 border-2 border-design-red flex items-center justify-center flex-shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-black border-2 border-design-red flex items-center justify-center flex-shrink-0">
                               <span className="text-xs">{getLogEntryIcon(entry.type)}</span>
                             </div>
-                            {index < logEntries.length - 1 && <div className="w-0.5 h-6 bg-design-gray-800 mt-1"></div>}
+                            {index < logEntries.length - 1 && <div className="w-0.5 h-6 bg-black mt-1"></div>}
                           </div>
                           {/* Content */}
                           <div className="flex-1 min-w-0 text-left">
@@ -483,7 +483,7 @@ Your responses should be well-structured, informative, and suitable for academic
                 setShowPromptEditor(false);
                 setShowActivityLog(false);
               }}
-              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-design-gray-800 border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
+              className="flex items-center space-x-2 text-xs text-design-gray-400 hover:text-design-red bg-design-gray-1200 hover:bg-black border border-design-gray-800 hover:border-design-red/30 px-3 py-1.5 rounded-md transition-all duration-200"
             >
               <Lightbulb className="w-3 h-3" />
               <span>Suggestions</span>
@@ -505,7 +505,7 @@ Your responses should be well-structured, informative, and suitable for academic
                           // We'll handle this through the ChatInput component
                           setShowSuggestions(false);
                         }}
-                        className="w-full text-left p-2 text-xs text-design-gray-300 hover:text-white hover:bg-design-gray-800 rounded-md transition-colors border border-design-gray-800 hover:border-design-red/30"
+                        className="w-full text-left p-2 text-xs text-design-gray-300 hover:text-white hover:bg-black rounded-md transition-colors border border-design-gray-800 hover:border-design-red/30"
                       >
                         {suggestion}
                       </button>
