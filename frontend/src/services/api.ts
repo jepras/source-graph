@@ -320,17 +320,10 @@ export const api = {
 };
 
 // ============================================================================
-// SECTION 9: AI STRUCTURING OPERATIONS -- redundant?
-// ============================================================================
-
-
-// ============================================================================
-// SECTION 10: INFLUENCE SAVING OPERATIONS 
+// SECTION 9: INFLUENCE SAVING OPERATIONS 
 // ============================================================================
 
 export const influenceApi = {
-  
-
   getItemPreview: async (itemId: string): Promise<any> => {
     const response = await fetch(`${API_BASE}/influences/preview/${itemId}`);
     if (!response.ok) throw new Error('Failed to get preview');
@@ -346,21 +339,6 @@ export const influenceApi = {
       body: JSON.stringify(structuredData),
     });
     if (!response.ok) throw new Error('Failed to force save');
-    return response.json();
-  },
-
-  mergeWithExisting: async (existingItemId: string, newData: StructuredOutput): Promise<{ success: boolean; item_id: string; message: string }> => {
-    const response = await fetch(`${API_BASE}/influences/merge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        existing_item_id: existingItemId,
-        new_data: newData
-      }),
-    });
-    if (!response.ok) throw new Error('Failed to merge');
     return response.json();
   },
 
@@ -386,7 +364,7 @@ export const influenceApi = {
 };
 
 // ============================================================================
-// SECTION 11: AI PROPOSAL OPERATIONS
+// SECTION 10: AI PROPOSAL OPERATIONS
 // ============================================================================
 
 export const proposalApi = {
@@ -419,30 +397,10 @@ export const proposalApi = {
     if (!response.ok) throw new Error('Failed to process question');
     return response.json();
   },
-
-  mergeWithComprehensiveResolutions: async (
-    existingItemId: string, 
-    newData: StructuredOutput, 
-    influenceResolutions: Record<string, any>
-  ): Promise<{ success: boolean; item_id: string; message: string }> => {
-    const response = await fetch(`${API_BASE}/influences/merge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        existing_item_id: existingItemId,
-        new_data: newData,
-        influence_resolutions: influenceResolutions
-      }),
-    });
-    if (!response.ok) throw new Error('Failed to merge with comprehensive resolutions');
-    return response.json();
-  },
 };
 
 // ============================================================================
-// SECTION 12: CANVAS API OPERATIONS
+// SECTION 11: CANVAS API OPERATIONS
 // ============================================================================
 
 export const canvasApi = {
@@ -536,7 +494,7 @@ export const canvasApi = {
 };
 
 // ============================================================================
-// SECTION 13: ENHANCEMENT API OPERATIONS
+// SECTION 12: ENHANCEMENT API OPERATIONS
 // ============================================================================
 
 export const enhancementApi = {

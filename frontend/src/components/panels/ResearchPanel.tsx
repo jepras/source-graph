@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Send, ChevronDown, ChevronUp, Activity, Lightbulb } from 'lucide-react';
+import { Send, ChevronDown, ChevronUp, Activity, Lightbulb, Loader2 } from 'lucide-react';
 import { CanvasTab } from '../canvas/CanvasTab';
 import { ChatInput } from '../canvas/ChatInput';
 import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { useCanvasOperations } from '../../hooks/useCanvas';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
-import { proposalApi, api } from '../../services/api';
-import type { AcceptProposalsRequest, StructuredOutput, InfluenceProposal } from '../../services/api';
+import { proposalApi, influenceApi } from '../../services/api';
+import type { AcceptProposalsRequest, AcceptProposalsResponse, StructuredOutput, InfluenceProposal } from '../../services/api';
+import { useConflictResolution } from '../../hooks/useConflictResolution';
 
 interface ResearchPanelProps {
   onItemSaved: (itemId: string) => void;
@@ -331,7 +332,7 @@ Your responses should be well-structured, informative, and suitable for academic
           categories: Array.from(new Set(selectedSections.map(s => s.influence_data?.category || "General")))
         };
 
-        response = await proposalApi.mergeWithComprehensiveResolutions(
+        response = await influenceApi.mergeWithComprehensiveResolutions(
           selectedItemId,
           structuredOutput,
           influenceResolutions || {}
