@@ -262,29 +262,23 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         .attr("rx", 8)
         .attr("opacity", 0.8);
       
-      // Draw cluster name inside the cluster with vertical, semi-transparent text
-      const clusterLeftX = x + 20; // 20px from left edge of cluster
-      const clusterTopY = topPadding + 30; // Start from top of cluster with some padding
+      // Draw cluster name inside the cluster with rotated vertical text
+      const clusterLeftX = x + 25; // 20px from left edge of cluster
+      const clusterBottomY = height - padding - 10; // Start from bottom of cluster with some padding
       
-      // Create a group for the vertical text
-      const textGroup = graphGroup.append("g")
-        .attr("transform", `translate(${clusterLeftX}, ${clusterTopY})`);
-      
-      // Split the cluster name into characters for vertical display
-      const chars = clusterName.split('');
-      chars.forEach((char, charIndex) => {
-        textGroup.append("text")
-          .attr("x", 0)
-          .attr("y", charIndex * 20) // Start from top, no centering
-          .attr("text-anchor", "start") // Left-aligned text
-          .attr("dominant-baseline", "middle")
-          .style("font-size", "16px")
-          .style("font-weight", "600")
-          .style("fill", "#ef4444") // Red accent color
-          .style("opacity", "0.3") // Semi-transparent
-          .style("pointer-events", "none") // Don't interfere with node interactions
-          .text(char);
-      });
+      // Create a single text element with rotation for true vertical text
+      graphGroup.append("text")
+        .attr("x", clusterLeftX)
+        .attr("y", clusterBottomY)
+        .attr("text-anchor", "start")
+        .attr("dominant-baseline", "middle")
+        .attr("transform", `rotate(-90, ${clusterLeftX}, ${clusterBottomY})`)
+        .style("font-size", "16px")
+        .style("font-weight", "600")
+        .style("fill", "#ef4444") // Red accent color
+        .style("opacity", "0.3") // Semi-transparent
+        .style("pointer-events", "none") // Don't interfere with node interactions
+        .text(clusterName);
     });
   };
 
