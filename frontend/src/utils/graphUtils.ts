@@ -53,7 +53,7 @@ export const extractNodesAndRelationships = (
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
     category: mainNodeCategory,
-    clusters: mainItemClusters, // ✅ Use derived clusters from relationships
+    clusters: ["Research Focus"], // Main items always go in "Research Focus" cluster
     x: existingMainNode?.x,
     y: existingMainNode?.y
   });
@@ -95,7 +95,7 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
   const mainNodes = nodes.filter(n => n.category === 'main');
   const influenceNodes = nodes.filter(n => n.category === 'influence');
   
-  const clusters = extractClusters(influenceNodes);
+  const clusters = extractClusters(nodes);
   if (clusters.length === 0) {
     positionDefaultModeChronological(nodes, width, height);
     return;
@@ -107,34 +107,33 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
 
-  // Position main items to the left of the first cluster
-  mainNodes.forEach((node, index) => {
-    const mainItemSpacing = 150; // Space between main items
-    const mainItemX = padding - 30; // Position to the left of the first cluster
-    const startX = mainItemX - ((mainNodes.length - 1) * mainItemSpacing / 2);
-    node.x = startX + (index * mainItemSpacing);
-    node.y = 160;
-  });
+  // Sort ALL nodes globally by year (newest first) - including main items
+  const allNodesWithYears = nodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
+  const allNodesWithoutYears = nodes.filter(n => !n.year);
 
-  // Sort ALL influence nodes globally by year (newest first)
-  const nodesWithYears = influenceNodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
-  const nodesWithoutYears = influenceNodes.filter(n => !n.year);
-
-  // Assign global Y positions based on chronological order
-  nodesWithYears.forEach((node, index) => {
-    const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
+  // Assign global Y positions based on chronological order for ALL nodes
+  allNodesWithYears.forEach((node, index) => {
+    const yProgress = index / Math.max(allNodesWithYears.length - 1, 1);
     node.y = topPadding + (yProgress * availableHeight * 0.8);
   });
 
   // Position nodes without years at bottom
-  nodesWithoutYears.forEach((node, index) => {
+  allNodesWithoutYears.forEach((node, index) => {
     node.y = height - padding - 50 - (index * 30);
   });
 
-  // Rest of the function stays the same...
+  // Position nodes within their clusters
   clusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
-    const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+    
+    let clusterNodes: GraphNode[];
+    if (clusterName === "Research Focus") {
+      // "Research Focus" cluster contains main items
+      clusterNodes = mainNodes;
+    } else {
+      // Other clusters contain influence nodes
+      clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+    }
     
     const yearGroups = new Map<number, GraphNode[]>();
     clusterNodes.forEach(node => {
@@ -160,7 +159,7 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
   const mainNodes = nodes.filter(n => n.category === 'main');
   const influenceNodes = nodes.filter(n => n.category === 'influence');
   
-  const clusters = extractClusters(influenceNodes);
+  const clusters = extractClusters(nodes);
   if (clusters.length === 0) {
     positionDefaultModeNatural(nodes, width, height);
     return;
@@ -172,18 +171,17 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
 
-  // Position main items to the left of the first cluster
-  mainNodes.forEach((node, index) => {
-    const mainItemSpacing = 150; // Space between main items
-    const mainItemX = padding - 100; // Position to the left of the first cluster
-    const startX = mainItemX - ((mainNodes.length - 1) * mainItemSpacing / 2);
-    node.x = startX + (index * mainItemSpacing);
-    node.y = 160;
-  });
-
   clusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
-    const clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+    
+    let clusterNodes: GraphNode[];
+    if (clusterName === "Research Focus") {
+      // "Research Focus" cluster contains main items
+      clusterNodes = mainNodes;
+    } else {
+      // Other clusters contain influence nodes
+      clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+    }
     
     // Distribute nodes naturally within the cluster column
     clusterNodes.forEach((node, nodeIndex) => {
@@ -279,6 +277,11 @@ const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: n
 // Helper function to extract unique clusters
 export const extractClusters = (nodes: GraphNode[]): string[] => {
   const clusterSet = new Set<string>();
+  
+  // Always add "Research Focus" cluster for main items
+  clusterSet.add("Research Focus");
+  
+  // Add clusters from influence nodes
   nodes.forEach(node => {
     if (node.clusters && Array.isArray(node.clusters)) {
       node.clusters.forEach(cluster => clusterSet.add(cluster));
