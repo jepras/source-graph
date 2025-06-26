@@ -227,6 +227,34 @@ export const useGraphOperations = () => {
     }
   }, [checkIfItemExistsInGraph, setLoading, setError, state.accumulatedGraph, addNodesAndLinks, clearGraph]);
 
+  // Used in MainLayout for topbar searches - always clear graph first
+  const loadItemInfluencesFromTopbar = useCallback(async (itemId: string) => {
+    setLoading(true);
+    setError(null);
+  
+    try {
+      const response = await api.getInfluences(itemId);
+      
+      // Always clear the graph for topbar searches
+      clearGraph();
+  
+      // Use your existing utility function to convert API response to graph format
+      const { nodes, relationships } = extractNodesAndRelationships(response, state.accumulatedGraph);
+      
+      // Convert Maps to arrays for the context
+      const nodeArray = Array.from(nodes.values());
+      const linkArray = Array.from(relationships.values());
+  
+      addNodesAndLinks(nodeArray, linkArray);
+      // Note: We don't call selectNode here - the item details panel should only open when a node is explicitly clicked
+  
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load influences');
+    } finally {
+      setLoading(false);
+    }
+  }, [addNodesAndLinks, setLoading, setError, clearGraph]);
+
   return {
     loadItemInfluences,
     loadItemInfluencesWithoutSelection,
@@ -234,5 +262,6 @@ export const useGraphOperations = () => {
     searchAndLoadItem,
     loadItemWithAccumulation,
     checkIfItemExistsInGraph,
+    loadItemInfluencesFromTopbar,
   };
 };

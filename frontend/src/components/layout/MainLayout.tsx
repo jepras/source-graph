@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import type { Item } from '../../services/api';
 
 export const MainLayout: React.FC = () => {
-  const { loadItemInfluences, loadItemInfluencesWithoutSelection, searchAndLoadItem } = useGraphOperations();
+  const { loadItemInfluences, loadItemInfluencesWithoutSelection, loadItemInfluencesFromTopbar, searchAndLoadItem } = useGraphOperations();
   const { state } = useGraph();
   const [searchResults, setSearchResults] = useState<Item[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -86,9 +86,8 @@ export const MainLayout: React.FC = () => {
   };
 
   const handleItemSelect = async (item: Item) => {
-    // Don't automatically select the node when an item is selected from search
-    // The item details panel should only open when a node is explicitly clicked
-    await loadItemInfluencesWithoutSelection(item.id);
+    // Always clear graph for topbar searches and select the new item
+    await loadItemInfluencesFromTopbar(item.id);
     setSearchResults([]); // Clear search results
     setSelectedItem(item.name);
   };

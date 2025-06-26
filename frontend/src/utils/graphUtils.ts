@@ -122,8 +122,11 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
     node.y = height - padding - 50 - (index * 30);
   });
 
-  // Position nodes within their clusters
-  clusters.forEach((clusterName, clusterIndex) => {
+  // Get reordered clusters with "Research Focus" in center
+  const reorderedClusters = getReorderedClusters(nodes);
+
+  // Position nodes within their clusters using reordered cluster positions
+  reorderedClusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
     
     let clusterNodes: GraphNode[];
@@ -171,7 +174,10 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
 
-  clusters.forEach((clusterName, clusterIndex) => {
+  // Get reordered clusters with "Research Focus" in center
+  const reorderedClusters = getReorderedClusters(nodes);
+
+  reorderedClusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
     
     let clusterNodes: GraphNode[];
@@ -273,7 +279,6 @@ const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: n
   });
 };
 
-
 // Helper function to extract unique clusters
 export const extractClusters = (nodes: GraphNode[]): string[] => {
   const clusterSet = new Set<string>();
@@ -288,4 +293,24 @@ export const extractClusters = (nodes: GraphNode[]): string[] => {
     }
   });
   return Array.from(clusterSet);
+};
+
+// Helper function to get clusters with "Research Focus" in center
+export const getReorderedClusters = (nodes: GraphNode[]): string[] => {
+  const clusters = extractClusters(nodes);
+  
+  // Calculate center position for "Research Focus" cluster
+  const centerIndex = Math.floor(clusters.length / 2);
+  
+  // Reorder clusters to put "Research Focus" in center
+  const reorderedClusters = [...clusters];
+  const researchFocusIndex = reorderedClusters.indexOf("Research Focus");
+  if (researchFocusIndex !== -1) {
+    // Remove "Research Focus" from its current position
+    reorderedClusters.splice(researchFocusIndex, 1);
+    // Insert it at the center position
+    reorderedClusters.splice(centerIndex, 0, "Research Focus");
+  }
+  
+  return reorderedClusters;
 };

@@ -5,7 +5,7 @@ import { Card, CardContent } from '../ui/card';
 import { Wand2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ItemDetailsPanel } from '../panels/ItemDetailsPanel';
 import type { AccumulatedGraph, GraphNode, GraphLink } from '../../types/graph';
-import { positionGraphNodes, extractClusters } from '../../utils/graphUtils';
+import { positionGraphNodes, extractClusters, getReorderedClusters } from '../../utils/graphUtils';
 
 interface InfluenceGraphProps {
   accumulatedGraph: AccumulatedGraph;
@@ -37,7 +37,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Update dimensions when container size changes
+  // Update dimensions when container size changes or graph data changes
   useEffect(() => {
     const updateDimensions = () => {
       if (svgRef.current?.parentElement) {
@@ -52,7 +52,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+  }, [accumulatedGraph.nodes.size]); // Recalculate when graph data changes
 
   // ====== CLEAN POSITIONING LOGIC ======
 
@@ -241,7 +241,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
   // Helper function to draw cluster areas
   const drawClusterAreas = (graphGroup: any, nodes: GraphNode[], width: number, height: number) => {
-    const clusters = extractClusters(nodes);
+    const clusters = getReorderedClusters(nodes);
     const padding = 80;
     const topPadding = 150; // NEW: Extra space for main items
     const columnWidth = (width - 2 * padding) / clusters.length;
