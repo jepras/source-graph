@@ -216,7 +216,7 @@ export const EnhancementPanel: React.FC<EnhancementPanelProps> = ({ itemId, item
                         <img
                           src={content.thumbnail}
                           alt={content.title}
-                          className="w-16 h-12 object-cover rounded mb-2"
+                          className="w-full h-32 object-cover rounded mb-2"
                         />
                       )}
 

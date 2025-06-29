@@ -1,5 +1,6 @@
 import json
 import logging
+import html
 from typing import Dict, List, Any, Optional
 from langchain.schema import HumanMessage, SystemMessage
 
@@ -220,14 +221,19 @@ Generate specific queries for each tool that would find valuable content."""
                     video_id = video.get("id", {}).get("videoId")
 
                     if video_id and snippet:
+                        # Decode HTML entities in title and description
+                        title = html.unescape(snippet.get("title", "Untitled"))
+                        description = html.unescape(snippet.get("description", ""))
+                        channel_title = html.unescape(
+                            snippet.get("channelTitle", "Unknown Creator")
+                        )
+
                         extracted_videos.append(
                             {
                                 "video_id": video_id,
-                                "title": snippet.get("title", "Untitled"),
-                                "description": snippet.get("description", ""),
-                                "channel_title": snippet.get(
-                                    "channelTitle", "Unknown Creator"
-                                ),
+                                "title": title,
+                                "description": description,
+                                "channel_title": channel_title,
                                 "published_at": snippet.get("publishedAt", ""),
                                 "thumbnail_url": snippet.get("thumbnails", {})
                                 .get("medium", {})
@@ -295,7 +301,11 @@ Generate specific queries for each tool that would find valuable content."""
         return results
 
     async def score_and_filter_content(
-        self, results: List[Dict[str, Any]], item: Item, analysis: Dict[str, Any]
+        self,
+        results: List[Dict[str, Any]],
+        item: Item,
+        analysis: Dict[str, Any],
+        max_content_pieces: int = 4,
     ) -> List[Dict[str, Any]]:
         """Score and filter content based on relevance and quality"""
 
@@ -303,7 +313,7 @@ Generate specific queries for each tool that would find valuable content."""
             logger.info("No results to score")
             return []
 
-        system_prompt = """You are an AI assistant that scores content relevance for item enhancement.
+        system_prompt = f"""You are an AI assistant that scores content relevance for item enhancement.
 
 For each piece of content, score it from 0-10 based on:
 - Relevance to the item (0-4 points)
@@ -311,9 +321,9 @@ For each piece of content, score it from 0-10 based on:
 - Uniqueness and value (0-3 points)
 
 Return ONLY valid JSON:
-[{{"scored_content": [{{"original_result": {{...}}, "score": 8, "explanation": "Why this content is relevant/useful", "content_type": "video|audio|text|image"}}]}}]
+[{{{{\"scored_content\": [{{{{\"original_result\": {{{{...}}}}, \"score\": 8, \"explanation\": \"Why this content is relevant/useful\", \"content_type\": \"video|audio|text|image\"}}}}]}}}}]
 
-Only include content with scores >= 6. Limit to 4 pieces total."""
+Only include content with scores >= 6. Limit to {max_content_pieces} pieces total."""
 
         # Create a simplified version of results to avoid template variable issues
         simplified_results = []
@@ -325,16 +335,16 @@ Only include content with scores >= 6. Limit to 4 pieces total."""
             }
             simplified_results.append(simplified_result)
 
-        human_prompt = """Score these content pieces for enhancing this item:
+        human_prompt = f"""Score these content pieces for enhancing this item:
 
-Item: {item_name}
-Type: {item_type}
-Clusters: {clusters}
+Item: {{item_name}}
+Type: {{item_type}}
+Clusters: {{clusters}}
 
 Content to score:
-{content_data}
+{{content_data}}
 
-Score each piece and explain why it's valuable for enhancing this item."""
+Score each piece and explain why it's valuable for enhancing this item. Return exactly {max_content_pieces} pieces."""
 
         try:
             prompt = self.create_prompt(system_prompt, human_prompt)
@@ -365,9 +375,9 @@ Score each piece and explain why it's valuable for enhancing this item."""
 
             filtered_content = scored.get("scored_content", [])
 
-            # Sort by score and limit to top 4
+            # Sort by score and limit to max_content_pieces
             filtered_content.sort(key=lambda x: x.get("score", 0), reverse=True)
-            filtered_content = filtered_content[:4]
+            filtered_content = filtered_content[:max_content_pieces]
 
             # Map the scored content back to the original results to preserve video_data
             final_filtered_content = []
@@ -403,9 +413,9 @@ Score each piece and explain why it's valuable for enhancing this item."""
         except json.JSONDecodeError as e:
             logger.error(f"Failed to score content: {e}")
             logger.error(f"Raw response: {response}")
-            # Fallback: return first 2 results with basic scoring
+            # Fallback: return first max_content_pieces results with basic scoring
             fallback_content = []
-            for i, result in enumerate(results[:2]):
+            for i, result in enumerate(results[:max_content_pieces]):
                 fallback_content.append(
                     {
                         "original_result": result,
@@ -418,9 +428,13 @@ Score each piece and explain why it's valuable for enhancing this item."""
                 )
             return fallback_content
 
-    async def enhance_item(self, item: Item) -> Dict[str, Any]:
+    async def enhance_item(
+        self, item: Item, max_content_pieces: int = 4
+    ) -> Dict[str, Any]:
         """Main enhancement pipeline"""
-        logger.info(f"Starting enhancement for item: {item.name}")
+        logger.info(
+            f"Starting enhancement for item: {item.name} with max {max_content_pieces} content pieces"
+        )
 
         try:
             # Step 1: Analyze item context
@@ -439,11 +453,16 @@ Score each piece and explain why it's valuable for enhancing this item."""
                     tool_results = await self.execute_tool_queries(
                         tool_name, queries[tool_name]
                     )
+                    # Ensure every result has a 'tool' field
+                    for r in tool_results:
+                        if "tool" not in r or not r["tool"]:
+                            logger.warning(f"Result missing 'tool' field: {r}")
+                            r["tool"] = tool_name
                     all_results.extend(tool_results)
 
             # Step 5: Score and filter content
             enhanced_content = await self.score_and_filter_content(
-                all_results, item, analysis
+                all_results, item, analysis, max_content_pieces
             )
 
             # Step 6: Add structured data to enhanced content
@@ -451,6 +470,10 @@ Score each piece and explain why it's valuable for enhancing this item."""
             for content_item in enhanced_content:
                 original_result = content_item.get("original_result", {})
                 video_data = original_result.get("video_data")
+                # Always set source from original_result or fallback
+                source = (
+                    original_result.get("tool") or content_item.get("tool") or "unknown"
+                )
 
                 if video_data:
                     # Add structured video data
@@ -464,6 +487,7 @@ Score each piece and explain why it's valuable for enhancing this item."""
                             "url": video_data.get("url", ""),
                             "thumbnail": video_data.get("thumbnail_url", ""),
                             "description": video_data.get("description", ""),
+                            "source": source,
                         }
                     )
                 else:
@@ -476,6 +500,7 @@ Score each piece and explain why it's valuable for enhancing this item."""
                             "url": "",
                             "thumbnail": "",
                             "description": "",
+                            "source": source,
                         }
                     )
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 import logging
 import json
+import html
 
 from app.models.enhancement import (
     EnhancementRequest,
@@ -35,7 +36,7 @@ async def enhance_item(
     agent: EnhancementAgent = Depends(get_enhancement_agent),
     graph_service: GraphService = Depends(get_graph_service),
 ):
-    """Enhance an item with relevant content using MCP tools"""
+    """Enhance an item with relevant content from various sources"""
 
     try:
         # Get the item from the database
@@ -43,139 +44,43 @@ async def enhance_item(
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
 
-        # Set model if specified
-        if request.model_name:
-            agent.set_model(request.model_name)
+        # Run enhancement with the specified max_content_pieces
+        max_content_pieces = request.max_content_pieces or 4
+        result = await agent.enhance_item(item, max_content_pieces)
 
-        # Run enhancement
-        result = await agent.enhance_item(item)
-        logger.error(
-            f"[Enhancement API] Enhancement agent returned result of type {type(result)}: {repr(result)}"
-        )
+        if result.get("error"):
+            logger.error(f"Enhancement failed: {result['error']}")
+            raise HTTPException(status_code=500, detail=result["error"])
 
-        # Convert to response format
+        # Convert to response format using structured data from enhancement agent
         enhanced_content = []
-        for idx, content in enumerate(result.get("enhanced_content", [])):
-            if not isinstance(content, dict):
+        for content_item in result.get("enhanced_content", []):
+            if not isinstance(content_item, dict):
                 logger.error(
-                    f"[Enhancement API] Skipping non-dict content at index {idx}: {repr(content)} (type: {type(content)})"
+                    f"[Enhancement API] Skipping non-dict content: {repr(content_item)}"
                 )
                 continue
-            original_result = content.get("original_result", {})
-            if (
-                isinstance(original_result, dict)
-                and "result" in original_result
-                and "content" in original_result["result"]
-            ):
-                for item_content in original_result["result"]["content"]:
-                    # Parse JSON string if item_content is a string
-                    if isinstance(item_content, str):
-                        try:
-                            item_content = json.loads(item_content)
-                        except json.JSONDecodeError as e:
-                            logger.error(
-                                f"[Enhancement API] Failed to parse JSON content: {e}"
-                            )
-                            continue
 
-                    # Handle case where item_content is a list of search results
-                    if isinstance(item_content, list):
-                        for search_result in item_content:
-                            if not isinstance(search_result, dict):
-                                logger.error(
-                                    f"[Enhancement API] Skipping non-dict search_result: {repr(search_result)} (type: {type(search_result)})"
-                                )
-                                continue
-
-                            # Extract video data from snippet if available
-                            snippet = search_result.get("snippet", {})
-                            video_id = search_result.get("id", {}).get("videoId", "")
-
-                            enhanced_content.append(
-                                EnhancedContent(
-                                    item_id=item_id,
-                                    content_type=(
-                                        "video"
-                                        if content.get("tool") == "youtube"
-                                        else "text"
-                                    ),
-                                    source=content.get("tool", "unknown"),
-                                    title=snippet.get("title", "Untitled"),
-                                    url=(
-                                        f"https://www.youtube.com/watch?v={video_id}"
-                                        if video_id
-                                        else ""
-                                    ),
-                                    thumbnail=snippet.get("thumbnails", {})
-                                    .get("medium", {})
-                                    .get("url", None),
-                                    relevance_score=content.get("score", 5.0),
-                                    context_explanation=content.get(
-                                        "explanation", "No explanation provided"
-                                    ),
-                                    embedded_data=search_result,
-                                )
-                            )
-                    elif isinstance(item_content, dict):
-                        # Extract video data from snippet if available
-                        snippet = item_content.get("snippet", {})
-                        video_id = item_content.get("id", {}).get("videoId", "")
-
-                        enhanced_content.append(
-                            EnhancedContent(
-                                item_id=item_id,
-                                content_type=(
-                                    "video"
-                                    if content.get("tool") == "youtube"
-                                    else "text"
-                                ),
-                                source=content.get("tool", "unknown"),
-                                title=snippet.get("title", "Untitled"),
-                                url=(
-                                    f"https://www.youtube.com/watch?v={video_id}"
-                                    if video_id
-                                    else ""
-                                ),
-                                thumbnail=snippet.get("thumbnails", {})
-                                .get("medium", {})
-                                .get("url", None),
-                                relevance_score=content.get("score", 5.0),
-                                context_explanation=content.get(
-                                    "explanation", "No explanation provided"
-                                ),
-                                embedded_data=item_content,
-                            )
-                        )
-                    else:
-                        logger.error(
-                            f"[Enhancement API] Skipping non-dict item_content: {repr(item_content)} (type: {type(item_content)})"
-                        )
-                        continue
-            else:
-                # Fallback: try to use top-level content fields if present
-                try:
-                    enhanced_content.append(
-                        EnhancedContent(
-                            item_id=item_id,
-                            content_type=content.get("content_type", "unknown"),
-                            source=content.get(
-                                "tool", content.get("source", "unknown")
-                            ),
-                            title=content.get("title", "Untitled"),
-                            url=content.get("url", ""),
-                            thumbnail=content.get("thumbnail", None),
-                            relevance_score=content.get("score", 5.0),
-                            context_explanation=content.get(
-                                "explanation", "No explanation provided"
-                            ),
-                            embedded_data=content,
-                        )
+            # Use the structured data provided by the enhancement agent
+            try:
+                enhanced_content.append(
+                    EnhancedContent(
+                        item_id=item_id,
+                        content_type=content_item.get("content_type", "unknown"),
+                        source=content_item.get("source", "unknown"),
+                        title=content_item.get("title", "Untitled"),
+                        url=content_item.get("url", ""),
+                        thumbnail=content_item.get("thumbnail", None),
+                        relevance_score=content_item.get("score", 5.0),
+                        context_explanation=content_item.get(
+                            "explanation", "No explanation provided"
+                        ),
+                        embedded_data=content_item.get("original_result", {}),
                     )
-                except Exception as e:
-                    logger.error(
-                        f"[Enhancement API] Failed to parse content at index {idx}: {repr(content)}. Error: {e}"
-                    )
-                    continue
+                )
+            except Exception as e:
+                logger.error(f"[Enhancement API] Failed to create EnhancedContent: {e}")
+                continue
 
         # Save enhanced content to database
         saved_content_ids = []

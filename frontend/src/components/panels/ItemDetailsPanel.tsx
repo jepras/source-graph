@@ -598,10 +598,10 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => removeNodeFromGraph(state.selectedNodeId!)}
                 className="bg-design-gray-900 border-design-gray-800 hover:bg-black text-xs text-design-gray-400 hover:text-design-gray-100"
-                disabled
               >
-                <Share2 className="w-3 h-3 mr-1" /> Share
+                <X className="w-3 h-3 mr-1" /> Remove from graph
               </Button>
               <Button
                 size="sm"
