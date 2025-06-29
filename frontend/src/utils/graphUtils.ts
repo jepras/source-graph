@@ -1,5 +1,5 @@
 import type { GraphResponse } from '../services/api';
-import type { GraphNode, GraphLink, AccumulatedGraph } from '../types/graph';
+import type { GraphNode, GraphLink, AccumulatedGraph, CustomCluster } from '../types/graph';
 
 // ============================================================================
 // GRAPH POSITIONING LOGIC
@@ -10,16 +10,18 @@ export interface PositionConfig {
   isChronologicalOrder: boolean;
   width: number;
   height: number;
+  clusteringMode?: 'item' | 'custom';
+  customClusters?: CustomCluster[];
 }
 
 export const positionGraphNodes = (nodes: GraphNode[], config: PositionConfig) => {
-  const { isClusteringEnabled, isChronologicalOrder, width, height } = config;
+  const { isClusteringEnabled, isChronologicalOrder, width, height, clusteringMode, customClusters } = config;
 
   if (isClusteringEnabled) {
     if (isChronologicalOrder) {
-      positionClusterModeChronological(nodes, width, height);
+      positionClusterModeChronological(nodes, width, height, clusteringMode, customClusters);
     } else {
-      positionClusterModeNatural(nodes, width, height);
+      positionClusterModeNatural(nodes, width, height, clusteringMode, customClusters);
     }
   } else {
     if (isChronologicalOrder) {
@@ -37,33 +39,28 @@ export const extractNodesAndRelationships = (
   const nodes = new Map<string, GraphNode>();
   const relationships = new Map<string, GraphLink>();
 
-  // Check if main item already exists
   const existingMainNode = existingGraph?.nodes.get(graphResponse.main_item.id);
   const mainNodeCategory = existingMainNode ? existingMainNode.category : 'main';
   
-  // For main item, derive clusters from its incoming influences
   const mainItemClusters = graphResponse.influences
     .flatMap(influence => influence.clusters || [])
     .filter(Boolean);
 
-  // Add main item with derived clusters
   nodes.set(graphResponse.main_item.id, {
     id: graphResponse.main_item.id,
     name: graphResponse.main_item.name,
     type: graphResponse.main_item.auto_detected_type || 'unknown',
     year: graphResponse.main_item.year,
     category: mainNodeCategory,
-    clusters: ["Research Focus"], // Main items always go in "Research Focus" cluster
+    clusters: ["Research Focus"],
     x: existingMainNode?.x,
     y: existingMainNode?.y
   });
 
-  // Add influence items and relationships
   graphResponse.influences.forEach((influence) => {
     const influenceId = influence.from_item.id;
     const relationshipId = `${influenceId}->${graphResponse.main_item.id}`;
 
-    // Add influence node (if not already exists)
     if (!nodes.has(influenceId)) {
       nodes.set(influenceId, {
         id: influenceId,
@@ -71,11 +68,10 @@ export const extractNodesAndRelationships = (
         type: influence.from_item.auto_detected_type || 'unknown',
         year: influence.from_item.year,
         category: 'influence',
-        clusters: influence.clusters || [] // ✅ Use relationship clusters
+        clusters: influence.clusters || []
       });
     }
 
-    // Add relationship
     relationships.set(relationshipId, {
       source: influenceId,
       target: graphResponse.main_item.id,
@@ -89,13 +85,8 @@ export const extractNodesAndRelationships = (
   return { nodes, relationships };
 };
 
-// 1. Cluster Mode + Chronological: Vertical columns, globally sorted by year
-const positionClusterModeChronological = (nodes: GraphNode[], width: number, height: number) => {
-  // Separate main items from influences
-  const mainNodes = nodes.filter(n => n.category === 'main');
-  const influenceNodes = nodes.filter(n => n.category === 'influence');
-  
-  const clusters = extractClusters(nodes);
+const positionClusterModeChronological = (nodes: GraphNode[], width: number, height: number, clusteringMode: 'item' | 'custom' = 'item', customClusters: CustomCluster[] = []) => {
+  const clusters = clusteringMode === 'custom' && customClusters ? customClusters.map(c => c.name) : extractClusters(nodes);
   if (clusters.length === 0) {
     positionDefaultModeChronological(nodes, width, height);
     return;
@@ -107,35 +98,36 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
 
-  // Sort ALL nodes globally by year (newest first) - including main items
   const allNodesWithYears = nodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
   const allNodesWithoutYears = nodes.filter(n => !n.year);
 
-  // Assign global Y positions based on chronological order for ALL nodes
   allNodesWithYears.forEach((node, index) => {
     const yProgress = index / Math.max(allNodesWithYears.length - 1, 1);
     node.y = topPadding + (yProgress * availableHeight * 0.8);
   });
 
-  // Position nodes without years at bottom
   allNodesWithoutYears.forEach((node, index) => {
     node.y = height - padding - 50 - (index * 30);
   });
 
-  // Get reordered clusters with "Research Focus" in center
-  const reorderedClusters = getReorderedClusters(nodes);
+  const reorderedClusters = clusteringMode === 'custom' && customClusters ? customClusters.map(c => c.name) : getReorderedClusters(nodes);
 
-  // Position nodes within their clusters using reordered cluster positions
   reorderedClusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
     
     let clusterNodes: GraphNode[];
-    if (clusterName === "Research Focus") {
-      // "Research Focus" cluster contains main items
-      clusterNodes = mainNodes;
+    if (clusteringMode === 'custom' && customClusters) {
+        const cluster = customClusters.find(c => c.name === clusterName);
+        const nodeIds = cluster ? cluster.nodeIds : [];
+        clusterNodes = nodes.filter(n => nodeIds.includes(n.id));
     } else {
-      // Other clusters contain influence nodes
-      clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+        const mainNodes = nodes.filter(n => n.category === 'main');
+        const influenceNodes = nodes.filter(n => n.category === 'influence');
+        if (clusterName === "Research Focus") {
+            clusterNodes = mainNodes;
+        } else {
+            clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+        }
     }
     
     const yearGroups = new Map<number, GraphNode[]>();
@@ -156,13 +148,8 @@ const positionClusterModeChronological = (nodes: GraphNode[], width: number, hei
   });
 };
 
-// 2. Cluster Mode + Natural: Vertical columns, natural spread within clusters
-const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: number) => {
-  // Separate main items from influences
-  const mainNodes = nodes.filter(n => n.category === 'main');
-  const influenceNodes = nodes.filter(n => n.category === 'influence');
-  
-  const clusters = extractClusters(nodes);
+const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: number, clusteringMode: 'item' | 'custom' = 'item', customClusters: CustomCluster[] = []) => {
+  const clusters = clusteringMode === 'custom' && customClusters ? customClusters.map(c => c.name) : extractClusters(nodes);
   if (clusters.length === 0) {
     positionDefaultModeNatural(nodes, width, height);
     return;
@@ -174,34 +161,36 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
 
-  // Get reordered clusters with "Research Focus" in center
-  const reorderedClusters = getReorderedClusters(nodes);
+  const reorderedClusters = clusteringMode === 'custom' && customClusters ? customClusters.map(c => c.name) : getReorderedClusters(nodes);
 
   reorderedClusters.forEach((clusterName, clusterIndex) => {
     const clusterCenterX = padding + (clusterIndex * columnWidth) + (columnWidth / 2);
     
     let clusterNodes: GraphNode[];
-    if (clusterName === "Research Focus") {
-      // "Research Focus" cluster contains main items
-      clusterNodes = mainNodes;
+    if (clusteringMode === 'custom' && customClusters) {
+        const cluster = customClusters.find(c => c.name === clusterName);
+        const nodeIds = cluster ? cluster.nodeIds : [];
+        clusterNodes = nodes.filter(n => nodeIds.includes(n.id));
     } else {
-      // Other clusters contain influence nodes
-      clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+        const mainNodes = nodes.filter(n => n.category === 'main');
+        const influenceNodes = nodes.filter(n => n.category === 'influence');
+        if (clusterName === "Research Focus") {
+            clusterNodes = mainNodes;
+        } else {
+            clusterNodes = influenceNodes.filter(n => n.clusters?.includes(clusterName));
+        }
     }
     
-    // Distribute nodes naturally within the cluster column
     clusterNodes.forEach((node, nodeIndex) => {
       const yProgress = nodeIndex / Math.max(clusterNodes.length - 1, 1);
       node.y = topPadding + (yProgress * availableHeight);
       
-      // Add some horizontal variation within the column
       const xVariation = (Math.random() - 0.5) * (columnWidth * 0.4);
       node.x = clusterCenterX + xVariation;
     });
   });
 };
 
-// 3. Default Mode + Chronological: Natural spread constrained by Y-axis chronology
 const positionDefaultModeChronological = (nodes: GraphNode[], width: number, height: number) => {
   const nodesWithYears = nodes.filter(n => n.year).sort((a, b) => (b.year || 0) - (a.year || 0));
   const nodesWithoutYears = nodes.filter(n => !n.year);
@@ -209,19 +198,16 @@ const positionDefaultModeChronological = (nodes: GraphNode[], width: number, hei
   const padding = 80;
   const availableHeight = height - (2 * padding);
 
-  // Assign Y positions based on chronology
   nodesWithYears.forEach((node, index) => {
     const yProgress = index / Math.max(nodesWithYears.length - 1, 1);
     node.y = padding + (yProgress * availableHeight * 0.8);
   });
 
-  // Assign X positions with natural spread
   nodesWithYears.forEach((node, index) => {
     const xVariation = (Math.random() - 0.5) * (width * 0.6);
     node.x = (width / 2) + xVariation;
   });
 
-  // Position nodes without years at bottom
   nodesWithoutYears.forEach((node, index) => {
     node.y = height - padding - 50;
     const spacing = Math.min(120, (width - 2 * padding) / Math.max(nodesWithoutYears.length, 1));
@@ -229,7 +215,6 @@ const positionDefaultModeChronological = (nodes: GraphNode[], width: number, hei
   });
 };
 
-// 4. Default Mode + Natural: Smart grid/radial avoiding overlaps
 const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: number) => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -238,19 +223,16 @@ const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: n
   nodes.forEach((node, index) => {
     let positioned = false;
     
-    // Try positioning in expanding circles
     for (let radius = minDistance; radius < Math.min(width, height) / 2; radius += minDistance * 0.7) {
       const positions = Math.max(8, Math.floor(2 * Math.PI * radius / minDistance));
       
       for (let i = 0; i < positions; i++) {
-        const angle = (2 * Math.PI * i) / positions + (index * 0.1); // Small offset per node
+        const angle = (2 * Math.PI * i) / positions + (index * 0.1);
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
         
-        // Check bounds
         if (x < 60 || x > width - 60 || y < 60 || y > height - 60) continue;
         
-        // Check for overlaps with already positioned nodes
         const hasOverlap = nodes.slice(0, index).some(other => {
           if (!other.x || !other.y) return false;
           const dx = other.x - x;
@@ -269,7 +251,6 @@ const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: n
       if (positioned) break;
     }
     
-    // Fallback positioning
     if (!positioned) {
       const fallbackAngle = (index / nodes.length) * 2 * Math.PI;
       const fallbackRadius = Math.min(width, height) / 3;
@@ -279,14 +260,11 @@ const positionDefaultModeNatural = (nodes: GraphNode[], width: number, height: n
   });
 };
 
-// Helper function to extract unique clusters
 export const extractClusters = (nodes: GraphNode[]): string[] => {
   const clusterSet = new Set<string>();
   
-  // Always add "Research Focus" cluster for main items
   clusterSet.add("Research Focus");
   
-  // Add clusters from influence nodes
   nodes.forEach(node => {
     if (node.clusters && Array.isArray(node.clusters)) {
       node.clusters.forEach(cluster => clusterSet.add(cluster));
@@ -295,20 +273,15 @@ export const extractClusters = (nodes: GraphNode[]): string[] => {
   return Array.from(clusterSet);
 };
 
-// Helper function to get clusters with "Research Focus" in center
 export const getReorderedClusters = (nodes: GraphNode[]): string[] => {
   const clusters = extractClusters(nodes);
   
-  // Calculate center position for "Research Focus" cluster
   const centerIndex = Math.floor(clusters.length / 2);
   
-  // Reorder clusters to put "Research Focus" in center
   const reorderedClusters = [...clusters];
   const researchFocusIndex = reorderedClusters.indexOf("Research Focus");
   if (researchFocusIndex !== -1) {
-    // Remove "Research Focus" from its current position
     reorderedClusters.splice(researchFocusIndex, 1);
-    // Insert it at the center position
     reorderedClusters.splice(centerIndex, 0, "Research Focus");
   }
   

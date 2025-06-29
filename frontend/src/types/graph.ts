@@ -1,3 +1,9 @@
+export interface CustomCluster {
+  id: string;
+  name: string;
+  nodeIds: string[];
+}
+
 export interface GraphNode {
     id: string;
     name: string;
@@ -7,7 +13,7 @@ export interface GraphNode {
     y?: number;
     category: 'main' | 'influence';
     isSelected?: boolean;
-    clusters?: string[]; // NEW: Add this line
+    clusters?: string[];
   }
   
   export interface GraphLink {

@@ -237,7 +237,7 @@ export interface EnhancementStatus {
 // SECTION 7: CONFIGURATION
 // ============================================================================
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://localhost:8001/api';
 
 // ============================================================================
 // SECTION 8: CORE API OPERATIONS

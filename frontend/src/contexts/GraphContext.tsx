@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { AccumulatedGraph, GraphNode, GraphLink } from '../types/graph';
+import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
+import type { AccumulatedGraph, GraphNode, GraphLink, CustomCluster } from '../types/graph';
 
 // Graph State Interface
 interface GraphState {
@@ -7,19 +7,27 @@ interface GraphState {
   selectedNodeId: string | null;
   isChronologicalOrder: boolean;
   isCategoricalLayout: boolean;
-  isClusteringEnabled: boolean; // NEW: Add clustering toggle
+  isClusteringEnabled: boolean;
+  clusteringMode: 'item' | 'custom'; // New: item-based or custom
+  customClusters: CustomCluster[]; // New: stores user-defined clusters
   loading: boolean;
   error: string | null;
-  nodePositions: Map<string, { x: number; y: number }>; // ADD this
-  expandedNodes: Set<string>; // ADD this to track which nodes have been expanded
+  nodePositions: Map<string, { x: number; y: number }>;
+  expandedNodes: Set<string>;
 }
 
 // Graph Actions
-type GraphAction = 
+type GraphAction =
   | { type: 'SET_SELECTED_NODE'; payload: string | null }
   | { type: 'SET_CHRONOLOGICAL_ORDER'; payload: boolean }
   | { type: 'SET_CATEGORICAL_LAYOUT'; payload: boolean }
-  | { type: 'SET_CLUSTERING_ENABLED'; payload: boolean } // NEW: Add clustering action
+  | { type: 'SET_CLUSTERING_ENABLED'; payload: boolean }
+  | { type: 'SET_CLUSTERING_MODE'; payload: 'item' | 'custom' }
+  | { type: 'SET_CUSTOM_CLUSTERS'; payload: CustomCluster[] }
+  | { type: 'ADD_CUSTOM_CLUSTER'; payload: CustomCluster }
+  | { type: 'UPDATE_CUSTOM_CLUSTER'; payload: { clusterId: string; updates: Partial<CustomCluster> } }
+  | { type: 'DELETE_CUSTOM_CLUSTER'; payload: string }
+  | { type: 'MOVE_NODE_TO_CLUSTER'; payload: { nodeId: string; newClusterId: string } }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'ADD_NODES'; payload: GraphNode[] }
@@ -29,10 +37,8 @@ type GraphAction =
   | { type: 'UPDATE_NODE'; payload: { nodeId: string; updates: Partial<GraphNode> } }
   | { type: 'PRESERVE_POSITIONS'; payload: Map<string, { x: number; y: number }> }
   | { type: 'MARK_NODE_EXPANDED'; payload: string }
-  | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: GraphResponse; preservePositions: boolean } }
-  | { type: 'REMOVE_NODE'; payload: string }; 
-
-
+  | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: any; preservePositions: boolean } }
+  | { type: 'REMOVE_NODE'; payload: string };
 
 // Initial State
 const initialState: GraphState = {
@@ -45,7 +51,9 @@ const initialState: GraphState = {
   selectedNodeId: null,
   isChronologicalOrder: true,
   isCategoricalLayout: false,
-  isClusteringEnabled: true, // NEW: Default clustering enabled
+  isClusteringEnabled: true,
+  clusteringMode: 'item',
+  customClusters: [],
   loading: false,
   error: null,
   nodePositions: new Map(),
@@ -59,77 +67,69 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
       return {
         ...state,
         selectedNodeId: action.payload,
-        accumulatedGraph: {
-          ...state.accumulatedGraph,
-          selectedNodeId: action.payload
-        }
+        accumulatedGraph: { ...state.accumulatedGraph, selectedNodeId: action.payload }
       };
-    
     case 'SET_CHRONOLOGICAL_ORDER':
-      return {
-        ...state,
-        isChronologicalOrder: action.payload
-      };
-    
+      return { ...state, isChronologicalOrder: action.payload };
     case 'SET_CATEGORICAL_LAYOUT':
+      return { ...state, isCategoricalLayout: action.payload };
+    case 'SET_CLUSTERING_ENABLED':
+      return { ...state, isClusteringEnabled: action.payload };
+    case 'SET_CLUSTERING_MODE':
+      return { ...state, clusteringMode: action.payload };
+    case 'SET_CUSTOM_CLUSTERS':
+      return { ...state, customClusters: action.payload };
+    case 'ADD_CUSTOM_CLUSTER':
+      return { ...state, customClusters: [...state.customClusters, action.payload] };
+    case 'UPDATE_CUSTOM_CLUSTER':
       return {
         ...state,
-        isCategoricalLayout: action.payload
+        customClusters: state.customClusters.map(c =>
+          c.id === action.payload.clusterId ? { ...c, ...action.payload.updates } : c
+        ),
       };
-    
-    case 'SET_CLUSTERING_ENABLED': // NEW: Handle clustering toggle
+    case 'DELETE_CUSTOM_CLUSTER':
+      const clusterToRemove = state.customClusters.find(c => c.id === action.payload);
+      if (!clusterToRemove) return state;
+      const uncategorizedCluster = state.customClusters.find(c => c.name === 'Uncategorized');
+      if (!uncategorizedCluster) return state; // Should not happen
+
+      // Move nodes from deleted cluster to "Uncategorized"
+      uncategorizedCluster.nodeIds.push(...clusterToRemove.nodeIds);
+
       return {
         ...state,
-        isClusteringEnabled: action.payload
+        customClusters: state.customClusters.filter(c => c.id !== action.payload),
       };
-    
+    case 'MOVE_NODE_TO_CLUSTER':
+      const { nodeId, newClusterId } = action.payload;
+      const newClusters = state.customClusters.map(cluster => {
+        // Remove node from its old cluster
+        const newNodeIds = cluster.nodeIds.filter(id => id !== nodeId);
+        // Add node to its new cluster
+        if (cluster.id === newClusterId) {
+          newNodeIds.push(nodeId);
+        }
+        return { ...cluster, nodeIds: newNodeIds };
+      });
+      return { ...state, customClusters: newClusters };
     case 'SET_LOADING':
-      return {
-        ...state,
-        loading: action.payload
-      };
-    
+      return { ...state, loading: action.payload };
     case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload,
-        loading: false
-      };
-    
+      return { ...state, error: action.payload, loading: false };
     case 'ADD_NODES':
       const newNodes = new Map(state.accumulatedGraph.nodes);
-      action.payload.forEach(node => {
-        newNodes.set(node.id, node);
-      });
-      return {
-        ...state,
-        accumulatedGraph: {
-          ...state.accumulatedGraph,
-          nodes: newNodes
-        }
-      };
-    
+      action.payload.forEach(node => { newNodes.set(node.id, node); });
+      return { ...state, accumulatedGraph: { ...state.accumulatedGraph, nodes: newNodes } };
     case 'ADD_LINKS':
       const newRelationships = new Map(state.accumulatedGraph.relationships);
       action.payload.forEach(link => {
         const linkId = `${link.source}-${link.target}`;
         newRelationships.set(linkId, link);
       });
-      return {
-        ...state,
-        accumulatedGraph: {
-          ...state.accumulatedGraph,
-          relationships: newRelationships
-        }
-      };
-    
+      return { ...state, accumulatedGraph: { ...state.accumulatedGraph, relationships: newRelationships } };
     case 'SET_GRAPH':
-      return {
-        ...state,
-        accumulatedGraph: action.payload,
-        selectedNodeId: action.payload.selectedNodeId
-      };
-    
+      return { ...state, accumulatedGraph: action.payload, selectedNodeId: action.payload.selectedNodeId };
     case 'CLEAR_GRAPH':
       return {
         ...state,
@@ -140,90 +140,45 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
           expandedNodeIds: new Set()
         },
         selectedNodeId: null,
-        error: null
+        error: null,
+        customClusters: [], // Also clear custom clusters
       };
-    
     case 'UPDATE_NODE':
       const updatedNodes = new Map(state.accumulatedGraph.nodes);
       const existingNode = updatedNodes.get(action.payload.nodeId);
       if (existingNode) {
-        updatedNodes.set(action.payload.nodeId, {
-          ...existingNode,
-          ...action.payload.updates
-        });
+        updatedNodes.set(action.payload.nodeId, { ...existingNode, ...action.payload.updates });
       }
+      return { ...state, accumulatedGraph: { ...state.accumulatedGraph, nodes: updatedNodes } };
+    case 'REMOVE_NODE':
+      const nodeToRemove = action.payload;
+      const filteredNodes = new Map(state.accumulatedGraph.nodes);
+      filteredNodes.delete(nodeToRemove);
+      const filteredRelationships = new Map(state.accumulatedGraph.relationships);
+      for (const [linkId, link] of filteredRelationships.entries()) {
+        if (link.source === nodeToRemove || link.target === nodeToRemove) {
+          filteredRelationships.delete(linkId);
+        }
+      }
+      const newSelectedNodeId = state.selectedNodeId === nodeToRemove ? null : state.selectedNodeId;
+      // Also remove from custom clusters
+      const updatedCustomClusters = state.customClusters.map(c => ({
+        ...c,
+        nodeIds: c.nodeIds.filter(id => id !== nodeToRemove),
+      }));
       return {
         ...state,
         accumulatedGraph: {
           ...state.accumulatedGraph,
-          nodes: updatedNodes
-        }
-      };
-    
-      case 'PRESERVE_POSITIONS':
-        return {
-          ...state,
-          nodePositions: action.payload,
-        };
-        
-      case 'MARK_NODE_EXPANDED':
-        return {
-          ...state,
-          expandedNodes: new Set([...state.expandedNodes, action.payload]),
-        };
-        
-      case 'ACCUMULATE_GRAPH':
-        if (action.payload.preservePositions) {
-          // Merge new data with existing, preserving positions
-          return {
-            ...state,
-            data: action.payload.graphData,
-            loading: false,
-            error: null,
-          };
-        } else {
-          // Normal replacement behavior
-          return {
-            ...state,
-            data: action.payload.graphData,
-            nodePositions: new Map(),
-            expandedNodes: new Set(),
-            loading: false,
-            error: null,
-          };
-        }
-      
-      case 'REMOVE_NODE':
-        const nodeToRemove = action.payload;
-        const filteredNodes = new Map(state.accumulatedGraph.nodes);
-        const filteredRelationships = new Map(state.accumulatedGraph.relationships);
-        
-        // Remove the node
-        filteredNodes.delete(nodeToRemove);
-        
-        // Remove all relationships involving this node
-        for (const [linkId, link] of filteredRelationships.entries()) {
-          if (link.source === nodeToRemove || link.target === nodeToRemove) {
-            filteredRelationships.delete(linkId);
-          }
-        }
-        
-        // Clear selection if the deleted node was selected
-        const newSelectedNodeId = state.selectedNodeId === nodeToRemove ? null : state.selectedNodeId;
-        
-        return {
-          ...state,
-          accumulatedGraph: {
-            ...state.accumulatedGraph,
-            nodes: filteredNodes,
-            relationships: filteredRelationships,
-            selectedNodeId: newSelectedNodeId
-          },
+          nodes: filteredNodes,
+          relationships: filteredRelationships,
           selectedNodeId: newSelectedNodeId
-        };
-
-      default:
-        return state;
+        },
+        selectedNodeId: newSelectedNodeId,
+        customClusters: updatedCustomClusters,
+      };
+    default:
+      return state;
   }
 }
 
@@ -231,11 +186,11 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
 interface GraphContextType {
   state: GraphState;
   dispatch: React.Dispatch<GraphAction>;
-  // Helper functions
   selectNode: (nodeId: string | null) => void;
   toggleChronologicalOrder: () => void;
-  toggleCategoricalLayout: () => void;
-  toggleClustering: () => void; // NEW: Add clustering toggle function
+  toggleClustering: () => void;
+  setClusteringMode: (mode: 'item' | 'custom') => void;
+  initializeCustomClusters: (nodes: GraphNode[], mainItemId: string) => void;
   addNodesAndLinks: (nodes: GraphNode[], links: GraphLink[]) => void;
   clearGraph: () => void;
   setLoading: (loading: boolean) => void;
@@ -253,7 +208,6 @@ interface GraphProviderProps {
 export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(graphReducer, initialState);
 
-  // Helper functions
   const selectNode = (nodeId: string | null) => {
     dispatch({ type: 'SET_SELECTED_NODE', payload: nodeId });
   };
@@ -262,17 +216,47 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_CHRONOLOGICAL_ORDER', payload: !state.isChronologicalOrder });
   };
 
-  const toggleCategoricalLayout = () => {
-    dispatch({ type: 'SET_CATEGORICAL_LAYOUT', payload: !state.isCategoricalLayout });
+  const toggleClustering = () => {
+    dispatch({ type: 'SET_CLUSTERING_ENABLED', payload: !state.isClusteringEnabled });
   };
 
-  const toggleClustering = () => { // NEW: Add clustering toggle function
-    dispatch({ type: 'SET_CLUSTERING_ENABLED', payload: !state.isClusteringEnabled });
+  const setClusteringMode = (mode: 'item' | 'custom') => {
+    dispatch({ type: 'SET_CLUSTERING_MODE', payload: mode });
+  };
+
+  const initializeCustomClusters = (nodes: GraphNode[], mainItemId: string) => {
+    const researchFocusCluster: CustomCluster = {
+      id: 'research-focus',
+      name: 'Research Focus',
+      nodeIds: [mainItemId],
+    };
+    const uncategorizedCluster: CustomCluster = {
+      id: 'uncategorized',
+      name: 'Uncategorized',
+      nodeIds: nodes.filter(n => n.id !== mainItemId).map(n => n.id),
+    };
+    dispatch({ type: 'SET_CUSTOM_CLUSTERS', payload: [researchFocusCluster, uncategorizedCluster] });
   };
 
   const addNodesAndLinks = (nodes: GraphNode[], links: GraphLink[]) => {
     dispatch({ type: 'ADD_NODES', payload: nodes });
     dispatch({ type: 'ADD_LINKS', payload: links });
+
+    // If in custom mode, add new nodes to the "Uncategorized" cluster
+    if (state.clusteringMode === 'custom') {
+      const uncategorizedCluster = state.customClusters.find(c => c.id === 'uncategorized');
+      if (uncategorizedCluster) {
+        const newNodeIds = nodes.map(n => n.id);
+        const updatedCluster = {
+          ...uncategorizedCluster,
+          nodeIds: [...uncategorizedCluster.nodeIds, ...newNodeIds],
+        };
+        dispatch({
+          type: 'UPDATE_CUSTOM_CLUSTER',
+          payload: { clusterId: 'uncategorized', updates: updatedCluster },
+        });
+      }
+    }
   };
 
   const clearGraph = () => {
@@ -296,13 +280,14 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     dispatch,
     selectNode,
     toggleChronologicalOrder,
-    toggleCategoricalLayout,
-    toggleClustering, // NEW: Add to context value
+    toggleClustering,
+    setClusteringMode,
+    initializeCustomClusters,
     addNodesAndLinks,
     clearGraph,
     setLoading,
     setError,
-    removeNodeFromGraph
+    removeNodeFromGraph,
   };
 
   return (
