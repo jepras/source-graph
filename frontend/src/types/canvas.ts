@@ -35,6 +35,17 @@ export interface CanvasDocument {
     };
   }
   
+  export interface ActivityLogEntry {
+    id: string;
+    timestamp: Date;
+    stage: 'setup' | 'analyzing' | 'structuring' | 'parsing' | 'complete' | 'error';
+    activity: string;
+    function_called?: string;
+    parameters?: Record<string, any>;
+    duration_ms?: number;
+    status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  }
+  
   export interface CanvasState {
     currentDocument: CanvasDocument | null;
     loading: boolean;
@@ -45,6 +56,7 @@ export interface CanvasDocument {
     activeModel: string;    // Currently active model (may differ due to fallback)
     use_two_agent: boolean; // Use two-agent system instead of single-agent
     loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
+    activityLogs: ActivityLogEntry[]; // Research activity logs
   }
   
   export interface ChatMessage {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import type { ReactNode } from 'react';
-import type { CanvasState, CanvasDocument, DocumentSection, ChatMessage } from '../types/canvas';
+import type { CanvasState, CanvasDocument, DocumentSection, ChatMessage, ActivityLogEntry } from '../types/canvas';
 
 // Canvas Actions
 type CanvasAction = 
@@ -16,6 +16,9 @@ type CanvasAction =
   | { type: 'SET_ACTIVE_MODEL'; payload: string }
   | { type: 'SET_USE_TWO_AGENT'; payload: boolean }
   | { type: 'SET_LOADING_STAGE'; payload: 'analyzing' | 'structuring' | null }
+  | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLogEntry }
+  | { type: 'UPDATE_ACTIVITY_LOG'; payload: { id: string; updates: Partial<ActivityLogEntry> } }
+  | { type: 'CLEAR_ACTIVITY_LOGS' }
   | { type: 'CLEAR_CANVAS' };
 
 // Initial State
@@ -29,6 +32,7 @@ const initialState: CanvasState = {
   activeModel: 'gemini-2.5-flash',    // Currently active model (may differ due to fallback)
   use_two_agent: false,         // Use two-agent system instead of single-agent
   loading_stage: null,          // 'analyzing' | 'structuring' | null
+  activityLogs: [],             // Research activity logs
 };
 
 // Reducer
@@ -124,6 +128,28 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'SET_LOADING_STAGE':
       return { ...state, loading_stage: action.payload };
     
+    case 'ADD_ACTIVITY_LOG':
+      return {
+        ...state,
+        activityLogs: [...state.activityLogs, action.payload]
+      };
+    
+    case 'UPDATE_ACTIVITY_LOG':
+      return {
+        ...state,
+        activityLogs: state.activityLogs.map(log =>
+          log.id === action.payload.id
+            ? { ...log, ...action.payload.updates }
+            : log
+        )
+      };
+    
+    case 'CLEAR_ACTIVITY_LOGS':
+      return {
+        ...state,
+        activityLogs: []
+      };
+    
     case 'CLEAR_CANVAS':
       return {
         ...initialState,
@@ -153,6 +179,9 @@ interface CanvasContextType {
   setActiveModel: (model: string) => void;
   setUseTwoAgent: (useTwoAgent: boolean) => void;
   setLoadingStage: (stage: 'analyzing' | 'structuring' | null) => void;
+  addActivityLog: (log: ActivityLogEntry) => void;
+  updateActivityLog: (id: string, updates: Partial<ActivityLogEntry>) => void;
+  clearActivityLogs: () => void;
   clearCanvas: () => void;
 }
 
@@ -215,6 +244,18 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_LOADING_STAGE', payload: stage });
   };
 
+  const addActivityLog = (log: ActivityLogEntry) => {
+    dispatch({ type: 'ADD_ACTIVITY_LOG', payload: log });
+  };
+
+  const updateActivityLog = (id: string, updates: Partial<ActivityLogEntry>) => {
+    dispatch({ type: 'UPDATE_ACTIVITY_LOG', payload: { id, updates } });
+  };
+
+  const clearActivityLogs = () => {
+    dispatch({ type: 'CLEAR_ACTIVITY_LOGS' });
+  };
+
   const clearCanvas = () => {
     dispatch({ type: 'CLEAR_CANVAS' });
   };
@@ -234,6 +275,9 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     setActiveModel,
     setUseTwoAgent,
     setLoadingStage,
+    addActivityLog,
+    updateActivityLog,
+    clearActivityLogs,
     clearCanvas
   };
 
