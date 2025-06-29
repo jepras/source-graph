@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Save, Loader2, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { Send, Loader2, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { ModelSelector } from './ModelSelector';
 import { Input } from '../ui/input';
@@ -17,7 +17,6 @@ interface AILogEntry {
 
 interface ChatInputProps {
   onSubmit: (message: string) => void;
-  onSave: () => void;
   loading: boolean;
   placeholder?: string;
   // Control props
@@ -46,7 +45,6 @@ const MODEL_NAMES: Record<string, string> = {
 
 export const ChatInput: React.FC<ChatInputProps> = ({ 
   onSubmit, 
-  onSave,
   loading, 
   placeholder = "Enter the item you want to research...",
   // Control props
@@ -67,9 +65,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [message, setMessage] = useState('');
   const { state, setSelectedModel, setUseTwoAgent } = useCanvas();
   const [lastActiveModel, setLastActiveModel] = useState(state.activeModel);
-
-  // Calculate how many sections are selected for graph
-  const selectedCount = state.currentDocument?.sections.filter(s => s.selectedForGraph).length || 0;
 
   // Show fallback notification
   useEffect(() => {
@@ -284,18 +279,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           disabled={loading}
           className="flex-1 bg-design-gray-1200 border-design-gray-800 text-design-gray-100 placeholder-design-gray-500 focus:border-design-red focus:ring-design-red/20 [&::placeholder]:text-design-gray-500"
         />
-        
-        {/* Save Button */}
-        {selectedCount > 0 && !loading && (
-          <Button
-            onClick={onSave}
-            size="sm"
-            className="bg-design-red hover:bg-design-red-hover text-white border-0 focus:ring-2 focus:ring-design-red/30"
-            title={`Save ${selectedCount} selected influences to graph`}
-          >
-            <Save className="w-4 h-4" />
-          </Button>
-        )}
         
         {/* Send Button */}
         <Button

@@ -117,6 +117,8 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
           <DocumentRenderer 
             document={state.currentDocument}
             onItemSaved={onItemSaved}
+            onSave={handleSave}
+            saveLoading={saveLoading}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-design-gray-400">

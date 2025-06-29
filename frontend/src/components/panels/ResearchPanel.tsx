@@ -255,7 +255,6 @@ Your responses should be well-structured, informative, and suitable for academic
         {/* Chat Input Component with integrated controls */}
         <ChatInput 
           onSubmit={handleChatSubmit}
-          onSave={handleSave}
           loading={state.loading || saveLoading}
           placeholder="Enter the item you want to research..."
           // Pass control props
