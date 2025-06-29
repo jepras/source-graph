@@ -2,21 +2,30 @@ import React, { useState } from 'react';
 import { DocumentRenderer } from './DocumentRenderer';
 import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
-import { useCanvasOperations } from '../../hooks/useCanvas';
-import { useGraphOperations } from '../../hooks/useGraphOperations';
-import { proposalApi } from '../../services/api';
-import { Loader2 } from 'lucide-react';
-import type { AcceptProposalsRequest, AcceptProposalsResponse, StructuredOutput } from '../../services/api';
 import { useConflictResolution } from '../../hooks/useConflictResolution';
+import { useCanvasSave } from '../../hooks/useCanvasSave';
+import { useGraphOperations } from '../../hooks/useGraphOperations';
+import { Loader2 } from 'lucide-react';
 
 interface CanvasTabProps {
   onItemSaved: (itemId: string) => void;
 }
 
 export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
-  const { state, clearCanvas, updateSection} = useCanvas();
+  const { state, clearCanvas, updateSection } = useCanvas();
   const { loadItemWithAccumulation } = useGraphOperations();
-  const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Use the shared canvas save hook
+  const {
+    saveLoading,
+    saveError,
+    setSaveError,
+    handleSaveToGraph
+  } = useCanvasSave({ 
+    onItemSaved, 
+    clearCanvas, 
+    updateSection 
+  });
   
   // Use the shared conflict resolution hook
   const {
@@ -24,93 +33,22 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
     setConflictData,
     handleConflictResolve,
   } = useConflictResolution({ loadItemWithAccumulation, onItemSaved });
-  
-  const [saveLoading, setSaveLoading] = useState(false);
 
-  const handleSaveToGraph = async () => {
-    setSaveError(null); 
-    if (!state.currentDocument) return;
-
-    // Get all sections selected for graph
-    const selectedSections = state.currentDocument.sections.filter(s => s.selectedForGraph && s.influence_data);
-    
-    if (selectedSections.length === 0) {
-      alert('Please select at least one influence to save to the graph');
-      return;
-    }
-
-    setSaveLoading(true);
-
+  const handleSave = async () => {
     try {
-      // Convert Canvas sections to AcceptProposalsRequest format
-      const request: AcceptProposalsRequest = {
-        item_name: state.currentDocument.item_name,
-        item_type: state.currentDocument.item_type,
-        creator: state.currentDocument.creator,
-        item_year: selectedSections[0]?.influence_data?.year, // Use first influence year as item year
-        item_description: state.currentDocument.sections.find(s => s.type === 'intro')?.content,
-        accepted_proposals: selectedSections.map(section => ({
-          ...section.influence_data!,
-          accepted: true,
-          parent_id: undefined,
-          children: [],
-          is_expanded: false,
-          influence_type: section.influence_data?.influence_type || 'general'
-        }))
-      };
-
-      const result = await proposalApi.acceptProposals(request);
+      const result = await handleSaveToGraph();
       
-      // Check if conflict resolution is needed
-      if (result && !result.success && result.requires_review) {
+      if (result.requires_review && result.new_data) {
+        // Show conflict resolution
         setConflictData({
           conflicts: result.conflicts,
           previewData: result.preview_data,
-          newData: result.new_data as StructuredOutput
-        });
-      } else if (result?.success && result.item_id) {
-        // Success - load item into graph
-        await loadItemWithAccumulation(result.item_id, state.currentDocument.item_name);
-        onItemSaved(result.item_id);
-        
-        // Clear selected sections
-        selectedSections.forEach(section => {
-          updateSection(section.id, { selectedForGraph: false });
+          newData: result.new_data
         });
       }
-    } catch (err: any) {
-      console.error('Failed to save to graph:', err);
-      
-      // Parse validation errors from API response
-      let errorMessage = 'Failed to save to graph. Please try again.';
-      
-      if (err?.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        
-        if (typeof detail === 'string' && detail.includes('validation error')) {
-          // Parse Pydantic validation error
-          if (detail.includes('scope')) {
-            errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
-          } else if (detail.includes('year')) {
-            errorMessage = 'Error with influence. Issue with year - must be a valid number.';
-          } else if (detail.includes('confidence')) {
-            errorMessage = 'Error with influence. Issue with confidence - must be between 0 and 1.';
-          } else {
-            errorMessage = 'Error with influence data. Please refine sections and try again.';
-          }
-        }
-      } else if (err?.message) {
-        // Handle other error formats
-        if (err.message.includes('scope')) {
-          errorMessage = 'Error with influence. Issue with scope - must be macro, micro, or nano.';
-        } else if (err.message.includes('validation error')) {
-          errorMessage = 'Error with influence data. Please refine sections and try again.';
-        }
-      }
-      
-      setSaveError(errorMessage);
-    } finally {
-      setSaveLoading(false);
+    } catch (err) {
+      // Error is already handled in the hook
+      console.error('Save failed:', err);
     }
   };
 

@@ -7,10 +7,11 @@ import { ChatInput } from '../canvas/ChatInput';
 import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { useCanvasOperations } from '../../hooks/useCanvas';
-import { useGraphOperations } from '../../hooks/useGraphOperations';
-import { proposalApi, influenceApi } from '../../services/api';
-import type { AcceptProposalsRequest, AcceptProposalsResponse, StructuredOutput, InfluenceProposal } from '../../services/api';
+import { useCanvasSave } from '../../hooks/useCanvasSave';
 import { useConflictResolution } from '../../hooks/useConflictResolution';
+import { useGraphOperations } from '../../hooks/useGraphOperations';
+import { influenceApi } from '../../services/api';
+import type { StructuredOutput } from '../../services/api';
 
 interface ResearchPanelProps {
   onItemSaved: (itemId: string) => void;
@@ -26,58 +27,33 @@ interface AILogEntry {
   expanded?: boolean;
 }
 
+// Mock AI log data
 const mockAILog: AILogEntry[] = [
   {
     id: "1",
-    timestamp: "14:32:15",
-    type: "user_input",
-    content: "Research influences for Shaft (1971)",
-    status: "Added",
+    timestamp: "14:30",
+    type: "thinking",
+    content: "Analyzing influence patterns in 1970s cinema",
+    details: "Examining visual style, narrative structure, and cultural impact",
+    status: "Completed",
     expanded: false,
   },
   {
     id: "2",
-    timestamp: "14:32:16",
-    type: "thinking",
-    content: "Analyzing blaxploitation cinema influences...",
-    details:
-      "Need to research visual style, musical innovation, character archetypes, and cultural impact of Shaft (1971)",
+    timestamp: "14:31",
+    type: "action",
+    content: "Identified key influences: Blaxploitation genre, French New Wave",
+    details: "Found 3 macro-level influences and 7 micro-level connections",
     status: "Generated",
     expanded: false,
   },
   {
     id: "3",
-    timestamp: "14:32:18",
-    type: "action",
-    content: "Generated research document structure",
-    details: "Created sections for Visual Style, Musical Innovation, Character Archetypes, and Cultural Impact",
-    status: "Completed",
-    expanded: false,
-  },
-  {
-    id: "4",
-    timestamp: "14:32:45",
-    type: "user_input",
-    content: "Expand paragraph about visual style",
-    status: "Added",
-    expanded: false,
-  },
-  {
-    id: "5",
-    timestamp: "14:32:46",
-    type: "action",
-    content: "Expanded visual style paragraph",
-    details: "Added information about handheld cameras and natural lighting techniques",
-    status: "Edited",
-    expanded: false,
-  },
-  {
-    id: "6",
-    timestamp: "14:33:12",
+    timestamp: "14:32",
     type: "observation",
-    content: "User is focusing on cinematographic techniques",
-    details: "Multiple expansions requested for visual and technical aspects",
-    status: "Generated",
+    content: "Noticed strong connection to 1960s social movements",
+    details: "Civil rights movement, urban culture, and political activism themes",
+    status: "Added",
     expanded: false,
   },
 ];
@@ -87,16 +63,25 @@ export const ResearchPanel: React.FC<ResearchPanelProps> = ({ onItemSaved }) => 
   const { startResearch, sendChatMessage } = useCanvasOperations();
   const { loadItemWithAccumulation } = useGraphOperations();
   
-  const [isDocumentMode, setIsDocumentMode] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveLoading, setSaveLoading] = useState(false);
+  // Use the shared canvas save hook
+  const {
+    saveLoading,
+    saveError,
+    setSaveError,
+    handleSaveToGraph: saveToGraph
+  } = useCanvasSave({ 
+    onItemSaved, 
+    clearCanvas 
+  });
   
-  // Add conflict resolution state
-  const [conflictData, setConflictData] = useState<{
-    conflicts: any;
-    previewData: any;
-    newData: StructuredOutput;
-  } | null>(null);
+  // Use the shared conflict resolution hook
+  const {
+    conflictData,
+    setConflictData,
+    handleConflictResolve: resolveConflicts,
+  } = useConflictResolution({ loadItemWithAccumulation, onItemSaved });
+  
+  const [isDocumentMode, setIsDocumentMode] = useState(false);
   
   const [systemPrompt, setSystemPrompt] = useState(
     `You are an AI research assistant specializing in influence mapping and cultural analysis. When researching influences:
@@ -116,46 +101,52 @@ Your responses should be well-structured, informative, and suitable for academic
   const promptEditorRef = useRef<HTMLDivElement | null>(null);
   const activityLogRef = useRef<HTMLDivElement | null>(null);
 
-  // Close dropdowns when clicking outside
+  // Handle clicks outside prompt editor and activity log
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (promptEditorRef.current && !promptEditorRef.current.contains(event.target as Node)) {
+      if (
+        promptEditorRef.current &&
+        !promptEditorRef.current.contains(event.target as Node)
+      ) {
         setShowPromptEditor(false);
       }
-      if (activityLogRef.current && !activityLogRef.current.contains(event.target as Node)) {
+      if (
+        activityLogRef.current &&
+        !activityLogRef.current.contains(event.target as Node)
+      ) {
         setShowActivityLog(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
-
-  // Update document mode when canvas state changes
-  useEffect(() => {
-    setIsDocumentMode(!!state.currentDocument);
-  }, [state.currentDocument]);
 
   const handleChatSubmit = async (message: string) => {
     if (!state.currentDocument) {
-      // First message - start research
+      // Start new research
       await startResearch(message);
+      setIsDocumentMode(true);
     } else {
-      // Subsequent messages - chat interaction
+      // Continue existing research
       await sendChatMessage(message);
     }
   };
 
   const toggleLogEntry = (id: string) => {
-    setLogEntries((prev) =>
-      prev.map((entry) => (entry.id === id ? { ...entry, expanded: !entry.expanded } : entry))
+    setLogEntries(prev =>
+      prev.map(entry =>
+        entry.id === id ? { ...entry, expanded: !entry.expanded } : entry
+      )
     );
   };
 
   const getLogEntryIcon = (type: AILogEntry["type"]) => {
     switch (type) {
       case "thinking":
-        return "🤔";
+        return "🧠";
       case "action":
         return "⚡";
       case "observation":
@@ -167,139 +158,36 @@ Your responses should be well-structured, informative, and suitable for academic
     }
   };
 
-  const handleSaveToGraph = async () => {
-    if (!state.currentDocument) return;
-
-    setSaveLoading(true);
-    setSaveError(null);
-
+  const handleSave = async () => {
     try {
-      // Get selected sections
-      const selectedSections = state.currentDocument.sections.filter(s => s.selectedForGraph);
+      const result = await saveToGraph();
       
-      if (selectedSections.length === 0) {
-        setSaveError("No influences selected for saving");
-        return;
-      }
-
-      // Convert sections to structured output
-      const structuredOutput: StructuredOutput = {
-        main_item: state.currentDocument.item_name,
-        main_item_type: state.currentDocument.item_type,
-        main_item_creator: state.currentDocument.creator,
-        influences: selectedSections.map(section => {
-          const influence = section.influence_data;
-          return {
-            name: influence?.name || section.title || "Unknown",
-            type: influence?.type,
-            creator_name: influence?.creator_name,
-            creator_type: influence?.creator_type,
-            year: influence?.year,
-            category: influence?.category || "General",
-            scope: influence?.scope || "macro",
-            influence_type: influence?.influence_type || "direct",
-            confidence: influence?.confidence || 0.8,
-            explanation: influence?.explanation || section.content,
-            source: undefined,
-            clusters: influence?.clusters
-          };
-        }),
-        categories: Array.from(new Set(selectedSections.map(s => s.influence_data?.category || "General")))
-      };
-
-      // Convert to InfluenceProposal format
-      const acceptedProposals: InfluenceProposal[] = selectedSections.map(section => {
-        const influence = section.influence_data!;
-        return {
-          name: influence.name,
-          type: influence.type,
-          creator_name: influence.creator_name,
-          creator_type: influence.creator_type,
-          year: influence.year,
-          category: influence.category,
-          scope: influence.scope,
-          influence_type: influence.influence_type || "direct",
-          confidence: influence.confidence,
-          explanation: influence.explanation,
-          accepted: true,
-          parent_id: undefined,
-          children: [],
-          is_expanded: false,
-          clusters: influence.clusters
-        };
-      });
-
-      // Accept proposals
-      const response = await proposalApi.acceptProposals({
-        item_name: state.currentDocument.item_name,
-        item_type: state.currentDocument.item_type,
-        creator: state.currentDocument.creator,
-        accepted_proposals: acceptedProposals
-      });
-
-      if (response.success && response.item_id) {
-        // Load the item into the graph
-        await loadItemWithAccumulation(response.item_id, state.currentDocument.item_name);
-        onItemSaved(response.item_id);
-        
-        // Clear the canvas after successful save
-        clearCanvas();
-      } else if (response.requires_review) {
+      if (result.requires_review && result.new_data) {
         // Show conflict resolution
         setConflictData({
-          conflicts: response.conflicts,
-          previewData: response.preview_data,
-          newData: structuredOutput
+          conflicts: result.conflicts,
+          previewData: result.preview_data,
+          newData: result.new_data
         });
-      } else {
-        setSaveError(response.message || "Failed to save influences");
       }
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save influences");
-    } finally {
-      setSaveLoading(false);
+      // Error is already handled in the hook
+      console.error('Save failed:', err);
     }
   };
 
   const handleConflictResolve = async (resolution: 'create_new' | 'merge', selectedItemId?: string, influenceResolutions?: Record<string, any>) => {
     if (!state.currentDocument || !conflictData) return;
 
-    setSaveLoading(true);
-    setSaveError(null);
-
     try {
       let response;
       
       if (resolution === 'create_new') {
-        // Create new item
-        const selectedSections = state.currentDocument.sections.filter(s => s.selectedForGraph);
-        const acceptedProposals: InfluenceProposal[] = selectedSections.map(section => {
-          const influence = section.influence_data!;
-          return {
-            name: influence.name,
-            type: influence.type,
-            creator_name: influence.creator_name,
-            creator_type: influence.creator_type,
-            year: influence.year,
-            category: influence.category,
-            scope: influence.scope,
-            influence_type: influence.influence_type || "direct",
-            confidence: influence.confidence,
-            explanation: influence.explanation,
-            accepted: true,
-            parent_id: undefined,
-            children: [],
-            is_expanded: false,
-            clusters: influence.clusters
-          };
-        });
-
-        response = await proposalApi.acceptProposals({
-          item_name: state.currentDocument.item_name,
-          item_type: state.currentDocument.item_type,
-          creator: state.currentDocument.creator,
-          accepted_proposals: acceptedProposals
-        });
+        // Use the shared save hook for creating new
+        const result = await saveToGraph();
+        if (result.success) {
+          setConflictData(null);
+        }
       } else {
         // Merge with existing item
         if (!selectedItemId) {
@@ -307,53 +195,27 @@ Your responses should be well-structured, informative, and suitable for academic
           return;
         }
         
-        const selectedSections = state.currentDocument.sections.filter(s => s.selectedForGraph);
-        const structuredOutput: StructuredOutput = {
-          main_item: state.currentDocument.item_name,
-          main_item_type: state.currentDocument.item_type,
-          main_item_creator: state.currentDocument.creator,
-          influences: selectedSections.map(section => {
-            const influence = section.influence_data;
-            return {
-              name: influence?.name || section.title || "Unknown",
-              type: influence?.type,
-              creator_name: influence?.creator_name,
-              creator_type: influence?.creator_type,
-              year: influence?.year,
-              category: influence?.category || "General",
-              scope: influence?.scope || "macro",
-              influence_type: influence?.influence_type || "direct",
-              confidence: influence?.confidence || 0.8,
-              explanation: influence?.explanation || section.content,
-              source: undefined,
-              clusters: influence?.clusters
-            };
-          }),
-          categories: Array.from(new Set(selectedSections.map(s => s.influence_data?.category || "General")))
-        };
-
+        const structuredOutput = conflictData.newData;
         response = await influenceApi.mergeWithComprehensiveResolutions(
           selectedItemId,
           structuredOutput,
           influenceResolutions || {}
         );
-      }
 
-      if (response.success && response.item_id) {
-        // Load the item into the graph
-        await loadItemWithAccumulation(response.item_id, state.currentDocument.item_name);
-        onItemSaved(response.item_id);
-        
-        // Clear the canvas after successful save
-        clearCanvas();
-        setConflictData(null);
-      } else {
-        setSaveError(response.message || "Failed to resolve conflicts");
+        if (response.success && response.item_id) {
+          // Load the item into the graph
+          await loadItemWithAccumulation(response.item_id, state.currentDocument.item_name);
+          onItemSaved(response.item_id);
+          
+          // Clear the canvas after successful save
+          clearCanvas();
+          setConflictData(null);
+        } else {
+          setSaveError(response.message || "Failed to resolve conflicts");
+        }
       }
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to resolve conflicts");
-    } finally {
-      setSaveLoading(false);
     }
   };
 
@@ -393,7 +255,7 @@ Your responses should be well-structured, informative, and suitable for academic
         {/* Chat Input Component with integrated controls */}
         <ChatInput 
           onSubmit={handleChatSubmit}
-          onSave={handleSaveToGraph}
+          onSave={handleSave}
           loading={state.loading || saveLoading}
           placeholder="Enter the item you want to research..."
           // Pass control props
