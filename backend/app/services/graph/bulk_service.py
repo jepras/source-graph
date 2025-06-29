@@ -40,6 +40,7 @@ class BulkService(BaseGraphService):
             # Create influence item
             influence_item = self._create_item(
                 name=influence.name,
+                description=influence.explanation if influence.explanation else None,
                 auto_detected_type=influence.type,
                 year=influence.year,
             )

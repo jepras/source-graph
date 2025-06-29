@@ -185,7 +185,11 @@ class ConflictService(BaseGraphService):
                         # Create new influence with cleaned data
                         influence_item = self._create_item(
                             name=influence_name,
-                            description=f"Influence on {existing_item.name} (merged)",
+                            description=(
+                                influence.explanation
+                                if influence.explanation
+                                else f"Influence on {existing_item.name}"
+                            ),
                             auto_detected_type=influence.type,
                             year=influence.year,
                             confidence_score=influence.confidence,

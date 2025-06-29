@@ -838,7 +838,9 @@ class GraphService:
                         # Create new influence with cleaned data
                         influence_item = self.create_item(
                             name=influence_name,
-                            description=f"Influence on {existing_item.name} (merged)",
+                            description=(
+                                influence.explanation if influence.explanation else None
+                            ),
                             auto_detected_type=influence.type,
                             year=influence.year,
                             confidence_score=influence.confidence,
@@ -1049,6 +1051,7 @@ class GraphService:
             # Create influence item
             influence_item = self.create_item(
                 name=influence.name,
+                description=influence.explanation if influence.explanation else None,
                 auto_detected_type=influence.type,
                 year=influence.year,
             )

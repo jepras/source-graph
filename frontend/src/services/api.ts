@@ -62,6 +62,7 @@ export interface StructuredOutput {
   main_item_creator?: string;
   main_item_creator_type?: string;
   main_item_year?: number;
+  main_item_description?: string;
   influences: StructuredInfluence[];
   categories: string[];
 }

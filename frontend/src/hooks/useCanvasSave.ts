@@ -83,6 +83,7 @@ export function useCanvasSave({ onItemSaved, clearCanvas, updateSection }: UseCa
       main_item_type: state.currentDocument.item_type,
       main_item_creator: state.currentDocument.creator,
       main_item_year: year,
+      main_item_description: description,
       influences: selectedSections.map(section => {
         const influence = section.influence_data;
         return {
