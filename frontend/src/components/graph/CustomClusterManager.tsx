@@ -50,7 +50,7 @@ export const CustomClusterManager: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-design-gray-1200 border border-design-gray-800 rounded-lg shadow-sm mt-4">
+    <div className="bg-design-gray-1200 border border-design-gray-800 rounded-lg shadow-sm">
       <h4 className="text-sm font-semibold text-design-gray-200 mb-3">Custom Clusters</h4>
       <div className="space-y-2">
         {customClusters.map(cluster => (

@@ -275,9 +275,31 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
             </div>
 
             {showControls && (
-              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-design-gray-1100 border-design-gray-800">
-                <CardContent className="p-3">
-                  <div className="space-y-3">
+              <Card className="absolute top-10 left-0 w-80 shadow-xl z-10 bg-design-gray-1100 border-design-gray-800 h-[80vh] p-0">
+                <CardContent className="p-3 h-full flex flex-col">
+                  <div className="flex-1 overflow-y-auto space-y-3">
+                    <div>
+                      <h4 className="text-xs font-medium text-design-gray-200 mb-2">Graph Actions</h4>
+                      <div className="flex space-x-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={clearGraph}
+                          className="flex-1 justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
+                        >
+                          🧹 Clear Graph
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleFitToView}
+                          className="flex-1 justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
+                        >
+                          🔍 Fit to View
+                        </Button>
+                      </div>
+                    </div>
+
                     <div>
                       <h4 className="text-xs font-medium text-design-gray-200 mb-2">View Mode</h4>
                       <div className="flex space-x-1">
@@ -341,38 +363,6 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
                     )}
 
                     {clusteringMode === 'custom' && isClusteringEnabled && <CustomClusterManager />}
-
-                    <div>
-                      <h4 className="text-xs font-medium text-design-gray-200 mb-2">Graph Actions</h4>
-                      <div className="grid grid-cols-1 gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={clearGraph}
-                          className="w-full justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
-                        >
-                          🧹 Clear Graph
-                        </Button>
-                        <div className="grid grid-cols-2 gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {}}
-                            className="justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
-                          >
-                            🔄 Reset
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleFitToView}
-                            className="justify-start bg-design-gray-950 border-design-gray-800 text-design-gray-300 hover:bg-design-gray-900 text-xs py-1 h-7"
-                          >
-                            🔍 Fit to View
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
 
                     <div className="border-t border-design-gray-800/50 pt-2">
                       <div className="text-xs text-design-gray-400 space-y-1">
