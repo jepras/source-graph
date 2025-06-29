@@ -5,6 +5,7 @@ import type { AccumulatedGraph, GraphNode, GraphLink, CustomCluster } from '../t
 interface GraphState {
   accumulatedGraph: AccumulatedGraph;
   selectedNodeId: string | null;
+  highlightedEdgeIds: Set<string>; // New: tracks edges connected to selected node
   isChronologicalOrder: boolean;
   isCategoricalLayout: boolean;
   isClusteringEnabled: boolean;
@@ -19,6 +20,8 @@ interface GraphState {
 // Graph Actions
 type GraphAction =
   | { type: 'SET_SELECTED_NODE'; payload: string | null }
+  | { type: 'SET_HIGHLIGHTED_EDGES'; payload: Set<string> } // New: set highlighted edges
+  | { type: 'CLEAR_HIGHLIGHTED_EDGES' } // New: clear highlighted edges
   | { type: 'SET_CHRONOLOGICAL_ORDER'; payload: boolean }
   | { type: 'SET_CATEGORICAL_LAYOUT'; payload: boolean }
   | { type: 'SET_CLUSTERING_ENABLED'; payload: boolean }
@@ -49,6 +52,7 @@ const initialState: GraphState = {
     expandedNodeIds: new Set()
   },
   selectedNodeId: null,
+  highlightedEdgeIds: new Set(), // New: initialize empty set
   isChronologicalOrder: true,
   isCategoricalLayout: false,
   isClusteringEnabled: true,
@@ -69,6 +73,10 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
         selectedNodeId: action.payload,
         accumulatedGraph: { ...state.accumulatedGraph, selectedNodeId: action.payload }
       };
+    case 'SET_HIGHLIGHTED_EDGES':
+      return { ...state, highlightedEdgeIds: action.payload };
+    case 'CLEAR_HIGHLIGHTED_EDGES':
+      return { ...state, highlightedEdgeIds: new Set() };
     case 'SET_CHRONOLOGICAL_ORDER':
       return { ...state, isChronologicalOrder: action.payload };
     case 'SET_CATEGORICAL_LAYOUT':
@@ -140,6 +148,7 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
           expandedNodeIds: new Set()
         },
         selectedNodeId: null,
+        highlightedEdgeIds: new Set(), // Clear highlighted edges too
         error: null,
         customClusters: [], // Also clear custom clusters
       };
@@ -187,6 +196,8 @@ interface GraphContextType {
   state: GraphState;
   dispatch: React.Dispatch<GraphAction>;
   selectNode: (nodeId: string | null) => void;
+  highlightEdgesForNode: (nodeId: string | null) => void; // New: highlight edges for a node
+  clearHighlightedEdges: () => void; // New: clear highlighted edges
   toggleChronologicalOrder: () => void;
   toggleClustering: () => void;
   setClusteringMode: (mode: 'item' | 'custom') => void;
@@ -210,6 +221,27 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
 
   const selectNode = (nodeId: string | null) => {
     dispatch({ type: 'SET_SELECTED_NODE', payload: nodeId });
+  };
+
+  const highlightEdgesForNode = (nodeId: string | null) => {
+    if (!nodeId) {
+      dispatch({ type: 'CLEAR_HIGHLIGHTED_EDGES' });
+      return;
+    }
+
+    // Find all edges connected to this node
+    const connectedEdgeIds = new Set<string>();
+    for (const [linkId, link] of state.accumulatedGraph.relationships.entries()) {
+      if (link.source === nodeId || link.target === nodeId) {
+        connectedEdgeIds.add(linkId);
+      }
+    }
+    
+    dispatch({ type: 'SET_HIGHLIGHTED_EDGES', payload: connectedEdgeIds });
+  };
+
+  const clearHighlightedEdges = () => {
+    dispatch({ type: 'CLEAR_HIGHLIGHTED_EDGES' });
   };
 
   const toggleChronologicalOrder = () => {
@@ -279,6 +311,8 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     state,
     dispatch,
     selectNode,
+    highlightEdgesForNode,
+    clearHighlightedEdges,
     toggleChronologicalOrder,
     toggleClustering,
     setClusteringMode,

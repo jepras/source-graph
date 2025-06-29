@@ -27,8 +27,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const { state, dispatch, selectNode, toggleChronologicalOrder, toggleClustering, setClusteringMode, initializeCustomClusters, clearGraph } = useGraph();
-  const { accumulatedGraph, isChronologicalOrder, isClusteringEnabled, clusteringMode, customClusters } = state;
+  const { state, dispatch, selectNode, toggleChronologicalOrder, toggleClustering, setClusteringMode, initializeCustomClusters, clearGraph, highlightEdgesForNode, clearHighlightedEdges } = useGraph();
+  const { accumulatedGraph, isChronologicalOrder, isClusteringEnabled, clusteringMode, customClusters, highlightedEdgeIds } = state;
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -86,6 +86,16 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
 
     svg.attr("width", width).attr("height", height);
 
+    // Add click handler to clear highlights when clicking on empty space
+    svg.on("click", (event) => {
+      // Only clear if clicking on the SVG background, not on nodes or other elements
+      if (event.target === svgRef.current) {
+        clearHighlightedEdges();
+        selectNode(null);
+        setShowSelectedPanel(false);
+      }
+    });
+
     positionNodes(nodes, width, height);
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
@@ -109,7 +119,10 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .attr("class", "link")
       .attr("stroke", "#374151")
       .attr("stroke-width", d => d.confidence * 3)
-      .attr("stroke-opacity", 0.6)
+      .attr("stroke-opacity", d => {
+        const linkId = `${d.source}-${d.target}`;
+        return highlightedEdgeIds.has(linkId) ? 1.0 : 0.4;
+      })
       .attr("x1", d => nodes.find(n => n.id === d.source)?.x || 0)
       .attr("y1", d => nodes.find(n => n.id === d.source)?.y || 0)
       .attr("x2", d => nodes.find(n => n.id === d.target)?.x || 0)
@@ -125,6 +138,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .on("click", (event, d) => {
         if (onNodeClick) onNodeClick(d.id);
         selectNode(d.id);
+        highlightEdgesForNode(d.id);
         setShowSelectedPanel(true);
       })
       .on("mouseenter", (event, d) => {
@@ -167,7 +181,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     isChronologicalOrder, 
     isClusteringEnabled,
     clusteringMode,
-    customClusters
+    customClusters,
+    highlightedEdgeIds
   ]);
 
   useEffect(() => {
@@ -180,6 +195,20 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 3 : 2);
       
   }, [accumulatedGraph.selectedNodeId]);
+
+  useEffect(() => {
+    if (!svgRef.current || accumulatedGraph.nodes.size === 0) return;
+    
+    const svg = d3.select(svgRef.current);
+    const links = Array.from(accumulatedGraph.relationships.values());
+    
+    svg.selectAll<SVGLineElement, GraphLink>(".link")
+      .attr("stroke-opacity", d => {
+        const linkId = `${d.source}-${d.target}`;
+        return highlightedEdgeIds.has(linkId) ? 1.0 : 0.4;
+      });
+      
+  }, [highlightedEdgeIds, accumulatedGraph.relationships.size]);
 
   useEffect(() => {
     if (accumulatedGraph.selectedNodeId) {
@@ -242,6 +271,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
   const handleCloseDetailsPanel = () => {
     setShowSelectedPanel(false);
     selectNode(null);
+    clearHighlightedEdges();
   };
 
   return (
