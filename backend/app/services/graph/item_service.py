@@ -188,6 +188,53 @@ class ItemService(BaseGraphService):
             except Exception as e:
                 raise Exception(f"Failed to delete item: {str(e)}")
 
+    def update_item(self, item_id: str, update_data: dict) -> Optional[Item]:
+        """Update an existing item with new data"""
+        with neo4j_db.driver.session() as session:
+            try:
+                # Build dynamic SET clause for only provided fields
+                set_clauses = []
+                params = {"item_id": item_id}
+
+                for field, value in update_data.items():
+                    if value is not None:  # Only update non-None values
+                        set_clauses.append(f"i.{field} = ${field}")
+                        params[field] = value
+
+                if not set_clauses:
+                    # No fields to update, just return the item
+                    return self.get_item_by_id(item_id)
+
+                set_clause = ", ".join(set_clauses)
+
+                result = session.run(
+                    f"""
+                    MATCH (i:Item {{id: $item_id}})
+                    SET {set_clause}
+                    RETURN i
+                    """,
+                    params,
+                )
+
+                record = result.single()
+                if record:
+                    node = record["i"]
+                    return Item(
+                        id=node["id"],
+                        name=node["name"],
+                        description=node.get("description"),
+                        year=node.get("year"),
+                        auto_detected_type=node.get("auto_detected_type"),
+                        confidence_score=node.get("confidence_score"),
+                        verification_status=node.get(
+                            "verification_status", "ai_generated"
+                        ),
+                    )
+                return None
+
+            except Exception as e:
+                raise Exception(f"Failed to update item: {str(e)}")
+
     def merge_items(self, source_item_id: str, target_item_id: str) -> str:
         """Transfer all relationships from source to target, delete source"""
         with neo4j_db.driver.session() as session:

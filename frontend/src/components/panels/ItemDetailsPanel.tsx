@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
-import { X, Wand2, ExternalLink, Music, Film, BookOpen, Info, Share2, Edit, Trash2, ChevronDown } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { X, Wand2, ExternalLink, Music, Film, BookOpen, Info, Share2, Edit, Trash2, ChevronDown, Save, X as XIcon } from 'lucide-react';
 import { api } from '../../services/api';
 import { useGraph } from '../../contexts/GraphContext';
 import { useGraphOperations } from '../../hooks/useGraphOperations';
@@ -64,6 +66,17 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiContent, setAiContent] = useState<AIContentItem[]>([]);
   const [showFullDetails, setShowFullDetails] = useState<Record<string, boolean>>({});
+  
+  // Edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    year: '',
+    auto_detected_type: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Mock research log data
   const researchLog: ResearchLogItem[] = [
@@ -284,26 +297,26 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
 
   const handleGenerateContent = () => {
     setIsGenerating(true);
+    // Mock AI content generation
     setTimeout(() => {
-      if (itemDetails) {
-        const mockContent: AIContentItem[] = [
-          {
-            id: "1",
-            type: "wikipedia",
-            title: `${itemDetails.name}`,
-            description: `Information about ${itemDetails.name}`,
-            url: "https://en.wikipedia.org/wiki/Main_Page",
-          },
-          {
-            id: "2",
-            type: "image",
-            title: `${itemDetails.name} Visualization`,
-            description: "AI-generated representation of this concept",
-            thumbnail: "/placeholder.svg?height=200&width=300",
-          },
-        ];
-        setAiContent(mockContent);
-      }
+      setAiContent([
+        {
+          id: "1",
+          type: "spotify",
+          title: "Listen on Spotify",
+          description: "Stream this track on Spotify",
+          url: "https://spotify.com",
+          thumbnail: "/spotify-icon.png",
+        },
+        {
+          id: "2",
+          type: "youtube",
+          title: "Watch on YouTube",
+          description: "Official music video",
+          url: "https://youtube.com",
+          thumbnail: "/youtube-icon.png",
+        },
+      ]);
       setIsGenerating(false);
     }, 2000);
   };
@@ -468,6 +481,82 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
     }
   };
 
+  // Edit handlers
+  const handleEditClick = () => {
+    if (!itemDetails) return;
+    
+    setEditForm({
+      name: itemDetails.name || '',
+      description: itemDetails.description || '',
+      year: itemDetails.year?.toString() || '',
+      auto_detected_type: itemDetails.auto_detected_type || '',
+    });
+    setIsEditing(true);
+    setEditError(null);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditForm({
+      name: '',
+      description: '',
+      year: '',
+      auto_detected_type: '',
+    });
+    setEditError(null);
+  };
+
+  const handleEditSave = async () => {
+    if (!itemDetails) return;
+    
+    setEditLoading(true);
+    setEditError(null);
+    
+    try {
+      const updateData: any = {};
+      
+      if (editForm.name !== itemDetails.name) updateData.name = editForm.name;
+      if (editForm.description !== itemDetails.description) updateData.description = editForm.description;
+      if (editForm.year !== (itemDetails.year?.toString() || '')) {
+        updateData.year = editForm.year ? parseInt(editForm.year) : null;
+      }
+      if (editForm.auto_detected_type !== itemDetails.auto_detected_type) {
+        updateData.auto_detected_type = editForm.auto_detected_type;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        setIsEditing(false);
+        setEditLoading(false);
+        return;
+      }
+      
+      const response = await api.updateItem(itemDetails.id, updateData);
+      
+      if (response.success) {
+        setItemDetails(response.item);
+        setIsEditing(false);
+        setEditForm({
+          name: '',
+          description: '',
+          year: '',
+          auto_detected_type: '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update item:', error);
+      setEditError(error instanceof Error ? error.message : 'Failed to update item');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (!state.selectedNodeId || !itemDetails) {
     return (
       <div className="h-full flex flex-col bg-design-gray-1100">
@@ -592,8 +681,9 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
               <Button
                 size="sm"
                 variant="outline"
+                onClick={handleEditClick}
+                disabled={isEditing}
                 className="bg-design-gray-900 border-design-gray-800 hover:bg-black text-xs text-design-gray-400 hover:text-design-gray-100"
-                disabled
               >
                 <Edit className="w-3 h-3 mr-1" /> Edit
               </Button>
@@ -624,15 +714,98 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
               </Button>
             </div>
 
+            {/* Edit Form */}
+            {isEditing && (
+              <div className="bg-design-gray-1200 border border-design-gray-800 rounded-md p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-design-gray-300">Edit Item</h3>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={handleEditSave}
+                      disabled={editLoading}
+                      className="h-7 text-xs bg-design-red hover:bg-design-red-hover text-white"
+                    >
+                      {editLoading ? "Saving..." : (
+                        <>
+                          <Save className="w-3 h-3 mr-1" /> Save
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEditCancel}
+                      disabled={editLoading}
+                      className="h-7 text-xs bg-design-gray-900 border-design-gray-800 text-design-gray-400 hover:text-design-gray-100"
+                    >
+                      <XIcon className="w-3 h-3 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+                
+                {editError && (
+                  <div className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded p-2">
+                    {editError}
+                  </div>
+                )}
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-design-gray-400 mb-1">Name</label>
+                    <Input
+                      value={editForm.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Item name"
+                      className="bg-design-gray-1100 border-design-gray-800 text-design-gray-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-design-gray-400 mb-1">Year</label>
+                    <Input
+                      value={editForm.year}
+                      onChange={(e) => handleInputChange('year', e.target.value)}
+                      placeholder="Year (e.g., 1995)"
+                      className="bg-design-gray-1100 border-design-gray-800 text-design-gray-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-design-gray-400 mb-1">Type</label>
+                    <Input
+                      value={editForm.auto_detected_type}
+                      onChange={(e) => handleInputChange('auto_detected_type', e.target.value)}
+                      placeholder="Type (e.g., song, movie, innovation)"
+                      className="bg-design-gray-1100 border-design-gray-800 text-design-gray-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs text-design-gray-400 mb-1">Description</label>
+                    <Textarea
+                      value={editForm.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Description of the item"
+                      className="bg-design-gray-1100 border-design-gray-800 text-design-gray-100"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Description */}
-            <div>
-              <h3 className="text-sm font-medium text-design-gray-300 mb-2 flex items-center">
-                <Info className="w-3 h-3 mr-1" /> Description
-              </h3>
-              <p className="text-sm text-design-gray-400 leading-relaxed">
-                {itemDetails.description || "No description available."}
-              </p>
-            </div>
+            {!isEditing && (
+              <div>
+                <h3 className="text-sm font-medium text-design-gray-300 mb-2 flex items-center">
+                  <Info className="w-3 h-3 mr-1" /> Description
+                </h3>
+                <p className="text-sm text-design-gray-400 leading-relaxed">
+                  {itemDetails.description || "No description available."}
+                </p>
+              </div>
+            )}
 
             {/* AI Content Generator */}
             <div>

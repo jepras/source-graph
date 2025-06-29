@@ -78,6 +78,10 @@ class GraphService(BaseGraphService):
         """Delete item and all its relationships"""
         return self.item_service.delete_item_completely(item_id)
 
+    def update_item(self, item_id: str, update_data: dict) -> Optional[Item]:
+        """Update an existing item with new data"""
+        return self.item_service.update_item(item_id, update_data)
+
     def merge_items(self, source_item_id: str, target_item_id: str) -> str:
         """Transfer all relationships from source to target, delete source"""
         return self.item_service.merge_items(source_item_id, target_item_id)

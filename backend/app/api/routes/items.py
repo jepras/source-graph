@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
-from app.models.item import Item, GraphResponse
+from app.models.item import Item, GraphResponse, UpdateItemRequest
 from app.services.graph.graph_service import graph_service
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -168,5 +168,31 @@ async def merge_items(source_id: str, target_id: str):
             "target_item_id": result_id,
             "message": "Items merged successfully",
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{item_id}")
+async def update_item(item_id: str, update_data: UpdateItemRequest):
+    """Update an existing item"""
+    try:
+        # Convert Pydantic model to dict, excluding None values
+        update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No valid fields to update")
+
+        updated_item = graph_service.update_item(item_id, update_dict)
+
+        if not updated_item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        return {
+            "success": True,
+            "item": updated_item,
+            "message": "Item updated successfully",
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

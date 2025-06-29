@@ -305,6 +305,25 @@ export const api = {
     return response.json();
   },
   
+  updateItem: async (itemId: string, updateData: {
+    name?: string;
+    description?: string;
+    year?: number;
+    auto_detected_type?: string;
+    confidence_score?: number;
+    verification_status?: string;
+  }): Promise<{ success: boolean; item: Item; message: string }> => {
+    const response = await fetch(`${API_BASE}/items/${itemId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+    if (!response.ok) throw new Error('Failed to update item');
+    return response.json();
+  },
+  
   getMergeCandidates: async (itemId: string): Promise<{ candidates: any[] }> => {
     const response = await fetch(`${API_BASE}/items/${itemId}/merge-candidates`);
     if (!response.ok) throw new Error('Failed to get merge candidates');

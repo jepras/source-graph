@@ -14,6 +14,15 @@ class ItemBase(BaseModel):
     )
 
 
+class UpdateItemRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    year: Optional[int] = None
+    auto_detected_type: Optional[str] = None
+    confidence_score: Optional[float] = None
+    verification_status: Optional[str] = None
+
+
 class Item(ItemBase):
     id: str
     created_at: Optional[datetime] = None
