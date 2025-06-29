@@ -54,7 +54,8 @@ export const extractNodesAndRelationships = (
     category: mainNodeCategory,
     clusters: ["Research Focus"],
     x: existingMainNode?.x,
-    y: existingMainNode?.y
+    y: existingMainNode?.y,
+    description: graphResponse.main_item.description
   });
 
   graphResponse.influences.forEach((influence) => {
@@ -68,7 +69,8 @@ export const extractNodesAndRelationships = (
         type: influence.from_item.auto_detected_type || 'unknown',
         year: influence.from_item.year,
         category: 'influence',
-        clusters: influence.clusters || []
+        clusters: influence.clusters || [],
+        description: influence.from_item.description
       });
     }
 

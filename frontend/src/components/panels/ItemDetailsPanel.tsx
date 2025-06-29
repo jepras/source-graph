@@ -226,7 +226,8 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
         type: influenceItem.auto_detected_type || 'unknown',
         year: influenceItem.year,
         category: 'influence',
-        clusters: influence.clusters || []
+        clusters: influence.clusters || [],
+        description: influenceItem.description
       };
 
       // Create a link from the influence to the current item
@@ -259,7 +260,8 @@ export const ItemDetailsPanel: React.FC<ItemDetailsPanelProps> = ({ onClose }) =
         type: influenceItem.auto_detected_type || 'unknown',
         year: influenceItem.year,
         category: 'influence',
-        clusters: influence.clusters || []
+        clusters: influence.clusters || [],
+        description: influenceItem.description
       };
 
       // Create a link from the current item to the influence

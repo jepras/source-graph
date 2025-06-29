@@ -154,7 +154,8 @@ export const useGraphOperations = () => {
           type: nodeData.item.auto_detected_type || 'unknown',
           year: nodeData.item.year,
           category: nodeData.is_center ? 'main' : 'influence',
-          clusters: clusters
+          clusters: clusters,
+          description: nodeData.item.description
         });
       });
 

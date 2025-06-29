@@ -409,7 +409,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
               <span className="text-xs text-design-gray-500">({hoveredNode.year})</span>
             </div>
             <p className="text-xs text-design-gray-400 leading-relaxed">
-              {hoveredNode.category === 'main' ? 'Main item' : 'Influence item'}
+              {hoveredNode.description || (hoveredNode.category === 'main' ? 'Main item' : 'Influence item')}
             </p>
             <div className="flex items-center space-x-2 mt-2">
               <span className="text-xs text-design-gray-500 bg-design-gray-900 px-1.5 py-0.5 rounded">

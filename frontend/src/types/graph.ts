@@ -14,6 +14,7 @@ export interface GraphNode {
     category: 'main' | 'influence';
     isSelected?: boolean;
     clusters?: string[];
+    description?: string;
   }
   
   export interface GraphLink {
