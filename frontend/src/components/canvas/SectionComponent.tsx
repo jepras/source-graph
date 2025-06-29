@@ -242,7 +242,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
                   className="w-full px-3 py-2 text-left text-sm font-medium hover:bg-design-gray-900 flex items-center gap-2 text-design-gray-300"
                 >
                   <Check className={`w-3 h-3 ${section.selectedForGraph ? 'text-design-red' : 'text-design-gray-500'}`} />
-                  Add to graph
+                  {section.selectedForGraph ? 'Remove from graph' : 'Add to graph'}
                 </button>
               )}
               

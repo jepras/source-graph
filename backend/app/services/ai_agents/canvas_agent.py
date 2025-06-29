@@ -351,7 +351,7 @@ Return the complete updated section JSON that addresses their request."""
                     title=section_data.get("title"),
                     content=section_data.get("content", ""),
                     influence_data=influence_data,
-                    selectedForGraph=section_data.get("selectedForGraph", False),
+                    selectedForGraph=section_data.get("selectedForGraph", True),
                     metadata={"createdAt": datetime.now(), "aiGenerated": True},
                 )
                 sections.append(section)

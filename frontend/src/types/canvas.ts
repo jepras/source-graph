@@ -26,7 +26,7 @@ export interface CanvasDocument {
       explanation: string;
       clusters?: string[];     // ADD this
     };
-    selectedForGraph: boolean;
+    selectedForGraph: boolean;  // Default is now true in backend
     isEditing?: boolean;
     metadata?: {
       createdAt: Date;
@@ -54,7 +54,7 @@ export interface CanvasDocument {
     sectionLoadingStates: Record<string, boolean>;
     selectedModel: string;  // User-selected model: 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai'
     activeModel: string;    // Currently active model (may differ due to fallback)
-    use_two_agent: boolean; // Use two-agent system instead of single-agent
+    use_two_agent: boolean; // Use two-agent system instead of single-agent (defaults to true)
     loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
     activityLogs: ActivityLogEntry[]; // Research activity logs
   }
@@ -73,7 +73,7 @@ export interface CanvasDocument {
     item_type?: string;
     scope?: 'highlights' | 'comprehensive';
     selected_model?: string;  // 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
-    use_two_agent?: boolean;  // Use two-agent system instead of single-agent
+    use_two_agent?: boolean;  // Use two-agent system instead of single-agent (defaults to true)
   }
   
   export interface CanvasResearchResponse {
@@ -89,7 +89,7 @@ export interface CanvasDocument {
     current_document: CanvasDocument;
     context?: Record<string, any>;
     selected_model?: string;  // 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
-    use_two_agent?: boolean;  // Use two-agent system instead of single-agent
+    use_two_agent?: boolean;  // Use two-agent system instead of single-agent (defaults to true)
   }
   
   export interface CanvasChatResponse {

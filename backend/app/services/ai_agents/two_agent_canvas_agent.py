@@ -524,7 +524,7 @@ Return the complete updated section in the exact JSON format."""
                 title=section_data.get("title"),
                 content=section_data.get("content", ""),
                 influence_data=influence_data,
-                selectedForGraph=section_data.get("selectedForGraph", False),
+                selectedForGraph=section_data.get("selectedForGraph", True),
                 isEditing=section_data.get("isEditing", False),
                 metadata=section_data.get(
                     "metadata", {"createdAt": datetime.now(), "aiGenerated": True}

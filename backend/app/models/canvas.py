@@ -11,7 +11,7 @@ class DocumentSection(BaseModel):
     title: Optional[str] = None
     content: str
     influence_data: Optional[InfluenceProposal] = None
-    selectedForGraph: bool = False
+    selectedForGraph: bool = True
     isEditing: Optional[bool] = False
     metadata: Optional[Dict[str, Any]] = None
 
@@ -35,7 +35,7 @@ class CanvasResearchRequest(BaseModel):
         None  # 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     )
     use_two_agent: Optional[bool] = (
-        False  # Use two-agent system instead of single-agent
+        True  # Use two-agent system instead of single-agent - Changed from False to True
     )
 
 
@@ -56,7 +56,7 @@ class CanvasChatRequest(BaseModel):
         None  # 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai', or 'default'
     )
     use_two_agent: Optional[bool] = (
-        False  # Use two-agent system instead of single-agent
+        True  # Use two-agent system instead of single-agent - Changed from False to True
     )
 
 
