@@ -127,3 +127,6 @@ What everything in Zelda is influenced by. With images, etc.
 
 6. 
 Rakim's influence on hip hop. Rick Rubin's on hip hop + Rock. Dre, Grandmaster Flash, Slick Rick, Public Enemy, Run DMC
+
+7.
+Killing me softly fugees -> original -> singer/songwriter who was inspired by sseing a guy perform Empty Chair live

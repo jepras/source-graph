@@ -7,7 +7,7 @@ This project aims to create a universal influence tracking system that generates
 Refer to TASKS.md and PLANNING.md for detailed setup instructions and project plans. 
 
 ## How to use this
-- Run MCPs. Open MCP servers (npm start)
+- Run MCPs. Open MCP servers (cd ../../mcp-servers/youtube-mcp-server && npm start)
 - Start & open database from Neo4j Desktop. Run queries through the browser: http://localhost:7474/browser/
 - Run backend FastAPI: cd backend python run.py
     - Go to http://localhost:8000/docs
