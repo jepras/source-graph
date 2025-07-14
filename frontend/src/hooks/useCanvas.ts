@@ -214,51 +214,45 @@ export const useCanvasOperations = () => {
           console.log('📦 Received streaming chunk:', chunk);
           
           switch (chunk.type) {
-            case 'content':
-              // Add content chunks to streaming output
-              addStreamingChunk(chunk.data);
+            case 'llm_token':
+              // Add LLM token chunks to streaming output
+              if (chunk.chunk) {
+                addStreamingChunk(chunk.chunk);
+              }
               break;
               
-            case 'stage':
-              // Update streaming stage
+            case 'stage_start':
+              // Update streaming stage when stage starts
               if (chunk.stage) {
                 setStreamingStage(chunk.stage);
                 setLoadingStage(chunk.stage as 'analyzing' | 'structuring');
               }
+              if (chunk.message) {
+                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
+              }
               break;
               
-            case 'progress':
-              // Update progress
-              if (chunk.progress !== undefined) {
-                setStreamingProgress(chunk.progress);
+            case 'stage_complete':
+              // Handle stage completion
+              if (chunk.message) {
+                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
+              }
+              break;
+              
+            case 'connected':
+            case 'agent_selected':
+              // Handle connection and agent selection messages
+              if (chunk.message) {
+                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
               }
               break;
               
             case 'complete':
-              // Handle completion
+              // Handle completion - just log it, let onComplete handle the document
               console.log('🎉 Streaming completed!');
-              setStreamingActive(false);
-              setStreamingStage(null);
-              setStreamingProgress(100);
-              setLoading(false);
-              setLoadingStage(null);
-              
-              // Add completion activity log
-              addActivityLog({
-                id: (Date.now() + 3).toString(),
-                timestamp: new Date(),
-                stage: 'complete',
-                activity: `Streaming research completed successfully`,
-                function_called: 'startResearchStreaming',
-                duration_ms: Date.now() - startTime,
-                status: 'completed'
-              });
-              
-              // Update setup log to completed
-              updateActivityLog(setupLogId, { 
-                status: 'completed', 
-                duration_ms: Date.now() - startTime 
-              });
+              if (chunk.message) {
+                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
+              }
               break;
               
             case 'error':
@@ -297,6 +291,30 @@ export const useCanvasOperations = () => {
               timestamp: new Date()
             });
           }
+          
+          // Complete the streaming process
+          setStreamingActive(false);
+          setStreamingStage(null);
+          setStreamingProgress(100);
+          setLoading(false);
+          setLoadingStage(null);
+          
+          // Add completion activity log
+          addActivityLog({
+            id: (Date.now() + 3).toString(),
+            timestamp: new Date(),
+            stage: 'complete',
+            activity: `Streaming research completed successfully`,
+            function_called: 'startResearchStreaming',
+            duration_ms: Date.now() - startTime,
+            status: 'completed'
+          });
+          
+          // Update setup log to completed
+          updateActivityLog(setupLogId, { 
+            status: 'completed', 
+            duration_ms: Date.now() - startTime 
+          });
         },
         onError: (error: string) => {
           console.error('❌ Streaming API error:', error);

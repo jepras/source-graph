@@ -48,11 +48,13 @@ export interface CanvasDocument {
   
   // Streaming types
 export interface StreamingChunk {
-  type: 'content' | 'progress' | 'stage' | 'complete' | 'error';
-  data: string;
+  type: 'llm_token' | 'stage_start' | 'stage_complete' | 'connected' | 'agent_selected' | 'complete' | 'error';
+  chunk?: string;
+  message?: string;
   stage?: string;
   progress?: number;
   error?: string;
+  document?: any;
 }
 
 export interface CanvasState {

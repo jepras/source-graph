@@ -238,7 +238,7 @@ export interface EnhancementStatus {
 // SECTION 7: CONFIGURATION
 // ============================================================================
 
-const API_BASE = 'http://localhost:8001/api';
+const API_BASE = 'http://localhost:8000/api';
 
 // ============================================================================
 // SECTION 8: CORE API OPERATIONS
@@ -425,11 +425,13 @@ export const proposalApi = {
 
 // Streaming response types
 export interface StreamingChunk {
-  type: 'content' | 'progress' | 'stage' | 'complete' | 'error';
-  data: string;
+  type: 'llm_token' | 'stage_start' | 'stage_complete' | 'connected' | 'agent_selected' | 'complete' | 'error';
+  chunk?: string;
+  message?: string;
   stage?: string;
   progress?: number;
   error?: string;
+  document?: any;
 }
 
 export interface StreamingCallbacks {
@@ -474,78 +476,72 @@ export const canvasApi = {
     },
     callbacks: StreamingCallbacks
   ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      // Build query parameters
-      const params = new URLSearchParams({
-        item_name: request.item_name,
-        use_two_agent: (request.use_two_agent ?? true).toString(),
-      });
-      
-      if (request.creator) params.append('creator', request.creator);
-      if (request.item_type) params.append('item_type', request.item_type);
-      if (request.selected_model) params.append('selected_model', request.selected_model);
-
-      const response = await fetch(`${API_BASE}/canvas/research/stream?${params}`, {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      if (!response.body) {
-        throw new Error('No response body for streaming');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
+    return new Promise((resolve) => {
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) {
-            break;
-          }
+        // Build query parameters
+        const params = new URLSearchParams({
+          item_name: request.item_name,
+          use_two_agent: (request.use_two_agent ?? true).toString(),
+        });
+        
+        if (request.creator) params.append('creator', request.creator);
+        if (request.item_type) params.append('item_type', request.item_type);
+        if (request.selected_model) params.append('selected_model', request.selected_model);
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+        // Use EventSource for native SSE support
+        const eventSource = new EventSource(`${API_BASE}/canvas/research/stream?${params}`);
 
-          for (const line of lines) {
-            if (line.trim() === '') continue;
+        eventSource.onopen = () => {
+          console.log('EventSource connection opened for streaming research');
+        };
+
+        eventSource.onmessage = (event) => {
+          try {
+            console.log('Received SSE message:', event.data);
             
-            try {
-              const data: StreamingChunk = JSON.parse(line);
-              
-              switch (data.type) {
-                case 'content':
-                case 'progress':
-                case 'stage':
-                  callbacks.onChunk?.(data);
-                  break;
-                case 'complete':
-                  callbacks.onComplete?.(data.data as any);
-                  break;
-                case 'error':
-                  callbacks.onError?.(data.error || 'Unknown error');
-                  break;
-              }
-            } catch (parseError) {
-              console.warn('Failed to parse streaming chunk:', line, parseError);
+            // EventSource automatically strips the "data: " prefix
+            const data: StreamingChunk = JSON.parse(event.data);
+            
+            switch (data.type) {
+              case 'llm_token':
+              case 'stage_start':
+              case 'stage_complete':
+              case 'connected':
+              case 'agent_selected':
+                callbacks.onChunk?.(data);
+                break;
+              case 'complete':
+                callbacks.onComplete?.(data.document as any);
+                eventSource.close();
+                resolve({ success: true });
+                break;
+              case 'error':
+                callbacks.onError?.(data.error || 'Unknown error');
+                eventSource.close();
+                resolve({ success: false, error: data.error || 'Unknown error' });
+                break;
             }
+          } catch (parseError) {
+            console.error('Error parsing SSE message:', parseError, 'Raw data:', event.data);
+            callbacks.onError?.('Failed to parse streaming data');
+            eventSource.close();
+            resolve({ success: false, error: 'Failed to parse streaming data' });
           }
-        }
-      } finally {
-        reader.releaseLock();
-      }
+        };
 
-      return { success: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      callbacks.onError?.(errorMessage);
-      return { success: false, error: errorMessage };
-    }
+        eventSource.onerror = (error) => {
+          console.error('EventSource error:', error);
+          callbacks.onError?.('Streaming connection error');
+          eventSource.close();
+          resolve({ success: false, error: 'Streaming connection error' });
+        };
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        callbacks.onError?.(errorMessage);
+        resolve({ success: false, error: errorMessage });
+      }
+    });
   },
 
   sendChatMessage: async (request: {

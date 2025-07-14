@@ -89,9 +89,9 @@ export const CanvasTab: React.FC<CanvasTabProps> = ({ onItemSaved }) => {
       </div>
 
       {/* Document Area - Scrollable */}
-      <div className="flex-1 overflow-hidden">
-        {/* Loading Overlay - ONLY for initial research, not follow-up questions */}
-        {state.loading && !state.currentDocument && (
+      <div className="flex-1 overflow-hidden relative">
+        {/* Loading Overlay - Fallback for non-streaming research */}
+        {state.loading && !state.currentDocument && !state.streamingActive && (
           <div className="absolute inset-0 bg-design-gray-950 bg-opacity-80 flex items-center justify-center z-10">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-design-red" />

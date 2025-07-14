@@ -4,6 +4,7 @@ import { Input } from '../ui/input';
 import { Send, ChevronDown, ChevronUp, Activity, Lightbulb, Loader2 } from 'lucide-react';
 import { CanvasTab } from '../canvas/CanvasTab';
 import { ChatInput } from '../canvas/ChatInput';
+import { StreamingDisplay } from '../canvas/StreamingDisplay';
 import { ConflictResolution } from '../common/ConflictResolution';
 import { useCanvas } from '../../contexts/CanvasContext';
 import { useCanvasOperations } from '../../hooks/useCanvas';
@@ -60,7 +61,7 @@ const mockAILog: AILogEntry[] = [
 
 export const ResearchPanel: React.FC<ResearchPanelProps> = ({ onItemSaved }) => {
   const { state, clearCanvas } = useCanvas();
-  const { startResearch, sendChatMessage } = useCanvasOperations();
+  const { startResearchStreaming, sendChatMessage } = useCanvasOperations();
   const { loadItemWithAccumulation } = useGraphOperations();
   
   // Use the shared canvas save hook
@@ -124,11 +125,18 @@ Your responses should be well-structured, informative, and suitable for academic
     };
   }, []);
 
+  // Set document mode when document is ready
+  useEffect(() => {
+    if (state.currentDocument) {
+      setIsDocumentMode(true);
+    }
+  }, [state.currentDocument]);
+
   const handleChatSubmit = async (message: string) => {
     if (!state.currentDocument) {
-      // Start new research
-      await startResearch(message);
-      setIsDocumentMode(true);
+      // Start new research with streaming
+      await startResearchStreaming(message);
+      // Don't set isDocumentMode here - let it be set when document is ready
     } else {
       // Continue existing research
       await sendChatMessage(message);
@@ -237,17 +245,23 @@ Your responses should be well-structured, informative, and suitable for academic
   return (
     <div className="h-full flex flex-col bg-black overflow-hidden">
       {/* Document Area - Scrollable */}
-      <div className="flex-1 overflow-hidden">
-        {isDocumentMode ? (
+      <div className="flex-1 overflow-hidden relative">
+        {/* Streaming Display - Shows real-time AI output during streaming */}
+        {state.streamingActive && (
+          <StreamingDisplay />
+        )}
+        
+        {/* Canvas Tab - Shows when document is ready */}
+        {state.currentDocument ? (
           <CanvasTab onItemSaved={onItemSaved} />
-        ) : (
+        ) : !state.streamingActive ? (
           <div className="h-full flex items-center justify-center text-design-gray-400 p-6">
             <div className="text-center">
               <div className="text-lg font-medium mb-2 text-design-gray-300">Research Panel</div>
               <div className="text-sm">Ask a question below to start researching influences</div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Chat Input with Controls - Fixed at bottom */}
