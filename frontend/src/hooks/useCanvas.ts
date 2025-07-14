@@ -182,9 +182,19 @@ export const useCanvasOperations = () => {
           
           switch (chunk.type) {
             case 'llm_token':
-              // Add LLM token chunks to streaming output
+              // Add LLM token chunks to streaming output (only actual AI content)
               if (chunk.chunk) {
                 addStreamingChunk(chunk.chunk);
+              }
+              break;
+              
+            case 'continuous_text':
+              // Replace accumulated text for continuous display
+              if (chunk.text) {
+                // For continuous text, we want to replace the last chunk instead of adding
+                // This will be handled by clearing and adding the new text
+                // The StreamingDisplay will join all chunks into continuous text
+                addStreamingChunk(chunk.text);
               }
               break;
               
@@ -193,32 +203,29 @@ export const useCanvasOperations = () => {
               if (chunk.stage) {
                 setStreamingStage(chunk.stage);
               }
-              if (chunk.message) {
-                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
+              if (chunk.progress !== undefined) {
+                setStreamingProgress(chunk.progress);
               }
+              // Don't add stage_start messages to streaming output - they're handled by the UI
               break;
               
             case 'stage_complete':
               // Handle stage completion
-              if (chunk.message) {
-                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
+              if (chunk.progress !== undefined) {
+                setStreamingProgress(chunk.progress);
               }
+              // Don't add stage_complete messages to streaming output - they're handled by the UI
               break;
               
             case 'connected':
             case 'agent_selected':
-              // Handle connection and agent selection messages
-              if (chunk.message) {
-                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
-              }
+              // Handle connection and agent selection messages (don't show in streaming output)
               break;
               
             case 'complete':
               // Handle completion - just log it, let onComplete handle the document
               console.log('🎉 Streaming completed!');
-              if (chunk.message) {
-                addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
-              }
+              // Don't add completion message to streaming output
               break;
               
             case 'error':

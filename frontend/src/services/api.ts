@@ -425,8 +425,9 @@ export const proposalApi = {
 
 // Streaming response types
 export interface StreamingChunk {
-  type: 'llm_token' | 'stage_start' | 'stage_complete' | 'connected' | 'agent_selected' | 'complete' | 'error';
+  type: 'llm_token' | 'stage_start' | 'stage_complete' | 'connected' | 'agent_selected' | 'complete' | 'error' | 'continuous_text';
   chunk?: string;
+  text?: string;
   message?: string;
   stage?: string;
   progress?: number;

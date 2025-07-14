@@ -143,22 +143,49 @@ Convert this into the exact JSON structure required."""
                         "type": "stage_start",
                         "stage": "analyzing",
                         "message": "Agent 1: Starting cultural forensics analysis...",
+                        "progress": 10,
                     }
                 )
 
             prompt1 = self.create_prompt(CANVAS_FREE_FORM_PROMPT, human_message)
 
-            # Stream Agent 1's response
+            # Stream Agent 1's response with continuous text display
             free_form_response = ""
+            accumulated_text = ""
+
             async for chunk in self.stream_invoke(prompt1, {}, stream_callback):
                 free_form_response += chunk
+                accumulated_text += chunk
+
+                # Send continuous text update every few chunks
+                if len(accumulated_text) >= 50 or chunk.endswith((".", "!", "?", "\n")):
+                    if stream_callback:
+                        stream_callback(
+                            {
+                                "type": "continuous_text",
+                                "text": accumulated_text,
+                                "stage": "analyzing",
+                            }
+                        )
+                    accumulated_text = ""
+
+            # Send final accumulated text
+            if accumulated_text and stream_callback:
+                stream_callback(
+                    {
+                        "type": "continuous_text",
+                        "text": accumulated_text,
+                        "stage": "analyzing",
+                    }
+                )
 
             if stream_callback:
                 stream_callback(
                     {
                         "type": "stage_complete",
                         "stage": "analyzing",
-                        "message": "Agent 1: Cultural analysis complete",
+                        "message": "Agent 1: Finalised research",
+                        "progress": 50,
                     }
                 )
 
@@ -168,7 +195,8 @@ Convert this into the exact JSON structure required."""
                     {
                         "type": "stage_start",
                         "stage": "structuring",
-                        "message": "Agent 2: Structuring analysis into organized sections...",
+                        "message": "Agent 2: Structuring the research...",
+                        "progress": 60,
                     }
                 )
 
@@ -195,7 +223,8 @@ Convert this into the exact JSON structure required."""
                     {
                         "type": "stage_complete",
                         "stage": "structuring",
-                        "message": "Agent 2: Structuring complete",
+                        "message": "Agent 2: Structuring done",
+                        "progress": 90,
                     }
                 )
 
@@ -232,6 +261,7 @@ Convert this into the exact JSON structure required."""
                         "type": "complete",
                         "message": "Research complete! Document ready.",
                         "document": document_dict,
+                        "progress": 100,
                     }
                 )
 
