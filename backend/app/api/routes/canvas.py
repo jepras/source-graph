@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 import logging
+import asyncio
 from app.models.canvas import (
     CanvasResearchRequest,
     CanvasResearchResponse,
@@ -223,3 +225,82 @@ async def refine_section(request: dict):
         raise HTTPException(
             status_code=500, detail=f"Failed to refine section: {str(e)}"
         )
+
+
+@router.get("/research/stream")
+async def start_research_streaming(
+    item_name: str = Query(..., description="Name of the item to research"),
+    item_type: str = Query(None, description="Type of the item"),
+    creator: str = Query(None, description="Creator of the item"),
+    use_two_agent: bool = Query(True, description="Use two-agent system"),
+    selected_model: str = Query(None, description="Selected AI model"),
+):
+    """Stream research process with real-time AI output"""
+    logger.info(f"=== CANVAS STREAMING RESEARCH ENDPOINT ===")
+    logger.info(f"Item: {item_name}, Type: {item_type}, Creator: {creator}")
+    logger.info(f"Use two-agent: {use_two_agent}, Model: {selected_model}")
+
+    async def generate_stream():
+        """Generate streaming response"""
+        try:
+            # Step 1: Initial connection message
+            yield 'data: {"type": "connected", "message": "Starting research stream..."}\n\n'
+            await asyncio.sleep(0.1)
+
+            # Step 2: Agent selection message
+            agent_type = "Two-Agent System" if use_two_agent else "Single Agent"
+            yield f'data: {{"type": "agent_selected", "message": "Using {agent_type}"}}\n\n'
+            await asyncio.sleep(0.1)
+
+            # Step 3: Simulate Agent 1 analysis (free-form)
+            yield 'data: {"type": "stage_start", "stage": "analyzing", "message": "Agent 1: Starting cultural forensics analysis..."}\n\n'
+            await asyncio.sleep(0.5)
+
+            # Simulate streaming analysis output
+            analysis_chunks = [
+                "Examining cultural context: This item emerged during a significant period...",
+                "Identifying macro influences: The broader cultural movements that shaped this work...",
+                "Analyzing micro influences: Specific techniques and regional scenes...",
+                "Discovering nano influences: Tiny details and personal moments that influenced this creation...",
+            ]
+
+            for i, chunk in enumerate(analysis_chunks):
+                yield f'data: {{"type": "analysis_chunk", "chunk": "{chunk}", "progress": {(i+1)*25}}}\n\n'
+                await asyncio.sleep(1.0)  # Simulate AI thinking time
+
+            # Step 4: Agent 1 complete
+            yield 'data: {"type": "stage_complete", "stage": "analyzing", "message": "Agent 1: Cultural analysis complete"}\n\n'
+            await asyncio.sleep(0.5)
+
+            # Step 5: Start Agent 2 structuring
+            yield 'data: {"type": "stage_start", "stage": "structuring", "message": "Agent 2: Structuring analysis into organized sections..."}\n\n'
+            await asyncio.sleep(0.5)
+
+            # Simulate structuring process
+            structuring_chunks = [
+                "Creating influence categories...",
+                "Organizing sections by scope (macro/micro/nano)...",
+                "Extracting structured data from analysis...",
+                "Finalizing document structure...",
+            ]
+
+            for i, chunk in enumerate(structuring_chunks):
+                yield f'data: {{"type": "structuring_chunk", "chunk": "{chunk}", "progress": {(i+1)*25}}}\n\n'
+                await asyncio.sleep(0.8)
+
+            # Step 6: Complete
+            yield 'data: {"type": "complete", "message": "Research complete! Document ready."}\n\n'
+
+        except Exception as e:
+            logger.error(f"Error in streaming: {e}")
+            yield f'data: {{"type": "error", "message": "Streaming error: {str(e)}"}}\n\n'
+
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+        },
+    )

@@ -2,10 +2,47 @@ from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_perplexity import ChatPerplexity
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.callbacks import BaseCallbackHandler
 from app.config import settings
 import logging
+import json
 
 logger = logging.getLogger(__name__)
+
+
+class StreamingCallbackHandler(BaseCallbackHandler):
+    """Callback handler for streaming LLM responses"""
+
+    def __init__(self, stream_callback=None):
+        self.stream_callback = stream_callback
+        self.current_chunk = ""
+
+    def on_llm_start(self, serialized, prompts, **kwargs):
+        """Called when LLM starts"""
+        if self.stream_callback:
+            self.stream_callback(
+                {"type": "llm_start", "message": "AI agent starting analysis..."}
+            )
+
+    def on_llm_new_token(self, token, **kwargs):
+        """Called for each new token"""
+        if self.stream_callback:
+            self.current_chunk += token
+            # Send chunk every few tokens to avoid too many small updates
+            if len(self.current_chunk) >= 10 or token.endswith((".", "!", "?", "\n")):
+                self.stream_callback({"type": "llm_token", "chunk": self.current_chunk})
+                self.current_chunk = ""
+
+    def on_llm_end(self, response, **kwargs):
+        """Called when LLM finishes"""
+        # Send any remaining chunk
+        if self.current_chunk and self.stream_callback:
+            self.stream_callback(
+                {"type": "llm_token", "chunk": self.current_chunk, "token": ""}
+            )
+
+        if self.stream_callback:
+            self.stream_callback({"type": "llm_end", "message": "Analysis complete"})
 
 
 class BaseAgent:
@@ -106,6 +143,44 @@ class BaseAgent:
                 chain = prompt | self.llm
                 response = await chain.ainvoke(input_data)
                 return response.content
+            else:
+                raise e
+
+    async def stream_invoke(
+        self, prompt: ChatPromptTemplate, input_data: dict, stream_callback=None
+    ):
+        """Stream invoke the LLM with the given prompt and data"""
+        try:
+            # Create streaming callback handler
+            callbacks = (
+                [StreamingCallbackHandler(stream_callback)] if stream_callback else []
+            )
+
+            # Create chain with callbacks
+            chain = prompt | self.llm
+
+            # Use astream for streaming - only yield content, let callback handle events
+            async for chunk in chain.astream(
+                input_data, config={"callbacks": callbacks}
+            ):
+                content = chunk.content if hasattr(chunk, "content") else str(chunk)
+                yield content
+
+        except Exception as e:
+            logger.error(f"Error streaming invoke {self.active_model}: {e}")
+            if stream_callback:
+                stream_callback(
+                    {"type": "error", "message": f"Streaming error: {str(e)}"}
+                )
+
+            # Try fallback if not already using fallback
+            if self.active_model != settings.FALLBACK_MODEL:
+                logger.info(f"Falling back to {settings.FALLBACK_MODEL}")
+                self.set_model(settings.FALLBACK_MODEL)
+                async for chunk in self.stream_invoke(
+                    prompt, input_data, stream_callback
+                ):
+                    yield chunk
             else:
                 raise e
 
