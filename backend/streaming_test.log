@@ -1,0 +1,172 @@
+data: {"type": "connected", "message": "Starting research stream..."}
+
+data: {"type": "agent_selected", "message": "Using Two-Agent System"}
+
+data: {"type": "stage_start", "stage": "analyzing", "message": "Agent 1: Starting cultural forensics analysis..."}
+
+data: {"type": "llm_start", "message": "AI agent starting analysis..."}
+
+data: {"type": "llm_token", "chunk": "*   *Neuromancer* by William Gibson (1984): Established the foundational"}
+
+data: {"type": "llm_token", "chunk": " literary blueprint for the cyberpunk genre, introducing concepts like \"cyberspace\" as a consensual hallucination, the idea of \"jacking in\" to a virtual reality, and the aesthetic of a high-tech, low-life dystopian future with powerful"}
+
+data: {"type": "llm_token", "chunk": " AI entities.\n*   *Ghost in the Shell* (1995, Mamoru Oshii film): Provided significant visual and thematic inspiration, including the iconic \"digital rain\" opening credits, the philosophical exploration of identity and consciousness in a networked"}
+
+data: {"type": "llm_token", "chunk": " world, and specific action sequence choreography, such as the \"invisible\" combat and rooftop chases.\n*   *Dark City* (1998, Alex Proyas film): Shared a striking conceptual similarity with *The Matrix*, featuring a protagonist who"}
+
+data: {"type": "llm_token", "chunk": " discovers his reality is an artificial construct controlled by shadowy, powerful beings, and a visually oppressive, perpetually night-time urban environment. The Wachowskis even hired some of the same production designers.\n*   Plato's Allegory of"}
+
+data: {"type": "llm_token", "chunk": " the Cave: Formed the primary philosophical backbone, presenting the core metaphor of humanity being unknowingly trapped in an illusory reality, mistaking shadows for truth, and the challenging journey of a \"freed\" individual to perceive and return to the true, external"}
+
+data: {"type": "llm_token", "chunk": " world.\n*   Jean Baudrillard's *Simulacra and Simulation* (1981): Directly referenced in the film (Neo hides his hacking programs inside a hollowed-out copy of the book). Its"}
+
+data: {"type": "llm_token", "chunk": " theories on hyperreality, where simulations become more real than reality itself, and the loss of the distinction between the two, are central to the film's narrative and philosophical premise.\n*   Hong Kong Action Cinema (specifically the works of John Woo and the choreography"}
+
+data: {"type": "llm_token", "chunk": " of Yuen Woo-ping): Revolutionized the film's action sequences, introducing highly stylized \"gun-fu\" (balletic gunfights), slow-motion bullet effects, and the \"wire-fu\" martial arts choreography, directly"}
+
+data: {"type": "llm_token", "chunk": " leading to the hiring of Yuen Woo-ping as the film's fight choreographer.\n*   Gnosticism: Provided a significant theological framework, portraying the Matrix as a false, material world created by a deceptive, lesser entity (the Machines/Architect)"}
+
+data: {"type": "llm_token", "chunk": " that traps human souls, and Neo as a messianic figure with a \"spark\" of divine knowledge (gnosis) destined to awaken humanity to a true, hidden reality.\n*   Buddhism: Influenced the film's"}
+
+data: {"type": "llm_token", "chunk": " themes of illusion (Maya), the path to enlightenment through understanding and transcending the perceived world, and the concept of \"no-mind\" or extreme focus that allows characters like Neo to defy the Matrix's rules, akin to achieving a higher"}
+
+data: {"type": "llm_token", "chunk": " state of consciousness.\n*   *The Invisibles* by Grant Morrison (1994-2000 comic series): Explored similar themes of a gnostic rebellion against an unseen, oppressive control system, the nature of reality"}
+
+data: {"type": "llm_token", "chunk": " as a malleable construct, and a chosen \"messiah\" figure leading a small group of rebels to free humanity from psychic slavery.\n*   *Akira* (1988, Katsuhiro Otomo film): Contributed to the kinetic energy and"}
+
+data: {"type": "llm_token", "chunk": " scale of the action, the depiction of urban decay, and the concept of an individual gaining immense, reality-bending powers through a connection to a vast, unseen energy source.\n*   Lewis Carroll's *Alice's Adventures in Wonderland* ("}
+
+data: {"type": "llm_token", "chunk": "1865): Directly referenced through the instruction \"follow the white rabbit\" and the central narrative device of falling down a \"rabbit hole\" into a strange, illogical, and dangerous alternate reality.\n*   Bullet Time Photography (techn"}
+
+data: {"type": "llm_token", "chunk": "ique perfected for *The Matrix*): While not a single work, the development and pioneering use of this specific visual effects technique, involving an array of still cameras firing in sequence around a subject, created the iconic slow-motion, perspective-shifting action sequences that"}
+
+data: {"type": "llm_token", "chunk": " defined the film's visual style.\n*   *Hard Boiled* (1990, Frank Miller & Geof Darrow comic series): Geof Darrow, one of the comic's artists, served as a concept artist for *"}
+
+data: {"type": "llm_token", "chunk": "The Matrix*, and his distinctive, hyper-detailed, mechanical, and often grotesque style heavily influenced the design of the Machines, the Sentinels, and the overall aesthetic of the \"real world.\"\n*   *Blade Runner* (1982"}
+
+data: {"type": "llm_token", "chunk": ", Ridley Scott film): Contributed to the film's dark, dystopian, perpetually rainy urban aesthetic, the exploration of artificial intelligence and what it means to be human, and the overall mood of a technologically advanced yet decaying future.\n*   *Ninja"}
+
+data: {"type": "llm_token", "chunk": " Scroll* (1993, Yoshiaki Kawajiri film): Influenced the extreme, almost supernatural martial arts combat and the dynamic, often brutal, action choreography, particularly in the fights involving the Agents."}
+
+data: {"type": "llm_end", "message": "Analysis complete"}
+
+data: {"type": "stage_complete", "stage": "analyzing", "message": "Agent 1: Cultural analysis complete"}
+
+data: {"type": "stage_start", "stage": "structuring", "message": "Agent 2: Structuring analysis into organized sections..."}
+
+data: {"type": "llm_start", "message": "AI agent starting analysis..."}
+
+data: {"type": "llm_token", "chunk": "```json\n{\n  \"item_name\": \"The Matrix\",\n  \"item_type\": \"film\",\n  \""}
+
+data: {"type": "llm_token", "chunk": "item_year\": 1999,\n  \"item_creator\": \"The Wachowskis\",\n  \"item_description\": \"A groundbreaking sci-fi action film that redefined the genre with its philosophical depth,"}
+
+data: {"type": "llm_token", "chunk": " innovative visual effects, and revolutionary action choreography.\",\n  \"clusters\": [\n    \"Philosophical Core\",\n    \"Visual Aesthetics\",\n    \"Action Choreography\",\n    \"Narrative Blueprint\",\n    \"World-"}
+
+data: {"type": "llm_token", "chunk": "Building\",\n    \"Thematic Depth\"\n  ],\n  \"sections\": [\n    {\n      \"id\": \"intro\",\n      \"type\": \"intro\",\n      \"content\": \"Released in 1999"}
+
+data: {"type": "llm_token", "chunk": ", The Matrix exploded onto the cinematic landscape, a potent blend of philosophical inquiry, cutting-edge visual effects, and kinetic action. It wasn't just a movie; it was a cultural phenomenon that challenged perceptions of reality and redefined what science"}
+
+data: {"type": "llm_token", "chunk": " fiction cinema could be, drawing deeply from a diverse well of influences spanning ancient philosophy to contemporary anime and literature.\",\n      \"selectedForGraph\": false\n    },\n    {\n      \"id\": \"influence-1\",\n      \""}
+
+data: {"type": "llm_token", "chunk": "type\": \"influence-item\",\n      \"content\": \"William Gibson's seminal 1984 novel, *Neuromancer*, laid the essential groundwork for the cyberpunk genre, establishing a dystopian future where humanity interacts with vast"}
+
+data: {"type": "llm_token", "chunk": ", immersive digital realms. The Matrix directly inherited and visually realized many of Gibson's core concepts, from the very idea of 'cyberspace' as a shared hallucination to the act of 'jacking in' to a virtual world, providing"}
+
+data: {"type": "llm_token", "chunk": " a crucial literary blueprint for the film's narrative and aesthetic.\",\n      \"influence_data\": {\n        \"name\": \"Neuromancer by William Gibson\",\n        \"type\": \"influence\",\n        \"creator_name\": \"William Gibson\","}
+
+data: {"type": "llm_token", "chunk": "\n        \"creator_type\": \"person\",\n        \"year\": 1984,\n        \"category\": \"Cyberpunk Literary Foundation\",\n        \"scope\": \"macro\",\n        \"influence_type\": \""}
+
+data: {"type": "llm_token", "chunk": "conceptual_framework\",\n        \"confidence\": 0.9,\n        \"explanation\": \"Established the foundational literary blueprint for the cyberpunk genre, introducing concepts like 'cyberspace' as a consensual hallucination, the idea of 'jacking in'"}
+
+data: {"type": "llm_token", "chunk": " to a virtual reality, and the aesthetic of a high-tech, low-life dystopian future with powerful AI entities.\",\n        \"clusters\": [\n          \"Narrative Blueprint\",\n          \"World-Building\"\n        ]"}
+
+data: {"type": "llm_token", "chunk": "      },\n      \"selectedForGraph\": true\n    },\n    {\n      \"id\": \"influence-2\",\n      \"type\": \"influence-item\",\n      \"content\": \"Mamoru Oshii's "}
+
+data: {"type": "llm_token", "chunk": "1995 anime film *Ghost in the Shell* served as a profound visual and thematic wellspring for The Matrix. From its iconic 'digital rain' opening credits to its deep philosophical dives into identity and consciousness within a networked world, the anime"}
+
+data: {"type": "llm_token", "chunk": "'s influence is undeniable. Even specific action sequences, such as the 'invisible' combat and rooftop chases, found their echoes in the live-action masterpiece.\",\n      \"influence_data\": {\n        \"name\": \"Ghost in the Shell (1"}
+
+data: {"type": "llm_token", "chunk": "995 film)\",\n        \"type\": \"influence\",\n        \"creator_name\": \"Mamoru Oshii\",\n        \"creator_type\": \"person\",\n        \"year\": 1995,"}
+
+data: {"type": "llm_token", "chunk": "        \"category\": \"Anime Visual & Thematic Precedent\",\n        \"scope\": \"micro\",\n        \"influence_type\": \"visual_and_thematic_inspiration\",\n        \"confidence\": 0.9,"}
+
+data: {"type": "llm_token", "chunk": "        \"explanation\": \"Provided significant visual and thematic inspiration, including the iconic 'digital rain' opening credits, the philosophical exploration of identity and consciousness in a networked world, and specific action sequence choreography, such as the 'invisible' combat and"}
+
+data: {"type": "llm_token", "chunk": " rooftop chases.\",\n        \"clusters\": [\n          \"Visual Aesthetics\",\n          \"Philosophical Depth\",\n          \"Action Choreography\"\n        ]\n      },\n      \"selectedForGraph\": true\n    },"}
+
+data: {"type": "llm_token", "chunk": "    {\n      \"id\": \"influence-3\",\n      \"type\": \"influence-item\",\n      \"content\": \"The ancient Greek philosopher Plato's 'Allegory of the Cave,' penned around 380 BCE"}
+
+data: {"type": "llm_token", "chunk": ", forms the bedrock of The Matrix's central metaphor. This enduring philosophical concept, depicting prisoners mistaking shadows for reality, directly parallels humanity's unwitting entrapment within the Matrix. The film's narrative journey, particularly Neo's awakening"}
+
+data: {"type": "llm_token", "chunk": " and struggle to perceive a deeper truth, is a modern reinterpretation of Plato's profound exploration of perception versus reality.\",\n      \"influence_data\": {\n        \"name\": \"Plato's Allegory of the Cave\",\n        \"type"}
+
+data: {"type": "llm_token", "chunk": "\": \"influence\",\n        \"creator_name\": \"Plato\",\n        \"creator_type\": \"person\",\n        \"year\": -380,\n        \"category\": \"Ancient Philosophical Metaphor\",\n        \""}
+
+data: {"type": "llm_token", "chunk": "scope\": \"macro\",\n        \"influence_type\": \"philosophical_framework\",\n        \"confidence\": 0.85,\n        \"explanation\": \"Formed the primary philosophical backbone, presenting the core metaphor of humanity being unknowingly trapped in an"}
+
+data: {"type": "llm_token", "chunk": " illusory reality, mistaking shadows for truth, and the challenging journey of a 'freed' individual to perceive and return to the true, external world.\",\n        \"clusters\": [\n          \"Philosophical Core\",\n          \""}
+
+data: {"type": "llm_token", "chunk": "Narrative Structure\"\n        ]\n      },\n      \"selectedForGraph\": true\n    },\n    {\n      \"id\": \"influence-4\",\n      \"type\": \"influence-item\",\n      \"content"}
+
+data: {"type": "llm_token", "chunk": "\": \"Jean Baudrillard's 1981 philosophical treatise, *Simulacra and Simulation*, is not just an influence; it's explicitly referenced in The Matrix, with Neo hiding his hacking programs inside a hollowed"}
+
+data: {"type": "llm_token", "chunk": "-out copy of the book. Baudrillard's theories on 'hyperreality'\u2014where simulations become more real than reality itself\u2014are central to the film's narrative and its profound questioning of authenticity, blurring the lines between the genuine"}
+
+data: {"type": "llm_token", "chunk": " and the fabricated.\",\n      \"influence_data\": {\n        \"name\": \"Simulacra and Simulation by Jean Baudrillard\",\n        \"type\": \"influence\",\n        \"creator_name\": \"Jean Baudrillard\","}
+
+data: {"type": "llm_token", "chunk": "\n        \"creator_type\": \"person\",\n        \"year\": 1981,\n        \"category\": \"Postmodern Philosophical Theory\",\n        \"scope\": \"micro\",\n        \"influence_type\": \""}
+
+data: {"type": "llm_token", "chunk": "direct_thematic_inspiration\",\n        \"confidence\": 0.9,\n        \"explanation\": \"Directly referenced in the film (Neo hides his hacking programs inside a hollowed-out copy of the book). Its theories"}
+
+data: {"type": "llm_token", "chunk": " on hyperreality, where simulations become more real than reality itself, and the loss of the distinction between the two, are central to the film's narrative and philosophical premise.\",\n        \"clusters\": [\n          \"Narrative Premise"}
+
+data: {"type": "llm_token", "chunk": "\",\n          \"Philosophical Depth\"\n        ]\n      },\n      \"selectedForGraph\": true\n    },\n    {\n      \"id\": \"influence-5\",\n      \"type\": \"influence-item\",\n      \"content"}
+
+data: {"type": "llm_token", "chunk": "\": \"The revolutionary action sequences of The Matrix owe an immense debt to Hong Kong Action Cinema, particularly the works of directors like John Woo and the innovative choreography of Yuen Woo-ping. The film's signature 'gun-fu' ("}
+
+data: {"type": "llm_token", "chunk": "balletic gunfights), slow-motion bullet effects, and gravity-defying 'wire-fu' martial arts were direct imports from this vibrant cinematic tradition, leading to the pivotal decision to hire Yuen Woo-ping himself as the film"}
+
+data: {"type": "llm_token", "chunk": "'s fight choreographer, fundamentally reshaping Hollywood action.\",\n      \"influence_data\": {\n        \"name\": \"Hong Kong Action Cinema (e.g., John Woo, Yuen Woo-ping)\",\n        \"type\": \"influence\",\n        "}
+
+data: {"type": "llm_token", "chunk": "\"creator_name\": null,\n        \"creator_type\": null,\n        \"year\": 1990,\n        \"category\": \"Stylized Action Choreography\",\n        \"scope\": \"macro\",\n        \"influence"}
+
+data: {"type": "llm_token", "chunk": "_type\": \"production_technique_and_style\",\n        \"confidence\": 0.85,\n        \"explanation\": \"Revolutionized the film's action sequences, introducing highly stylized 'gun-fu' (balletic gunf"}
+
+data: {"type": "llm_token", "chunk": "ights), slow-motion bullet effects, and the 'wire-fu' martial arts choreography, directly leading to the hiring of Yuen Woo-ping as the film's fight choreographer.\",\n        \"clusters\": [\n          \"Action"}
+
+data: {"type": "llm_token", "chunk": " Choreography\",\n          \"Visual Style\"\n        ]\n      },\n      \"selectedForGraph\": true\n    },\n    {\n      \"id\": \"influence-6\",\n      \"type\": \"influence-item\",\n      \"content"}
+
+data: {"type": "llm_token", "chunk": "\": \"Alex Proyas's 1998 film *Dark City* shared a striking conceptual and visual kinship with The Matrix, released just a year later. Both films feature protagonists who awaken to discover their reality is an artificial construct"}
+
+data: {"type": "llm_token", "chunk": " controlled by shadowy, powerful beings. The visually oppressive, perpetually night-time urban environment and the shared sense of existential dread were so similar that The Wachowskis even hired some of the same production designers, underscoring a common creative"}
+
+data: {"type": "llm_token", "chunk": " zeitgeist.\",\n      \"influence_data\": {\n        \"name\": \"Dark City (1998 film)\",\n        \"type\": \"influence\",\n        \"creator_name\": \"Alex Proyas\",\n        \""}
+
+data: {"type": "llm_token", "chunk": "creator_type\": \"person\",\n        \"year\": 1998,\n        \"category\": \"Neo-Noir Sci-Fi Cinema\",\n        \"scope\": \"micro\",\n        \"influence_type\": \""}
+
+data: {"type": "llm_token", "chunk": "conceptual_and_visual_parallel\",\n        \"confidence\": 0.8,\n        \"explanation\": \"Shared a striking conceptual similarity with The Matrix, featuring a protagonist who discovers his reality is an artificial construct controlled by shadowy, powerful"}
+
+data: {"type": "llm_token", "chunk": " beings, and a visually oppressive, perpetually night-time urban environment. The Wachowskis even hired some of the same production designers.\",\n        \"clusters\": [\n          \"Conceptual Parallel\",\n          \"Visual Aesthetics\",\n          "}
+
+data: {"type": "llm_token", "chunk": "\"Production Design\"\n        ]\n      },\n      \"selectedForGraph\": true\n    },\n    {\n      \"id\": \"influence-7\",\n      \"type\": \"influence-item\",\n      \"content"}
+
+data: {"type": "llm_token", "chunk": "\": \"The Matrix weaves a rich tapestry of spiritual and philosophical ideas, drawing significantly from ancient Gnosticism and Buddhist philosophy. Gnosticism provides the framework of a false material world (the Matrix) created by a deceptive entity, trapping human souls"}
+
+data: {"type": "llm_token", "chunk": ", with Neo as a messianic figure possessing 'gnosis' (divine knowledge) to awaken humanity. Buddhism contributes themes of illusion (Maya), the path to enlightenment through transcending perceived reality, and the concept of 'no-mind"}
+
+data: {"type": "llm_token", "chunk": "' or extreme focus that allows characters to defy the Matrix's rules, embodying a higher state of consciousness.\",\n      \"influence_data\": {\n        \"name\": \"Gnosticism and Buddhist Philosophy\",\n        \"type\": \"influence\",\n        "}
+
+data: {"type": "llm_token", "chunk": "\"creator_name\": null,\n        \"creator_type\": null,\n        \"year\": -100,\n        \"category\": \"Ancient Spiritual & Philosophical Frameworks\",\n        \"scope\": \"macro\","}
+
+data: {"type": "llm_token", "chunk": "        \"influence_type\": \"thematic_and_symbolic_inspiration\",\n        \"confidence\": 0.75,\n        \"explanation\": \"Provided significant theological and philosophical frameworks, portraying the Matrix as a false,"}
+
+data: {"type": "llm_token", "chunk": " material world created by a deceptive, lesser entity that traps human souls, and Neo as a messianic figure with a 'spark' of divine knowledge. Also influenced themes of illusion, enlightenment, and 'no-mind' through Buddhist concepts.\",\n        \"clusters"}
+
+data: {"type": "llm_token", "chunk": "\": [\n          \"Thematic Depth\",\n          \"Character Archetypes\",\n          \"Narrative Purpose\"\n        ]\n      },\n      \"selectedForGraph\": true\n    }\n  ]\n}\n```"}
+
+data: {"type": "llm_end", "message": "Analysis complete"}
+
+data: {"type": "stage_complete", "stage": "structuring", "message": "Agent 2: Structuring complete"}
+
+data: {"type": "complete", "message": "Research complete! Document ready."}
+

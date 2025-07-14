@@ -240,6 +240,8 @@ async def start_research_streaming(
     logger.info(f"=== CANVAS STREAMING RESEARCH ENDPOINT ===")
     logger.info(f"Item: {item_name}, Type: {item_type}, Creator: {creator}")
     logger.info(f"Use two-agent: {use_two_agent}, Model: {selected_model}")
+    logger.info(f"Item: {item_name}, Type: {item_type}, Creator: {creator}")
+    logger.info(f"Use two-agent: {use_two_agent}, Model: {selected_model}")
 
     async def generate_stream():
         """Generate streaming response using real AI agents"""

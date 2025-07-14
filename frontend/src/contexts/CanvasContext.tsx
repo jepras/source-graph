@@ -19,7 +19,13 @@ type CanvasAction =
   | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLogEntry }
   | { type: 'UPDATE_ACTIVITY_LOG'; payload: { id: string; updates: Partial<ActivityLogEntry> } }
   | { type: 'CLEAR_ACTIVITY_LOGS' }
-  | { type: 'CLEAR_CANVAS' };
+  | { type: 'CLEAR_CANVAS' }
+  // Streaming actions
+  | { type: 'SET_STREAMING_ACTIVE'; payload: boolean }
+  | { type: 'ADD_STREAMING_CHUNK'; payload: string }
+  | { type: 'SET_STREAMING_STAGE'; payload: string | null }
+  | { type: 'SET_STREAMING_PROGRESS'; payload: number }
+  | { type: 'CLEAR_STREAMING' };
 
 // Initial State
 const initialState: CanvasState = {
@@ -33,6 +39,11 @@ const initialState: CanvasState = {
   use_two_agent: true,         // Use two-agent system instead of single-agent
   loading_stage: null,          // 'analyzing' | 'structuring' | null
   activityLogs: [],             // Research activity logs
+  // Streaming state
+  streamingActive: false,       // Whether streaming is currently active
+  streamingOutput: [],          // Array of streaming chunks received
+  streamingStage: null,         // Current streaming stage
+  streamingProgress: 0,         // Progress percentage (0-100)
 };
 
 // Reducer
@@ -157,6 +168,31 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
         activeModel: state.selectedModel
       };
     
+    // Streaming actions
+    case 'SET_STREAMING_ACTIVE':
+      return { ...state, streamingActive: action.payload };
+    
+    case 'ADD_STREAMING_CHUNK':
+      return { 
+        ...state, 
+        streamingOutput: [...state.streamingOutput, action.payload]
+      };
+    
+    case 'SET_STREAMING_STAGE':
+      return { ...state, streamingStage: action.payload };
+    
+    case 'SET_STREAMING_PROGRESS':
+      return { ...state, streamingProgress: action.payload };
+    
+    case 'CLEAR_STREAMING':
+      return { 
+        ...state, 
+        streamingActive: false,
+        streamingOutput: [],
+        streamingStage: null,
+        streamingProgress: 0
+      };
+    
     default:
       return state;
   }
@@ -183,6 +219,12 @@ interface CanvasContextType {
   updateActivityLog: (id: string, updates: Partial<ActivityLogEntry>) => void;
   clearActivityLogs: () => void;
   clearCanvas: () => void;
+  // Streaming helper functions
+  setStreamingActive: (active: boolean) => void;
+  addStreamingChunk: (chunk: string) => void;
+  setStreamingStage: (stage: string | null) => void;
+  setStreamingProgress: (progress: number) => void;
+  clearStreaming: () => void;
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
@@ -260,6 +302,27 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     dispatch({ type: 'CLEAR_CANVAS' });
   };
 
+  // Streaming helper functions
+  const setStreamingActive = (active: boolean) => {
+    dispatch({ type: 'SET_STREAMING_ACTIVE', payload: active });
+  };
+
+  const addStreamingChunk = (chunk: string) => {
+    dispatch({ type: 'ADD_STREAMING_CHUNK', payload: chunk });
+  };
+
+  const setStreamingStage = (stage: string | null) => {
+    dispatch({ type: 'SET_STREAMING_STAGE', payload: stage });
+  };
+
+  const setStreamingProgress = (progress: number) => {
+    dispatch({ type: 'SET_STREAMING_PROGRESS', payload: progress });
+  };
+
+  const clearStreaming = () => {
+    dispatch({ type: 'CLEAR_STREAMING' });
+  };
+
   const value: CanvasContextType = {
     state,
     dispatch,
@@ -278,7 +341,13 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     addActivityLog,
     updateActivityLog,
     clearActivityLogs,
-    clearCanvas
+    clearCanvas,
+    // Streaming helper functions
+    setStreamingActive,
+    addStreamingChunk,
+    setStreamingStage,
+    setStreamingProgress,
+    clearStreaming
   };
 
   return (

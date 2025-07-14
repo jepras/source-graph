@@ -423,6 +423,21 @@ export const proposalApi = {
 // SECTION 11: CANVAS API OPERATIONS
 // ============================================================================
 
+// Streaming response types
+export interface StreamingChunk {
+  type: 'content' | 'progress' | 'stage' | 'complete' | 'error';
+  data: string;
+  stage?: string;
+  progress?: number;
+  error?: string;
+}
+
+export interface StreamingCallbacks {
+  onChunk?: (chunk: StreamingChunk) => void;
+  onComplete?: (finalDocument: any) => void;
+  onError?: (error: string) => void;
+}
+
 export const canvasApi = {
   generateResearch: async (request: {
     item_name: string;
@@ -446,6 +461,91 @@ export const canvasApi = {
     });
     if (!response.ok) throw new Error('Failed to generate research');
     return response.json();
+  },
+
+  startResearchStreaming: async (
+    request: {
+      item_name: string;
+      creator?: string;
+      item_type?: string;
+      scope?: string;
+      selected_model?: string;
+      use_two_agent?: boolean;
+    },
+    callbacks: StreamingCallbacks
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        item_name: request.item_name,
+        use_two_agent: (request.use_two_agent ?? true).toString(),
+      });
+      
+      if (request.creator) params.append('creator', request.creator);
+      if (request.item_type) params.append('item_type', request.item_type);
+      if (request.selected_model) params.append('selected_model', request.selected_model);
+
+      const response = await fetch(`${API_BASE}/canvas/research/stream?${params}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body for streaming');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            
+            try {
+              const data: StreamingChunk = JSON.parse(line);
+              
+              switch (data.type) {
+                case 'content':
+                case 'progress':
+                case 'stage':
+                  callbacks.onChunk?.(data);
+                  break;
+                case 'complete':
+                  callbacks.onComplete?.(data.data as any);
+                  break;
+                case 'error':
+                  callbacks.onError?.(data.error || 'Unknown error');
+                  break;
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse streaming chunk:', line, parseError);
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      callbacks.onError?.(errorMessage);
+      return { success: false, error: errorMessage };
+    }
   },
 
   sendChatMessage: async (request: {

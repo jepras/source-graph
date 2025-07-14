@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useCanvas } from '../contexts/CanvasContext';
 import { canvasApi, proposalApi } from '../services/api';
-import type { CanvasDocument, ActivityLogEntry } from '../types/canvas';
+import type { CanvasDocument, ActivityLogEntry, StreamingChunk } from '../types/canvas';
 
 export const useCanvasOperations = () => {
   const { 
@@ -17,7 +17,13 @@ export const useCanvasOperations = () => {
     setLoadingStage,
     addActivityLog,
     updateActivityLog,
-    clearActivityLogs
+    clearActivityLogs,
+    // Streaming helper functions
+    setStreamingActive,
+    addStreamingChunk,
+    setStreamingStage,
+    setStreamingProgress,
+    clearStreaming
   } = useCanvas();
 
   const startResearch = useCallback(async (itemName: string) => {
@@ -157,6 +163,186 @@ export const useCanvasOperations = () => {
       setLoadingStage(null);
     }
   }, [setLoading, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, setLoadingStage, addActivityLog, updateActivityLog, clearActivityLogs]);
+
+  const startResearchStreaming = useCallback(async (itemName: string) => {
+    if (!itemName.trim()) {
+      setError('Please enter an item name');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    clearActivityLogs();
+    clearStreaming(); // Clear any previous streaming state
+
+    // Start streaming
+    setStreamingActive(true);
+    setStreamingStage('analyzing');
+    setStreamingProgress(0);
+
+    // Add initial activity log
+    const setupLogId = Date.now().toString();
+    addActivityLog({
+      id: setupLogId,
+      timestamp: new Date(),
+      stage: 'setup',
+      activity: `Starting streaming research for "${itemName}"`,
+      function_called: 'startResearchStreaming',
+      parameters: { item_name: itemName, model: state.selectedModel, use_two_agent: state.use_two_agent },
+      status: 'in_progress'
+    });
+
+    // Add user message to chat
+    addChatMessage({
+      id: Date.now().toString(),
+      content: itemName,
+      role: 'user',
+      timestamp: new Date()
+    });
+
+    try {
+      const startTime = Date.now();
+      
+      // Call the streaming API with callbacks
+      const result = await canvasApi.startResearchStreaming({
+        item_name: itemName,
+        scope: 'highlights',
+        selected_model: state.selectedModel,
+        use_two_agent: state.use_two_agent
+      }, {
+        onChunk: (chunk: StreamingChunk) => {
+          console.log('📦 Received streaming chunk:', chunk);
+          
+          switch (chunk.type) {
+            case 'content':
+              // Add content chunks to streaming output
+              addStreamingChunk(chunk.data);
+              break;
+              
+            case 'stage':
+              // Update streaming stage
+              if (chunk.stage) {
+                setStreamingStage(chunk.stage);
+                setLoadingStage(chunk.stage as 'analyzing' | 'structuring');
+              }
+              break;
+              
+            case 'progress':
+              // Update progress
+              if (chunk.progress !== undefined) {
+                setStreamingProgress(chunk.progress);
+              }
+              break;
+              
+            case 'complete':
+              // Handle completion
+              console.log('🎉 Streaming completed!');
+              setStreamingActive(false);
+              setStreamingStage(null);
+              setStreamingProgress(100);
+              setLoading(false);
+              setLoadingStage(null);
+              
+              // Add completion activity log
+              addActivityLog({
+                id: (Date.now() + 3).toString(),
+                timestamp: new Date(),
+                stage: 'complete',
+                activity: `Streaming research completed successfully`,
+                function_called: 'startResearchStreaming',
+                duration_ms: Date.now() - startTime,
+                status: 'completed'
+              });
+              
+              // Update setup log to completed
+              updateActivityLog(setupLogId, { 
+                status: 'completed', 
+                duration_ms: Date.now() - startTime 
+              });
+              break;
+              
+            case 'error':
+              // Handle error
+              console.error('❌ Streaming error:', chunk.error);
+              setError(chunk.error || 'Streaming error occurred');
+              setStreamingActive(false);
+              setStreamingStage(null);
+              setStreamingProgress(0);
+              setLoading(false);
+              setLoadingStage(null);
+              
+              // Add error activity log
+              addActivityLog({
+                id: (Date.now() + 4).toString(),
+                timestamp: new Date(),
+                stage: 'error',
+                activity: `Streaming research failed: ${chunk.error || 'Unknown error'}`,
+                function_called: 'startResearchStreaming',
+                status: 'failed'
+              });
+              break;
+          }
+        },
+        onComplete: (finalDocument: any) => {
+          console.log('📄 Final document received:', finalDocument);
+          
+          if (finalDocument) {
+            setDocument(finalDocument);
+            
+            // Add AI response to chat
+            addChatMessage({
+              id: (Date.now() + 1).toString(),
+              content: `I've created a research document about ${finalDocument.item_name}. You can now ask questions, refine sections, or select influences to add to the graph.`,
+              role: 'assistant',
+              timestamp: new Date()
+            });
+          }
+        },
+        onError: (error: string) => {
+          console.error('❌ Streaming API error:', error);
+          setError(error);
+          setStreamingActive(false);
+          setStreamingStage(null);
+          setStreamingProgress(0);
+          setLoading(false);
+          setLoadingStage(null);
+          
+          // Add error activity log
+          addActivityLog({
+            id: (Date.now() + 5).toString(),
+            timestamp: new Date(),
+            stage: 'error',
+            activity: `Streaming research failed: ${error}`,
+            function_called: 'startResearchStreaming',
+            status: 'failed'
+          });
+        }
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Streaming failed');
+      }
+
+    } catch (err) {
+      console.error('Streaming research error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start streaming research');
+      setStreamingActive(false);
+      setStreamingStage(null);
+      setStreamingProgress(0);
+      setLoading(false);
+      setLoadingStage(null);
+      
+      // Add error activity log
+      addActivityLog({
+        id: (Date.now() + 6).toString(),
+        timestamp: new Date(),
+        stage: 'error',
+        activity: `Streaming research failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        function_called: 'startResearchStreaming',
+        status: 'failed'
+      });
+    }
+  }, [setLoading, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, setLoadingStage, addActivityLog, updateActivityLog, clearActivityLogs, setStreamingActive, addStreamingChunk, setStreamingStage, setStreamingProgress, clearStreaming]);
 
   const sendChatMessage = useCallback(async (message: string) => {
     console.log('=== SEND CHAT MESSAGE DEBUG ===');
@@ -347,6 +533,7 @@ export const useCanvasOperations = () => {
 
   return {
     startResearch,
+    startResearchStreaming,
     sendChatMessage,
     refineSection
   };

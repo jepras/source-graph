@@ -46,18 +46,32 @@ export interface CanvasDocument {
     status: 'pending' | 'in_progress' | 'completed' | 'failed';
   }
   
-  export interface CanvasState {
-    currentDocument: CanvasDocument | null;
-    loading: boolean;
-    error: string | null;
-    chatHistory: ChatMessage[];
-    sectionLoadingStates: Record<string, boolean>;
-    selectedModel: string;  // User-selected model: 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai'
-    activeModel: string;    // Currently active model (may differ due to fallback)
-    use_two_agent: boolean; // Use two-agent system instead of single-agent (defaults to true)
-    loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
-    activityLogs: ActivityLogEntry[]; // Research activity logs
-  }
+  // Streaming types
+export interface StreamingChunk {
+  type: 'content' | 'progress' | 'stage' | 'complete' | 'error';
+  data: string;
+  stage?: string;
+  progress?: number;
+  error?: string;
+}
+
+export interface CanvasState {
+  currentDocument: CanvasDocument | null;
+  loading: boolean;
+  error: string | null;
+  chatHistory: ChatMessage[];
+  sectionLoadingStates: Record<string, boolean>;
+  selectedModel: string;  // User-selected model: 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai'
+  activeModel: string;    // Currently active model (may differ due to fallback)
+  use_two_agent: boolean; // Use two-agent system instead of single-agent (defaults to true)
+  loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
+  activityLogs: ActivityLogEntry[]; // Research activity logs
+  // Streaming state
+  streamingActive: boolean; // Whether streaming is currently active
+  streamingOutput: string[]; // Array of streaming chunks received
+  streamingStage: string | null; // Current streaming stage (e.g., 'analyzing', 'structuring')
+  streamingProgress: number; // Progress percentage (0-100)
+}
   
   export interface ChatMessage {
     id: string;

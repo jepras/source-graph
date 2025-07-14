@@ -65,79 +65,122 @@ This document tracks the step-by-step implementation of streaming AI output for 
 
 ---
 
-## 🎨 Phase 2: Frontend Streaming Display
+## 🔗 Phase 2: Backend-Frontend Connection
 
-### Step 2.1: Add Streaming State (30 min)
-- [ ] Add `streamingOutput: string[]` to CanvasContext state
-- [ ] Add `streamingActive: boolean` to track streaming status
-- [ ] Add actions: `ADD_STREAMING_CHUNK`, `CLEAR_STREAMING`, `SET_STREAMING_ACTIVE`
-- [ ] Test: Verify state updates correctly
+### Step 2.1: Add Streaming API Methods (30 min)
+- [ ] Add streaming methods to `frontend/src/services/api.ts`
+- [ ] Create `startResearchStreaming()` function using fetch with streaming
+- [ ] Handle Server-Sent Events connection
+- [ ] Parse streaming data format
+- [ ] Test: Verify API can connect to backend streaming endpoint
+
+**Files to modify:**
+- `frontend/src/services/api.ts`
+
+**Test criteria:**
+- API connects to streaming endpoint successfully
+- Can receive and parse streaming data
+- Handles connection lifecycle properly
+- Error handling works correctly
+
+---
+
+### Step 2.2: Add Streaming State Management (30 min) ✅ COMPLETED
+- [x] Add `streamingOutput: string[]` to CanvasContext state
+- [x] Add `streamingActive: boolean` to track streaming status
+- [x] Add `streamingStage: string | null` to track current stage
+- [x] Add `streamingProgress: number` to track progress percentage
+- [x] Add actions: `ADD_STREAMING_CHUNK`, `CLEAR_STREAMING`, `SET_STREAMING_ACTIVE`, `SET_STREAMING_STAGE`, `SET_STREAMING_PROGRESS`
+- [x] Add helper functions to CanvasContext
+- [x] Test: Verify state updates correctly
 
 **Files to modify:**
 - `frontend/src/contexts/CanvasContext.tsx`
 - `frontend/src/types/canvas.ts`
 
 **Test criteria:**
-- State updates when streaming chunks added
-- Streaming status tracks correctly
-- No state conflicts with existing functionality
+- ✅ State updates when streaming chunks added
+- ✅ Streaming status tracks correctly
+- ✅ Stage and progress tracking works
+- ✅ No state conflicts with existing functionality
 
 ---
 
-### Step 2.2: Create Streaming Hook (45 min)
-- [ ] Add `startResearchStreaming` method to `useCanvas.ts`
-- [ ] Handle Server-Sent Events connection
-- [ ] Parse streaming data and update state
-- [ ] Handle connection lifecycle (connect, disconnect, error)
-- [ ] Test: Verify hook connects and receives data
+### Step 2.3: Create Streaming Hook (45 min) ✅ COMPLETED
+- [x] Add `startResearchStreaming` method to `useCanvas.ts`
+- [x] Connect to streaming API methods
+- [x] Update state with streaming data
+- [x] Handle connection lifecycle (connect, disconnect, error)
+- [x] Add comprehensive error handling and activity logging
+- [x] Test: Verify hook connects and receives real backend data
 
 **Files to modify:**
 - `frontend/src/hooks/useCanvas.ts`
 
 **Test criteria:**
-- Hook connects to streaming endpoint
-- Receives and parses streaming data
-- Updates state with streaming chunks
-- Handles connection errors gracefully
+- ✅ Hook connects to backend streaming endpoint
+- ✅ Receives and parses real AI streaming data (81 chunks, 19,801 bytes)
+- ✅ Updates state with streaming chunks
+- ✅ Handles connection errors gracefully
+- ✅ Manages streaming lifecycle (start, progress, complete, error)
 
 ---
 
-### Step 2.3: Add Streaming UI Component (1 hour)
+## 🎨 Phase 3: Frontend Streaming Display
+
+### Step 3.1: Add Streaming UI Component (1 hour)
 - [ ] Create `StreamingDisplay` component
 - [ ] Show real-time AI output with typing effect
 - [ ] Add progress indicators during streaming
 - [ ] Handle transition from streaming to final document
-- [ ] Test: Verify UI updates with streaming data
+- [ ] Test: Verify UI updates with real backend streaming data
 
 **Files to create/modify:**
 - `frontend/src/components/canvas/StreamingDisplay.tsx`
 - `frontend/src/components/canvas/CanvasTab.tsx`
 
 **Test criteria:**
-- Streaming output appears immediately
+- Streaming output appears immediately with real AI data
 - Typing effect works smoothly
 - Progress indicators update correctly
 - Transitions to final document seamlessly
 
 ---
 
-## 🔗 Phase 3: Integration & Polish
+### Step 3.2: Add Progress Indicators (45 min)
+- [ ] Show progress bar during streaming
+- [ ] Add stage transitions (Agent 1 → Agent 2)
+- [ ] Display estimated time remaining
+- [ ] Add completion indicators
+- [ ] Test: Verify progress updates correctly
 
-### Step 3.1: Connect Frontend to Backend (30 min)
-- [ ] Wire up streaming hook to new backend endpoint
-- [ ] Handle connection lifecycle properly
-- [ ] Add proper error handling
-- [ ] Test: End-to-end streaming from UI to AI
+**Files to modify:**
+- `frontend/src/components/canvas/StreamingDisplay.tsx`
+- `frontend/src/contexts/CanvasContext.tsx`
+
+**Test criteria:**
+- Progress bar updates smoothly
+- Stage transitions are clear
+- Time estimates are reasonable
+- Completion is clearly indicated
+
+---
+
+### Step 3.3: Error Handling & Fallback (30 min)
+- [ ] Handle streaming failures gracefully
+- [ ] Fallback to regular loading if streaming fails
+- [ ] Add retry mechanisms
+- [ ] Test: Verify error scenarios work
 
 **Files to modify:**
 - `frontend/src/hooks/useCanvas.ts`
 - `frontend/src/components/canvas/CanvasTab.tsx`
 
 **Test criteria:**
-- Full end-to-end streaming works
-- UI shows real AI output
-- Error handling works correctly
-- Performance is acceptable
+- Streaming failures don't break the app
+- Fallback to regular loading works
+- Retry mechanisms function correctly
+- User experience remains smooth
 
 ---
 
