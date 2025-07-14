@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 import logging
 import asyncio
+from collections import deque
 from app.models.canvas import (
     CanvasResearchRequest,
     CanvasResearchResponse,
@@ -241,7 +242,7 @@ async def start_research_streaming(
     logger.info(f"Use two-agent: {use_two_agent}, Model: {selected_model}")
 
     async def generate_stream():
-        """Generate streaming response"""
+        """Generate streaming response using real AI agents"""
         try:
             # Step 1: Initial connection message
             yield 'data: {"type": "connected", "message": "Starting research stream..."}\n\n'
@@ -252,44 +253,66 @@ async def start_research_streaming(
             yield f'data: {{"type": "agent_selected", "message": "Using {agent_type}"}}\n\n'
             await asyncio.sleep(0.1)
 
-            # Step 3: Simulate Agent 1 analysis (free-form)
-            yield 'data: {"type": "stage_start", "stage": "analyzing", "message": "Agent 1: Starting cultural forensics analysis..."}\n\n'
-            await asyncio.sleep(0.5)
+            # Step 3: Use real two-agent streaming
+            if use_two_agent:
+                # Create two-agent instance
+                agent = TwoAgentCanvasAgent()
+                if selected_model and selected_model != "default":
+                    agent.set_model(selected_model)
 
-            # Simulate streaming analysis output
-            analysis_chunks = [
-                "Examining cultural context: This item emerged during a significant period...",
-                "Identifying macro influences: The broader cultural movements that shaped this work...",
-                "Analyzing micro influences: Specific techniques and regional scenes...",
-                "Discovering nano influences: Tiny details and personal moments that influenced this creation...",
-            ]
+                # Create a queue for real-time streaming
+                import json
 
-            for i, chunk in enumerate(analysis_chunks):
-                yield f'data: {{"type": "analysis_chunk", "chunk": "{chunk}", "progress": {(i+1)*25}}}\n\n'
-                await asyncio.sleep(1.0)  # Simulate AI thinking time
+                # Queue to hold streaming data
+                stream_queue = deque()
+                streaming_complete = asyncio.Event()
 
-            # Step 4: Agent 1 complete
-            yield 'data: {"type": "stage_complete", "stage": "analyzing", "message": "Agent 1: Cultural analysis complete"}\n\n'
-            await asyncio.sleep(0.5)
+                def stream_callback(data):
+                    """Callback to queue streaming data for immediate yield"""
+                    try:
+                        json_data = json.dumps(data)
+                        stream_queue.append(json_data)
+                    except Exception as e:
+                        logger.error(f"Error in stream callback: {e}")
 
-            # Step 5: Start Agent 2 structuring
-            yield 'data: {"type": "stage_start", "stage": "structuring", "message": "Agent 2: Structuring analysis into organized sections..."}\n\n'
-            await asyncio.sleep(0.5)
+                # Start the research in background
+                async def run_research():
+                    try:
+                        result = await agent.generate_research_streaming(
+                            item_name=item_name,
+                            item_type=item_type,
+                            creator=creator,
+                            scope="highlights",
+                            selected_model=selected_model,
+                            stream_callback=stream_callback,
+                        )
+                        streaming_complete.set()
+                    except Exception as e:
+                        logger.error(f"Research error: {e}")
+                        streaming_complete.set()
 
-            # Simulate structuring process
-            structuring_chunks = [
-                "Creating influence categories...",
-                "Organizing sections by scope (macro/micro/nano)...",
-                "Extracting structured data from analysis...",
-                "Finalizing document structure...",
-            ]
+                # Start research task
+                research_task = asyncio.create_task(run_research())
 
-            for i, chunk in enumerate(structuring_chunks):
-                yield f'data: {{"type": "structuring_chunk", "chunk": "{chunk}", "progress": {(i+1)*25}}}\n\n'
-                await asyncio.sleep(0.8)
+                # Stream data as it becomes available
+                while not streaming_complete.is_set() or stream_queue:
+                    if stream_queue:
+                        data = stream_queue.popleft()
+                        yield f"data: {data}\n\n"
+                    else:
+                        await asyncio.sleep(0.1)  # Small delay to avoid busy waiting
 
-            # Step 6: Complete
-            yield 'data: {"type": "complete", "message": "Research complete! Document ready."}\n\n'
+                # Wait for research to complete
+                await research_task
+
+                # Send completion message
+                yield 'data: {"type": "complete", "message": "Research complete! Document ready."}\n\n'
+
+            else:
+                # Fallback to simulated output for single agent
+                yield 'data: {"type": "stage_start", "stage": "analyzing", "message": "Single Agent: Starting analysis..."}\n\n'
+                await asyncio.sleep(2.0)
+                yield 'data: {"type": "complete", "message": "Research complete! Document ready."}\n\n'
 
         except Exception as e:
             logger.error(f"Error in streaming: {e}")

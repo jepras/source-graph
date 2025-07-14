@@ -47,12 +47,12 @@ This document tracks the step-by-step implementation of streaming AI output for 
 
 ---
 
-### Step 1.3: Modify Two-Agent for Streaming (1 hour)
-- [ ] Add streaming version of `generate_research` method
-- [ ] Stream Agent 1's free-form analysis output
-- [ ] Stream Agent 2's structured extraction output
-- [ ] Add progress callbacks between agents
-- [ ] Test: Verify both agents stream their outputs
+### Step 1.3: Modify Two-Agent for Streaming (1 hour) ✅ COMPLETED
+- [x] Add streaming version of `generate_research` method
+- [x] Stream Agent 1's free-form analysis output
+- [x] Stream Agent 2's structured extraction output
+- [x] Add progress callbacks between agents
+- [x] Test: Verify both agents stream their outputs
 
 **Files to modify:**
 - `backend/app/services/ai_agents/two_agent_canvas_agent.py`

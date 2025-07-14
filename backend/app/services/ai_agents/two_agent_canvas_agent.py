@@ -105,6 +105,129 @@ Convert this into the exact JSON structure required."""
                 error_message=f"Error in two-agent research generation: {str(e)}",
             )
 
+    async def generate_research_streaming(
+        self,
+        item_name: str,
+        item_type: str = None,
+        creator: str = None,
+        scope: str = "highlights",
+        selected_model: str = None,
+        stream_callback=None,
+    ):
+        """Generate research document using two-agent system with streaming output"""
+        logger.info(
+            f"Starting two-agent streaming research with model: {selected_model}"
+        )
+        logger.info(f"Question: {item_name}")
+
+        # Set model if specified
+        if selected_model and selected_model != "default":
+            self.set_model(selected_model)
+
+        # Build human message for Agent 1 (Cultural Forensics Analyst)
+        if creator:
+            human_message = (
+                f"Find the influences for this item: '{item_name}' by {creator}"
+            )
+        else:
+            human_message = f"Find the influences for this item: '{item_name}'"
+
+        if item_type:
+            human_message += f" ({item_type})"
+
+        try:
+            # Step 1: Agent 1 - Free-form analysis with streaming
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "stage_start",
+                        "stage": "analyzing",
+                        "message": "Agent 1: Starting cultural forensics analysis...",
+                    }
+                )
+
+            prompt1 = self.create_prompt(CANVAS_FREE_FORM_PROMPT, human_message)
+
+            # Stream Agent 1's response
+            free_form_response = ""
+            async for chunk in self.stream_invoke(prompt1, {}, stream_callback):
+                free_form_response += chunk
+
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "stage_complete",
+                        "stage": "analyzing",
+                        "message": "Agent 1: Cultural analysis complete",
+                    }
+                )
+
+            # Step 2: Agent 2 - Structured extraction with streaming
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "stage_start",
+                        "stage": "structuring",
+                        "message": "Agent 2: Structuring analysis into organized sections...",
+                    }
+                )
+
+            extraction_message = f"""Original item: {item_name}
+{item_type and f"Type: {item_type}" or ""}
+{creator and f"Creator: {creator}" or ""}
+
+Free-form analysis from Cultural Forensics Analyst:
+{free_form_response}
+
+Convert this into the exact JSON structure required."""
+
+            prompt2 = self.create_prompt(
+                CANVAS_STRUCTURED_EXTRACTION_PROMPT, extraction_message
+            )
+
+            # Stream Agent 2's response
+            structured_response = ""
+            async for chunk in self.stream_invoke(prompt2, {}, stream_callback):
+                structured_response += chunk
+
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "stage_complete",
+                        "stage": "structuring",
+                        "message": "Agent 2: Structuring complete",
+                    }
+                )
+
+            # Parse and return the final result
+            result = await self._parse_research_response(structured_response, item_name)
+
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "complete",
+                        "message": "Research complete! Document ready.",
+                        "document": result.document.dict() if result.document else None,
+                    }
+                )
+
+            return result
+
+        except Exception as e:
+            if stream_callback:
+                stream_callback(
+                    {
+                        "type": "error",
+                        "message": f"Error in streaming research: {str(e)}",
+                    }
+                )
+
+            return CanvasResearchResponse(
+                success=False,
+                document=None,
+                error_message=f"Error in two-agent streaming research: {str(e)}",
+            )
+
     async def process_chat_message(
         self,
         message: str,
