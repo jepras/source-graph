@@ -218,6 +218,10 @@ Convert this into the exact JSON structure required."""
             async for chunk in self.stream_invoke(prompt2, {}, stream_callback):
                 structured_response += chunk
 
+            logger.info("=== AGENT 2 RESPONSE ===")
+            logger.info(f"Structured response length: {len(structured_response)}")
+            logger.info(f"Structured response: {repr(structured_response)}")
+
             if stream_callback:
                 stream_callback(
                     {
@@ -230,6 +234,11 @@ Convert this into the exact JSON structure required."""
 
             # Parse and return the final result
             result = await self._parse_research_response(structured_response, item_name)
+
+            logger.info(f"=== STREAMING COMPLETION ===")
+            logger.info(f"Result success: {result.success}")
+            logger.info(f"Result document: {result.document}")
+            logger.info(f"Result error: {result.error_message}")
 
             if stream_callback:
                 # Create a JSON-serializable version of the document
@@ -255,6 +264,12 @@ Convert this into the exact JSON structure required."""
                                     metadata["lastEdited"] = metadata[
                                         "lastEdited"
                                     ].isoformat()
+
+                    logger.info(
+                        f"Document dict created successfully with {len(document_dict.get('sections', []))} sections"
+                    )
+                else:
+                    logger.error("No document in result - parsing failed")
 
                 stream_callback(
                     {
