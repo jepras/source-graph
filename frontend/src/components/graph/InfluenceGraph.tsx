@@ -221,8 +221,8 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       ? customClusters.map(c => c.name)
       : getReorderedClusters(nodes);
     
-    const padding = 80;
-    const topPadding = 150;
+    const padding = 30;
+    const topPadding = 55;
     const columnWidth = (width - 2 * padding) / clusters.length;
     
     clusters.forEach((clusterName, index) => {

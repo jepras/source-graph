@@ -213,9 +213,11 @@ Convert this into the exact JSON structure required."""
                 CANVAS_STRUCTURED_EXTRACTION_PROMPT, extraction_message
             )
 
-            # Stream Agent 2's response
+            # Stream Agent 2's response (but don't show in UI - only collect for parsing)
             structured_response = ""
-            async for chunk in self.stream_invoke(prompt2, {}, stream_callback):
+            async for chunk in self.stream_invoke(
+                prompt2, {}, None
+            ):  # No stream_callback for Agent 2
                 structured_response += chunk
 
             logger.info("=== AGENT 2 RESPONSE ===")

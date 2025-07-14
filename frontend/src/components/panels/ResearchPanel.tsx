@@ -129,6 +129,8 @@ Your responses should be well-structured, informative, and suitable for academic
   useEffect(() => {
     if (state.currentDocument) {
       setIsDocumentMode(true);
+    } else {
+      setIsDocumentMode(false);
     }
   }, [state.currentDocument]);
 

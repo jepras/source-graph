@@ -162,6 +162,7 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
   const availableWidth = width - (2 * padding);
   const columnWidth = availableWidth / clusters.length;
   const availableHeight = height - topPadding - padding;
+  const minDistance = 80; // Minimum distance between nodes to prevent overlap
 
   const reorderedClusters = clusteringMode === 'custom' && customClusters ? customClusters.map(c => c.name) : getReorderedClusters(nodes);
 
@@ -183,12 +184,43 @@ const positionClusterModeNatural = (nodes: GraphNode[], width: number, height: n
         }
     }
     
+    // Position nodes within each cluster with overlap prevention
     clusterNodes.forEach((node, nodeIndex) => {
       const yProgress = nodeIndex / Math.max(clusterNodes.length - 1, 1);
       node.y = topPadding + (yProgress * availableHeight);
       
-      const xVariation = (Math.random() - 0.5) * (columnWidth * 0.4);
-      node.x = clusterCenterX + xVariation;
+      // Try to find a non-overlapping position
+      let positioned = false;
+      const maxAttempts = 20;
+      
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        // Start with center position and add variation
+        const xVariation = (Math.random() - 0.5) * (columnWidth * 0.6);
+        const candidateX = clusterCenterX + xVariation;
+        
+        // Check if this position overlaps with already positioned nodes in this cluster
+        const hasOverlap = clusterNodes.slice(0, nodeIndex).some(other => {
+          if (!other.x || !other.y || !node.y) return false;
+          const dx = other.x - candidateX;
+          const dy = other.y - node.y;
+          return Math.sqrt(dx * dx + dy * dy) < minDistance;
+        });
+        
+        if (!hasOverlap) {
+          node.x = candidateX;
+          positioned = true;
+          break;
+        }
+      }
+      
+      // If no non-overlapping position found, use fallback positioning
+      if (!positioned) {
+        // Use systematic spacing as fallback
+        const totalInCluster = clusterNodes.length;
+        const nodeSpacing = Math.min(80, columnWidth * 0.8 / Math.max(totalInCluster, 1));
+        const startX = clusterCenterX - ((totalInCluster - 1) * nodeSpacing) / 2;
+        node.x = startX + (nodeIndex * nodeSpacing);
+      }
     });
   });
 };
