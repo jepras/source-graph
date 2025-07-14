@@ -203,11 +203,35 @@ Convert this into the exact JSON structure required."""
             result = await self._parse_research_response(structured_response, item_name)
 
             if stream_callback:
+                # Create a JSON-serializable version of the document
+                document_dict = None
+                if result.document:
+                    document_dict = result.document.dict()
+                    # Convert datetime to ISO string
+                    if document_dict.get("created_at"):
+                        document_dict["created_at"] = document_dict[
+                            "created_at"
+                        ].isoformat()
+                    # Convert datetime in metadata for each section
+                    for section in document_dict.get("sections", []):
+                        if section.get("metadata"):
+                            metadata = section["metadata"]
+                            if metadata.get("createdAt"):
+                                if hasattr(metadata["createdAt"], "isoformat"):
+                                    metadata["createdAt"] = metadata[
+                                        "createdAt"
+                                    ].isoformat()
+                            if metadata.get("lastEdited"):
+                                if hasattr(metadata["lastEdited"], "isoformat"):
+                                    metadata["lastEdited"] = metadata[
+                                        "lastEdited"
+                                    ].isoformat()
+
                 stream_callback(
                     {
                         "type": "complete",
                         "message": "Research complete! Document ready.",
-                        "document": result.document.dict() if result.document else None,
+                        "document": document_dict,
                     }
                 )
 

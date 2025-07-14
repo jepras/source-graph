@@ -289,9 +289,11 @@ async def start_research_streaming(
                             stream_callback=stream_callback,
                         )
                         streaming_complete.set()
+                        return result
                     except Exception as e:
                         logger.error(f"Research error: {e}")
                         streaming_complete.set()
+                        return None
 
                 # Start research task
                 research_task = asyncio.create_task(run_research())
@@ -305,10 +307,10 @@ async def start_research_streaming(
                         await asyncio.sleep(0.1)  # Small delay to avoid busy waiting
 
                 # Wait for research to complete
-                await research_task
+                result = await research_task
 
-                # Send completion message
-                yield 'data: {"type": "complete", "message": "Research complete! Document ready."}\n\n'
+                # The completion message with document should already be sent by the agent
+                # No need to send another completion message here
 
             else:
                 # Fallback to simulated output for single agent

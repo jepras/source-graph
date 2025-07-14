@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { useCanvas } from '../contexts/CanvasContext';
-import { canvasApi, proposalApi } from '../services/api';
-import type { CanvasDocument, ActivityLogEntry, StreamingChunk } from '../types/canvas';
+import { canvasApi } from '../services/api';
+import type { StreamingChunk } from '../types/canvas';
 
 export const useCanvasOperations = () => {
   const { 
     state, 
-    setLoading, 
+    setResearchState, 
     setError, 
     setDocument, 
     addChatMessage, 
@@ -14,12 +14,10 @@ export const useCanvasOperations = () => {
     setSectionLoading,
     addSections,
     setActiveModel,
-    setLoadingStage,
     addActivityLog,
     updateActivityLog,
     clearActivityLogs,
     // Streaming helper functions
-    setStreamingActive,
     addStreamingChunk,
     setStreamingStage,
     setStreamingProgress,
@@ -27,14 +25,19 @@ export const useCanvasOperations = () => {
   } = useCanvas();
 
   const startResearch = useCallback(async (itemName: string) => {
+    console.log('=== START RESEARCH DEBUG ===');
+    console.log('Item name:', itemName);
+    console.log('Selected model:', state.selectedModel);
+    console.log('Use two agent:', state.use_two_agent);
+    
     if (!itemName.trim()) {
       setError('Please enter an item name');
       return;
     }
 
-    setLoading(true);
+    setResearchState('streaming');
     setError(null);
-    clearActivityLogs(); // Clear previous activity logs
+    clearActivityLogs();
 
     // Add initial activity log
     const setupLogId = Date.now().toString();
@@ -47,43 +50,6 @@ export const useCanvasOperations = () => {
       parameters: { item_name: itemName, model: state.selectedModel, use_two_agent: state.use_two_agent },
       status: 'in_progress'
     });
-
-    // Set initial loading stage for two-agent system
-    if (state.use_two_agent) {
-      setLoadingStage('analyzing');
-      
-      // Add analyzing activity log
-      const analyzingLogId = (Date.now() + 1).toString();
-      addActivityLog({
-        id: analyzingLogId,
-        timestamp: new Date(),
-        stage: 'analyzing',
-        activity: 'Analyzing influences with cultural forensics',
-        function_called: 'Agent 1 - Free-form Analysis',
-        status: 'in_progress'
-      });
-      
-      // Simulate the structuring stage after a delay
-      setTimeout(() => {
-        if (state.loading) {
-          setLoadingStage('structuring');
-          
-          // Update analyzing log to completed
-          updateActivityLog(analyzingLogId, { status: 'completed' });
-          
-          // Add structuring activity log
-          const structuringLogId = (Date.now() + 2).toString();
-          addActivityLog({
-            id: structuringLogId,
-            timestamp: new Date(),
-            stage: 'structuring',
-            activity: 'Structuring analysis into organized sections',
-            function_called: 'Agent 2 - Structured Extraction',
-            status: 'in_progress'
-          });
-        }
-      }, 8000); // 8 seconds delay
-    }
 
     try {
       // Add user message to chat
@@ -133,8 +99,12 @@ export const useCanvasOperations = () => {
 
         // Update setup log to completed
         updateActivityLog(setupLogId, { status: 'completed', duration_ms: duration });
+        
+        // Set research state to complete
+        setResearchState('complete');
       } else {
         setError(response.error_message || 'Failed to generate research');
+        setResearchState('error');
         
         // Add error activity log
         addActivityLog({
@@ -148,6 +118,7 @@ export const useCanvasOperations = () => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start research');
+      setResearchState('error');
       
       // Add error activity log
       addActivityLog({
@@ -158,11 +129,8 @@ export const useCanvasOperations = () => {
         function_called: 'startResearch',
         status: 'failed'
       });
-    } finally {
-      setLoading(false);
-      setLoadingStage(null);
     }
-  }, [setLoading, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, setLoadingStage, addActivityLog, updateActivityLog, clearActivityLogs]);
+  }, [setResearchState, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, addActivityLog, updateActivityLog, clearActivityLogs]);
 
   const startResearchStreaming = useCallback(async (itemName: string) => {
     if (!itemName.trim()) {
@@ -170,13 +138,12 @@ export const useCanvasOperations = () => {
       return;
     }
 
-    setLoading(true);
+    setResearchState('streaming');
     setError(null);
     clearActivityLogs();
     clearStreaming(); // Clear any previous streaming state
 
     // Start streaming
-    setStreamingActive(true);
     setStreamingStage('analyzing');
     setStreamingProgress(0);
 
@@ -225,7 +192,6 @@ export const useCanvasOperations = () => {
               // Update streaming stage when stage starts
               if (chunk.stage) {
                 setStreamingStage(chunk.stage);
-                setLoadingStage(chunk.stage as 'analyzing' | 'structuring');
               }
               if (chunk.message) {
                 addStreamingChunk(`\n\n**${chunk.message}**\n\n`);
@@ -259,11 +225,9 @@ export const useCanvasOperations = () => {
               // Handle error
               console.error('❌ Streaming error:', chunk.error);
               setError(chunk.error || 'Streaming error occurred');
-              setStreamingActive(false);
+              setResearchState('error');
               setStreamingStage(null);
               setStreamingProgress(0);
-              setLoading(false);
-              setLoadingStage(null);
               
               // Add error activity log
               addActivityLog({
@@ -293,11 +257,9 @@ export const useCanvasOperations = () => {
           }
           
           // Complete the streaming process
-          setStreamingActive(false);
+          setResearchState('complete');
           setStreamingStage(null);
           setStreamingProgress(100);
-          setLoading(false);
-          setLoadingStage(null);
           
           // Add completion activity log
           addActivityLog({
@@ -319,11 +281,9 @@ export const useCanvasOperations = () => {
         onError: (error: string) => {
           console.error('❌ Streaming API error:', error);
           setError(error);
-          setStreamingActive(false);
+          setResearchState('error');
           setStreamingStage(null);
           setStreamingProgress(0);
-          setLoading(false);
-          setLoadingStage(null);
           
           // Add error activity log
           addActivityLog({
@@ -336,19 +296,12 @@ export const useCanvasOperations = () => {
           });
         }
       });
-
-      if (!result.success) {
-        throw new Error(result.error || 'Streaming failed');
-      }
-
     } catch (err) {
       console.error('Streaming research error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start streaming research');
-      setStreamingActive(false);
+      setResearchState('error');
       setStreamingStage(null);
       setStreamingProgress(0);
-      setLoading(false);
-      setLoadingStage(null);
       
       // Add error activity log
       addActivityLog({
@@ -360,7 +313,7 @@ export const useCanvasOperations = () => {
         status: 'failed'
       });
     }
-  }, [setLoading, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, setLoadingStage, addActivityLog, updateActivityLog, clearActivityLogs, setStreamingActive, addStreamingChunk, setStreamingStage, setStreamingProgress, clearStreaming]);
+  }, [setResearchState, setError, setDocument, addChatMessage, state.selectedModel, state.use_two_agent, setActiveModel, addActivityLog, updateActivityLog, clearActivityLogs, addStreamingChunk, setStreamingStage, setStreamingProgress, clearStreaming]);
 
   const sendChatMessage = useCallback(async (message: string) => {
     console.log('=== SEND CHAT MESSAGE DEBUG ===');
@@ -374,8 +327,8 @@ export const useCanvasOperations = () => {
       return;
     }
   
-    console.log('Setting loading to true');
-    setLoading(true);
+    console.log('Setting research state to streaming');
+    setResearchState('streaming');
     setError(null);
 
     // Add chat activity log
@@ -447,9 +400,13 @@ export const useCanvasOperations = () => {
           duration_ms: duration,
           activity: `Chat message processed successfully${response.new_sections ? ` (${response.new_sections.length} new sections)` : ''}`
         });
+        
+        // Set research state back to complete
+        setResearchState('complete');
       } else {
         console.error('API returned success: false:', response.error_message);
         setError(response.error_message || 'Failed to process message');
+        setResearchState('error');
         
         // Update chat activity log to failed
         updateActivityLog(chatLogId, { 
@@ -460,17 +417,15 @@ export const useCanvasOperations = () => {
     } catch (err) {
       console.error('Chat message error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
+      setResearchState('error');
       
       // Update chat activity log to failed
       updateActivityLog(chatLogId, { 
         status: 'failed',
         activity: `Chat message failed: ${err instanceof Error ? err.message : 'Unknown error'}`
       });
-    } finally {
-      console.log('Setting loading to false');
-      setLoading(false);
     }
-  }, [state.currentDocument, state.selectedModel, setLoading, setError, addChatMessage, addSections, updateSection, setActiveModel, addActivityLog, updateActivityLog]);
+  }, [state.currentDocument, state.selectedModel, setResearchState, setError, addChatMessage, addSections, updateSection, setActiveModel, addActivityLog, updateActivityLog]);
 
   const refineSection = useCallback(async (sectionId: string, prompt: string) => {
     if (!state.currentDocument || !prompt.trim()) return;

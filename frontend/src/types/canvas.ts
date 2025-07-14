@@ -57,19 +57,19 @@ export interface StreamingChunk {
   document?: any;
 }
 
+export type ResearchState = 'idle' | 'streaming' | 'complete' | 'error';
+
 export interface CanvasState {
   currentDocument: CanvasDocument | null;
-  loading: boolean;
+  researchState: ResearchState;
   error: string | null;
   chatHistory: ChatMessage[];
   sectionLoadingStates: Record<string, boolean>;
   selectedModel: string;  // User-selected model: 'perplexity', 'perplexity-sonar-reasoning', 'gemini-2.5-flash', 'gemini-2.5-pro', 'openai'
   activeModel: string;    // Currently active model (may differ due to fallback)
   use_two_agent: boolean; // Use two-agent system instead of single-agent (defaults to true)
-  loading_stage: 'analyzing' | 'structuring' | null; // Two-agent loading stages
   activityLogs: ActivityLogEntry[]; // Research activity logs
-  // Streaming state
-  streamingActive: boolean; // Whether streaming is currently active
+  // Streaming state (only used during streaming)
   streamingOutput: string[]; // Array of streaming chunks received
   streamingStage: string | null; // Current streaming stage (e.g., 'analyzing', 'structuring')
   streamingProgress: number; // Progress percentage (0-100)

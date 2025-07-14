@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import type { ReactNode } from 'react';
-import type { CanvasState, CanvasDocument, DocumentSection, ChatMessage, ActivityLogEntry } from '../types/canvas';
+import type { CanvasState, CanvasDocument, DocumentSection, ChatMessage, ActivityLogEntry, ResearchState } from '../types/canvas';
 
 // Canvas Actions
 type CanvasAction = 
-  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_RESEARCH_STATE'; payload: ResearchState }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_DOCUMENT'; payload: CanvasDocument | null }
   | { type: 'ADD_CHAT_MESSAGE'; payload: ChatMessage }
@@ -15,13 +15,11 @@ type CanvasAction =
   | { type: 'SET_SELECTED_MODEL'; payload: string }
   | { type: 'SET_ACTIVE_MODEL'; payload: string }
   | { type: 'SET_USE_TWO_AGENT'; payload: boolean }
-  | { type: 'SET_LOADING_STAGE'; payload: 'analyzing' | 'structuring' | null }
   | { type: 'ADD_ACTIVITY_LOG'; payload: ActivityLogEntry }
   | { type: 'UPDATE_ACTIVITY_LOG'; payload: { id: string; updates: Partial<ActivityLogEntry> } }
   | { type: 'CLEAR_ACTIVITY_LOGS' }
   | { type: 'CLEAR_CANVAS' }
   // Streaming actions
-  | { type: 'SET_STREAMING_ACTIVE'; payload: boolean }
   | { type: 'ADD_STREAMING_CHUNK'; payload: string }
   | { type: 'SET_STREAMING_STAGE'; payload: string | null }
   | { type: 'SET_STREAMING_PROGRESS'; payload: number }
@@ -30,17 +28,15 @@ type CanvasAction =
 // Initial State
 const initialState: CanvasState = {
   currentDocument: null,
-  loading: false,
+  researchState: 'idle',
   error: null,
   chatHistory: [],
   sectionLoadingStates: {},
   selectedModel: 'gemini-2.5-flash', // Default model
   activeModel: 'gemini-2.5-flash',    // Currently active model (may differ due to fallback)
   use_two_agent: true,         // Use two-agent system instead of single-agent
-  loading_stage: null,          // 'analyzing' | 'structuring' | null
   activityLogs: [],             // Research activity logs
-  // Streaming state
-  streamingActive: false,       // Whether streaming is currently active
+  // Streaming state (only used during streaming)
   streamingOutput: [],          // Array of streaming chunks received
   streamingStage: null,         // Current streaming stage
   streamingProgress: 0,         // Progress percentage (0-100)
@@ -49,8 +45,8 @@ const initialState: CanvasState = {
 // Reducer
 function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
   switch (action.type) {
-    case 'SET_LOADING':
-      return { ...state, loading: action.payload };
+    case 'SET_RESEARCH_STATE':
+      return { ...state, researchState: action.payload };
     
     case 'SET_ERROR':
       return { ...state, error: action.payload };
@@ -136,9 +132,6 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'SET_USE_TWO_AGENT':
       return { ...state, use_two_agent: action.payload };
     
-    case 'SET_LOADING_STAGE':
-      return { ...state, loading_stage: action.payload };
-    
     case 'ADD_ACTIVITY_LOG':
       return {
         ...state,
@@ -169,9 +162,6 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
       };
     
     // Streaming actions
-    case 'SET_STREAMING_ACTIVE':
-      return { ...state, streamingActive: action.payload };
-    
     case 'ADD_STREAMING_CHUNK':
       return { 
         ...state, 
@@ -187,7 +177,6 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'CLEAR_STREAMING':
       return { 
         ...state, 
-        streamingActive: false,
         streamingOutput: [],
         streamingStage: null,
         streamingProgress: 0
@@ -203,7 +192,7 @@ interface CanvasContextType {
   state: CanvasState;
   dispatch: React.Dispatch<CanvasAction>;
   // Helper functions
-  setLoading: (loading: boolean) => void;
+  setResearchState: (state: ResearchState) => void;
   setError: (error: string | null) => void;
   setDocument: (document: CanvasDocument | null) => void;
   addChatMessage: (message: ChatMessage) => void;
@@ -214,13 +203,11 @@ interface CanvasContextType {
   setSelectedModel: (model: string) => void;
   setActiveModel: (model: string) => void;
   setUseTwoAgent: (useTwoAgent: boolean) => void;
-  setLoadingStage: (stage: 'analyzing' | 'structuring' | null) => void;
   addActivityLog: (log: ActivityLogEntry) => void;
   updateActivityLog: (id: string, updates: Partial<ActivityLogEntry>) => void;
   clearActivityLogs: () => void;
   clearCanvas: () => void;
   // Streaming helper functions
-  setStreamingActive: (active: boolean) => void;
   addStreamingChunk: (chunk: string) => void;
   setStreamingStage: (stage: string | null) => void;
   setStreamingProgress: (progress: number) => void;
@@ -238,8 +225,8 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(canvasReducer, initialState);
 
   // Helper functions
-  const setLoading = (loading: boolean) => {
-    dispatch({ type: 'SET_LOADING', payload: loading });
+  const setResearchState = (researchState: ResearchState) => {
+    dispatch({ type: 'SET_RESEARCH_STATE', payload: researchState });
   };
 
   const setError = (error: string | null) => {
@@ -282,10 +269,6 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_USE_TWO_AGENT', payload: useTwoAgent });
   };
 
-  const setLoadingStage = (stage: 'analyzing' | 'structuring' | null) => {
-    dispatch({ type: 'SET_LOADING_STAGE', payload: stage });
-  };
-
   const addActivityLog = (log: ActivityLogEntry) => {
     dispatch({ type: 'ADD_ACTIVITY_LOG', payload: log });
   };
@@ -303,10 +286,6 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
   };
 
   // Streaming helper functions
-  const setStreamingActive = (active: boolean) => {
-    dispatch({ type: 'SET_STREAMING_ACTIVE', payload: active });
-  };
-
   const addStreamingChunk = (chunk: string) => {
     dispatch({ type: 'ADD_STREAMING_CHUNK', payload: chunk });
   };
@@ -326,7 +305,7 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
   const value: CanvasContextType = {
     state,
     dispatch,
-    setLoading,
+    setResearchState,
     setError,
     setDocument,
     addChatMessage,
@@ -337,13 +316,11 @@ export const CanvasProvider: React.FC<CanvasProviderProps> = ({ children }) => {
     setSelectedModel,
     setActiveModel,
     setUseTwoAgent,
-    setLoadingStage,
     addActivityLog,
     updateActivityLog,
     clearActivityLogs,
     clearCanvas,
     // Streaming helper functions
-    setStreamingActive,
     addStreamingChunk,
     setStreamingStage,
     setStreamingProgress,

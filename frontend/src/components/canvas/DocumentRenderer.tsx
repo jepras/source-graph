@@ -26,13 +26,13 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
   // Auto-scroll to loading indicator when it appears
   useEffect(() => {
-    if (state.loading && loadingRef.current) {
+    if (state.researchState === 'streaming' && loadingRef.current) {
       loadingRef.current.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'center' 
       });
     }
-  }, [state.loading]);
+  }, [state.researchState]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-black">
@@ -97,15 +97,15 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           </div>
 
           {/* Loading Indicator */}
-          {state.loading && (
+          {state.researchState === 'streaming' && (
             <div ref={loadingRef} className="mt-6 p-4 bg-design-gray-900 border border-design-gray-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 animate-spin text-design-red" />
                 <div>
                   <p className="text-sm font-medium text-design-gray-200">
-                    {state.use_two_agent && state.loading_stage === 'analyzing' 
+                    {state.use_two_agent && state.streamingStage === 'analyzing' 
                       ? 'Analyzing influences...' 
-                      : state.use_two_agent && state.loading_stage === 'structuring'
+                      : state.use_two_agent && state.streamingStage === 'structuring'
                       ? 'Structuring data...'
                       : 'Processing your request...'
                     }

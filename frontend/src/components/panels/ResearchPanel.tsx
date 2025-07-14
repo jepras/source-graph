@@ -242,23 +242,32 @@ Your responses should be well-structured, informative, and suitable for academic
     );
   }
 
+
+
   return (
     <div className="h-full flex flex-col bg-black overflow-hidden">
       {/* Document Area - Scrollable */}
       <div className="flex-1 overflow-hidden relative">
         {/* Streaming Display - Shows real-time AI output during streaming */}
-        {state.streamingActive && (
+        {state.researchState === 'streaming' && (
           <StreamingDisplay />
         )}
         
         {/* Canvas Tab - Shows when document is ready */}
         {state.currentDocument ? (
           <CanvasTab onItemSaved={onItemSaved} />
-        ) : !state.streamingActive ? (
+        ) : state.researchState === 'idle' ? (
           <div className="h-full flex items-center justify-center text-design-gray-400 p-6">
             <div className="text-center">
               <div className="text-lg font-medium mb-2 text-design-gray-300">Research Panel</div>
               <div className="text-sm">Ask a question below to start researching influences</div>
+            </div>
+          </div>
+        ) : state.researchState === 'complete' && !state.currentDocument ? (
+          <div className="h-full flex items-center justify-center text-design-gray-400 p-6">
+            <div className="text-center">
+              <div className="text-lg font-medium mb-2 text-design-gray-300">Processing Complete</div>
+              <div className="text-sm">Document is being prepared...</div>
             </div>
           </div>
         ) : null}
@@ -269,7 +278,7 @@ Your responses should be well-structured, informative, and suitable for academic
         {/* Chat Input Component with integrated controls */}
         <ChatInput 
           onSubmit={handleChatSubmit}
-          loading={state.loading || saveLoading}
+          loading={state.researchState === 'streaming' || saveLoading}
           placeholder="Enter the item you want to research..."
           // Pass control props
           systemPrompt={systemPrompt}
