@@ -349,13 +349,13 @@ Your task is to:
 4. Organize into the exact JSON structure required
 
 **CRITICAL REQUIREMENTS:**
+- **INCLUDE ALL INFLUENCES**: You MUST include EVERY influence found by the Cultural Forensics Analyst. Do not drop, filter, or limit the number of influences. Preserve all the valuable research discovered by Agent 1.
 - Each influence MUST have a specific year (integer only, never strings or text)
 - YEAR FORMAT: ALWAYS use integers like 1994, 1975, 2001 - NEVER use strings like "1990s", "1970s-1980s", "mid-1980s"
 - If you only know a decade, pick the most likely year within that decade as an integer (e.g. if "1990s", use 1995)
 - If you know a range, pick the start year as an integer (e.g. if "1970s-1980s", use 1970)
 - Only include influences from item_year or earlier. Influences created AFTER cannot have influenced this item
 - Each influence needs: name, year, category, scope, explanation, confidence 0.6-0.9, clusters array
-- Generate 5-8 influence sections total (intro + 4-7 influences)
 - Content paragraphs should be engaging and tell the story of the influence
 - Categories should be descriptive: "Handheld Cinematography", "Funk Integration", "Minimalist Aesthetics"
 - Clusters represent WHAT ASPECT was influenced: "Visual Foundation", "Emotional Core", "Production Techniques"

@@ -204,12 +204,7 @@ export const SectionComponent: React.FC<SectionComponentProps> = ({
           </div>
         )}
 
-        {/* Selected for Graph Indicator */}
-        {section.selectedForGraph && (
-          <div className="absolute -left-2 top-2">
-            <Check className="w-4 h-4 text-design-red bg-design-gray-950 rounded-full border border-design-red" />
-          </div>
-        )}
+
       </div>
 
       {/* Hover Menu */}

@@ -250,8 +250,8 @@ Your responses should be well-structured, informative, and suitable for academic
     <div className="h-full flex flex-col bg-black overflow-hidden">
       {/* Document Area - Scrollable */}
       <div className="flex-1 overflow-hidden relative">
-        {/* Streaming Display - Shows real-time AI output during streaming */}
-        {state.researchState === 'streaming' && (
+        {/* Streaming Display - Shows real-time AI output during initial research only */}
+        {state.researchState === 'streaming' && !state.currentDocument && (
           <StreamingDisplay />
         )}
         
