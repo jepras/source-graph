@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relationship-Based Chronological Layout Demo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #3b82f6;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: inline-block;
+            width: 200px;
+            margin-right: 10px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+        }
+        
+        .value-display {
+            display: inline-block;
+            width: 50px;
+            text-align: right;
+        }
+        
+        .graph-container {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        #graph {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        
+        .node {
+            cursor: pointer;
+        }
+        
+        .node circle {
+            stroke: #1f2937;
+            stroke-width: 2px;
+        }
+        
+        .node text {
+            font-size: 12px;
+            font-weight: 500;
+            fill: #e5e7eb;
+            text-anchor: middle;
+        }
+        
+        .node .year-label {
+            font-size: 10px;
+            fill: #ffffff;
+        }
+        
+        .link {
+            stroke: #374151;
+            stroke-opacity: 0.4;
+            stroke-width: 2px;
+        }
+        
+        .link.direct {
+            stroke-opacity: 0.8;
+            stroke-width: 3px;
+        }
+        
+        .link.indirect {
+            stroke-opacity: 0.3;
+            stroke-width: 1px;
+            stroke-dasharray: 5,5;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            font-size: 12px;
+        }
+        
+        .legend-line {
+            display: inline-block;
+            width: 30px;
+            height: 2px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .cluster-background {
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        .cluster-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-anchor: middle;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Relationship-Based Chronological Layout</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Y-axis Chronological Force:</label>
+                <input type="range" id="chronologicalForce" min="0" max="100" value="80">
+                <span class="value-display" id="chronologicalForceValue">80</span>
+            </div>
+            <div class="control-group">
+                <label>X-axis Relationship Force:</label>
+                <input type="range" id="relationshipForce" min="0" max="100" value="60">
+                <span class="value-display" id="relationshipForceValue">60</span>
+            </div>
+            <div class="control-group">
+                <label>Collision Force:</label>
+                <input type="range" id="collisionForce" min="0" max="100" value="40">
+                <span class="value-display" id="collisionForceValue">40</span>
+            </div>
+            <div class="control-group">
+                <label>Link Distance:</label>
+                <input type="range" id="linkDistance" min="50" max="200" value="100">
+                <span class="value-display" id="linkDistanceValue">100</span>
+            </div>
+            <div class="control-group">
+                <label>Show Auto Clusters:</label>
+                <input type="checkbox" id="showAutoClusters" checked>
+            </div>
+            <div class="control-group">
+                <label>Cluster Opacity:</label>
+                <input type="range" id="clusterOpacity" min="0" max="100" value="30">
+                <span class="value-display" id="clusterOpacityValue">30</span>
+            </div>
+            <div class="control-group">
+                <label>Cluster Curvature:</label>
+                <input type="range" id="clusterCurvature" min="0" max="100" value="50">
+                <span class="value-display" id="clusterCurvatureValue">50</span>
+            </div>
+            <div class="control-group">
+                <label>Cluster Tightness:</label>
+                <input type="range" id="clusterTightness" min="0" max="100" value="60">
+                <span class="value-display" id="clusterTightnessValue">60</span>
+            </div>
+            <div class="control-group">
+                <label>Simulation Speed:</label>
+                <input type="range" id="simulationSpeed" min="0" max="100" value="50">
+                <span class="value-display" id="simulationSpeedValue">50</span>
+            </div>
+            <div class="control-group">
+                <label>Freeze Simulation:</label>
+                <input type="checkbox" id="freezeSimulation">
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <div id="graph"></div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #3b82f6;"></span>
+                Main Item
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #ef4444;"></span>
+                Influence Item
+            </div>
+            <div class="legend-item">
+                <span class="legend-line direct" style="background-color: #374151;"></span>
+                Direct Relationship
+            </div>
+            <div class="legend-item">
+                <span class="legend-line indirect" style="background-color: #374151; border-top: 1px dashed #374151;"></span>
+                Indirect Relationship (2-hop)
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #3b82f6; height: 15px; border-radius: 3px;"></span>
+                Photography Cluster
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #ef4444; height: 15px; border-radius: 3px;"></span>
+                Film Movement Cluster
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #10b981; height: 15px; border-radius: 3px;"></span>
+                Cultural Movement Cluster
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #f59e0b; height: 15px; border-radius: 3px;"></span>
+                Music Movement Cluster
+            </div>
+            <div class="legend-item">
+                <span class="legend-line" style="background-color: #8b5cf6; height: 15px; border-radius: 3px;"></span>
+                Blaxploitation Cluster
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - simulating the influence graph structure
+        const sampleData = {
+            nodes: [
+                { id: "item1", name: "Shaft (1971)", year: 1971, category: "main", type: "film" },
+                { id: "item2", name: "Super Fly (1972)", year: 1972, category: "influence", type: "film" },
+                { id: "item3", name: "Sweet Sweetback (1971)", year: 1971, category: "influence", type: "film" },
+                { id: "item4", name: "Cotton Comes to Harlem (1970)", year: 1970, category: "influence", type: "film" },
+                { id: "item5", name: "The Godfather (1972)", year: 1972, category: "influence", type: "film" },
+                { id: "item6", name: "Soul Cinema Movement", year: 1968, category: "influence", type: "movement" },
+                { id: "item7", name: "Blaxploitation Genre", year: 1969, category: "influence", type: "genre" },
+                { id: "item8", name: "Gordon Parks Photography", year: 1965, category: "influence", type: "photography" },
+                { id: "item9", name: "Civil Rights Movement", year: 1955, category: "influence", type: "movement" },
+                { id: "item10", name: "Motown Sound", year: 1960, category: "influence", type: "music" },
+                // Additional items related to Gordon Parks Photography
+                { id: "item11", name: "Life Magazine", year: 1936, category: "influence", type: "publication" },
+                { id: "item12", name: "Harlem Renaissance", year: 1920, category: "influence", type: "movement" },
+                { id: "item13", name: "Dorothea Lange Photography", year: 1935, category: "influence", type: "photography" },
+                { id: "item14", name: "Walker Evans Photography", year: 1930, category: "influence", type: "photography" },
+                { id: "item15", name: "FSA Photography Project", year: 1935, category: "influence", type: "project" },
+                { id: "item16", name: "James Van Der Zee", year: 1920, category: "influence", type: "photography" },
+                { id: "item17", name: "Roy DeCarava", year: 1950, category: "influence", type: "photography" },
+                // Additional items related to Soul Cinema Movement
+                { id: "item18", name: "French New Wave", year: 1958, category: "influence", type: "movement" },
+                { id: "item19", name: "Italian Neorealism", year: 1943, category: "influence", type: "movement" },
+                { id: "item20", name: "Ousmane Sembène", year: 1963, category: "influence", type: "filmmaker" },
+                { id: "item21", name: "Spike Lee", year: 1986, category: "influence", type: "filmmaker" },
+                { id: "item22", name: "John Singleton", year: 1991, category: "influence", type: "filmmaker" },
+                { id: "item23", name: "Black Arts Movement", year: 1965, category: "influence", type: "movement" },
+                { id: "item24", name: "Amiri Baraka", year: 1963, category: "influence", type: "writer" },
+                { id: "item25", name: "Nina Simone", year: 1958, category: "influence", type: "music" }
+            ],
+            links: [
+                // Direct relationships (1-hop)
+                { source: "item2", target: "item1", type: "direct", confidence: 0.9 },
+                { source: "item3", target: "item1", type: "direct", confidence: 0.8 },
+                { source: "item4", target: "item1", type: "direct", confidence: 0.7 },
+                { source: "item5", target: "item1", type: "direct", confidence: 0.6 },
+                { source: "item6", target: "item2", type: "direct", confidence: 0.9 },
+                { source: "item7", target: "item2", type: "direct", confidence: 0.8 },
+                { source: "item8", target: "item3", type: "direct", confidence: 0.7 },
+                { source: "item9", target: "item4", type: "direct", confidence: 0.8 },
+                { source: "item10", target: "item2", type: "direct", confidence: 0.6 },
+                // Gordon Parks Photography relationships
+                { source: "item11", target: "item8", type: "direct", confidence: 0.9 },
+                { source: "item12", target: "item8", type: "direct", confidence: 0.8 },
+                { source: "item13", target: "item8", type: "direct", confidence: 0.7 },
+                { source: "item14", target: "item8", type: "direct", confidence: 0.7 },
+                { source: "item15", target: "item8", type: "direct", confidence: 0.8 },
+                { source: "item16", target: "item8", type: "direct", confidence: 0.6 },
+                { source: "item17", target: "item8", type: "direct", confidence: 0.5 },
+                // Soul Cinema Movement relationships
+                { source: "item18", target: "item6", type: "direct", confidence: 0.8 },
+                { source: "item19", target: "item6", type: "direct", confidence: 0.7 },
+                { source: "item20", target: "item6", type: "direct", confidence: 0.9 },
+                { source: "item21", target: "item6", type: "direct", confidence: 0.6 },
+                { source: "item22", target: "item6", type: "direct", confidence: 0.5 },
+                { source: "item23", target: "item6", type: "direct", confidence: 0.8 },
+                { source: "item24", target: "item6", type: "direct", confidence: 0.7 },
+                { source: "item25", target: "item6", type: "direct", confidence: 0.6 },
+                // Additional cross-connections
+                { source: "item12", target: "item9", type: "direct", confidence: 0.8 },
+                { source: "item23", target: "item9", type: "direct", confidence: 0.9 },
+                { source: "item25", target: "item10", type: "direct", confidence: 0.7 },
+                { source: "item15", target: "item13", type: "direct", confidence: 0.9 },
+                { source: "item15", target: "item14", type: "direct", confidence: 0.9 }
+            ]
+        };
+
+        // Calculate indirect relationships (2-hop)
+        function calculateIndirectRelationships(nodes, directLinks) {
+            const indirectLinks = [];
+            const nodeIds = nodes.map(n => n.id);
+            
+            // Create adjacency map for direct relationships
+            const adjacencyMap = new Map();
+            nodeIds.forEach(id => adjacencyMap.set(id, new Set()));
+            
+            directLinks.forEach(link => {
+                adjacencyMap.get(link.source).add(link.target);
+                adjacencyMap.get(link.target).add(link.source);
+            });
+            
+            // Find 2-hop relationships
+            for (let i = 0; i < nodeIds.length; i++) {
+                for (let j = i + 1; j < nodeIds.length; j++) {
+                    const nodeA = nodeIds[i];
+                    const nodeB = nodeIds[j];
+                    
+                    // Skip if already directly connected
+                    if (adjacencyMap.get(nodeA).has(nodeB)) continue;
+                    
+                    // Check for 2-hop connection
+                    const neighborsA = adjacencyMap.get(nodeA);
+                    const neighborsB = adjacencyMap.get(nodeB);
+                    
+                    // Find common neighbors
+                    const commonNeighbors = new Set([...neighborsA].filter(x => neighborsB.has(x)));
+                    
+                    if (commonNeighbors.size > 0) {
+                        // Calculate relationship strength based on common neighbors
+                        const strength = commonNeighbors.size * 0.3; // Weaker than direct
+                        indirectLinks.push({
+                            source: nodeA,
+                            target: nodeB,
+                            type: "indirect",
+                            confidence: Math.min(strength, 0.5)
+                        });
+                    }
+                }
+            }
+            
+            return indirectLinks;
+        }
+
+        // AI-powered cluster detection
+        function detectClusters(nodes, links) {
+            // Create relationship strength matrix
+            const relationshipMatrix = new Map();
+            links.forEach(link => {
+                const key = [link.source, link.target].sort().join('-');
+                relationshipMatrix.set(key, link.confidence);
+            });
+            
+            // Define cluster seeds based on key nodes
+            const clusterSeeds = [
+                {
+                    name: "Photography Movement",
+                    color: "#3b82f6",
+                    type: "photography",
+                    seedNodes: ["item8", "item11", "item13", "item14", "item15", "item16", "item17"]
+                },
+                {
+                    name: "Film Movement",
+                    color: "#ef4444", 
+                    type: "film",
+                    seedNodes: ["item6", "item18", "item19", "item20", "item21", "item22"]
+                },
+                {
+                    name: "Cultural Movement",
+                    color: "#10b981",
+                    type: "cultural", 
+                    seedNodes: ["item9", "item12", "item23", "item24"]
+                },
+                {
+                    name: "Music Movement",
+                    color: "#f59e0b",
+                    type: "music",
+                    seedNodes: ["item10", "item25"]
+                },
+                {
+                    name: "Blaxploitation Films",
+                    color: "#8b5cf6",
+                    type: "blaxploitation",
+                    seedNodes: ["item1", "item2", "item3", "item4", "item7"]
+                }
+            ];
+            
+            // Build clusters around seeds
+            const clusters = [];
+            const assignedNodes = new Set();
+            
+            clusterSeeds.forEach((seed, index) => {
+                const clusterNodes = [];
+                
+                // Add seed nodes
+                seed.seedNodes.forEach(seedId => {
+                    const node = nodes.find(n => n.id === seedId);
+                    if (node) {
+                        clusterNodes.push(node);
+                        assignedNodes.add(seedId);
+                    }
+                });
+                
+                // Add nodes with strong relationships to this cluster
+                nodes.forEach(node => {
+                    if (!assignedNodes.has(node.id)) {
+                        let totalStrength = 0;
+                        let connectionCount = 0;
+                        
+                        clusterNodes.forEach(clusterNode => {
+                            const key = [node.id, clusterNode.id].sort().join('-');
+                            const strength = relationshipMatrix.get(key) || 0;
+                            if (strength > 0) {
+                                totalStrength += strength;
+                                connectionCount++;
+                            }
+                        });
+                        
+                        // If node has strong average connection to cluster, add it
+                        if (connectionCount > 0 && (totalStrength / connectionCount) > 0.4) {
+                            clusterNodes.push(node);
+                            assignedNodes.add(node.id);
+                        }
+                    }
+                });
+                
+                if (clusterNodes.length >= 2) {
+                    clusters.push({
+                        id: `cluster_${index}`,
+                        nodes: clusterNodes,
+                        name: seed.name,
+                        color: seed.color,
+                        type: seed.type
+                    });
+                }
+            });
+            
+            // Handle unassigned nodes (create mixed cluster or assign to closest)
+            const unassignedNodes = nodes.filter(n => !assignedNodes.has(n.id));
+            if (unassignedNodes.length > 0) {
+                // Find the cluster with strongest average connection
+                let bestCluster = null;
+                let bestStrength = 0;
+                
+                clusters.forEach(cluster => {
+                    let totalStrength = 0;
+                    let connectionCount = 0;
+                    
+                    unassignedNodes.forEach(node => {
+                        cluster.nodes.forEach(clusterNode => {
+                            const key = [node.id, clusterNode.id].sort().join('-');
+                            const strength = relationshipMatrix.get(key) || 0;
+                            if (strength > 0) {
+                                totalStrength += strength;
+                                connectionCount++;
+                            }
+                        });
+                    });
+                    
+                    if (connectionCount > 0) {
+                        const avgStrength = totalStrength / connectionCount;
+                        if (avgStrength > bestStrength) {
+                            bestStrength = avgStrength;
+                            bestCluster = cluster;
+                        }
+                    }
+                });
+                
+                if (bestCluster && bestStrength > 0.2) {
+                    bestCluster.nodes.push(...unassignedNodes);
+                } else if (unassignedNodes.length >= 2) {
+                    // Create a mixed cluster for remaining nodes
+                    clusters.push({
+                        id: `cluster_mixed`,
+                        nodes: unassignedNodes,
+                        name: "Mixed Influences",
+                        color: "#6b7280",
+                        type: "mixed"
+                    });
+                }
+            }
+            
+            return clusters;
+        }
+        
+
+
+        // Create the visualization
+        function createVisualization() {
+            const width = document.getElementById('graph').clientWidth;
+            const height = 600;
+            
+            // Calculate indirect relationships
+            const indirectLinks = calculateIndirectRelationships(sampleData.nodes, sampleData.links);
+            const allLinks = [...sampleData.links, ...indirectLinks];
+            
+            // Detect clusters
+            const detectedClusters = detectClusters(sampleData.nodes, allLinks);
+            
+            // Create SVG
+            const svg = d3.select("#graph")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+            
+            // Create tooltip
+            const tooltip = d3.select("body")
+                .append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+            
+            // Create force simulation
+            const simulation = d3.forceSimulation(sampleData.nodes)
+                .force("link", d3.forceLink(allLinks).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-200))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(25))
+                .alphaDecay(0.1) // Faster decay for quicker settling
+                .velocityDecay(0.4); // Higher velocity decay for less oscillation
+            
+            // Custom chronological force (Y-axis constraint)
+            function chronologicalForce() {
+                const chronologicalStrength = document.getElementById('chronologicalForce').value / 100;
+                const minYear = Math.min(...sampleData.nodes.map(n => n.year));
+                const maxYear = Math.max(...sampleData.nodes.map(n => n.year));
+                const yearRange = maxYear - minYear;
+                
+                sampleData.nodes.forEach(node => {
+                    if (yearRange > 0) {
+                        // Calculate target Y position based on year
+                        const yearProgress = (node.year - minYear) / yearRange;
+                        // Adjust Y positioning to ensure all items are visible within the graph bounds
+                        const targetY = height * 0.15 + (1 - yearProgress) * height * 0.7; // Invert so recent is at top
+                        
+                        // Apply force towards target Y position
+                        const dy = targetY - node.y;
+                        node.vy += dy * chronologicalStrength * 0.1;
+                    }
+                });
+            }
+            
+            // Custom relationship force (X-axis constraint)
+            function relationshipForce() {
+                const relationshipStrength = document.getElementById('relationshipForce').value / 100;
+                
+                // Create relationship matrix
+                const relationshipMatrix = new Map();
+                allLinks.forEach(link => {
+                    const key = [link.source, link.target].sort().join('-');
+                    relationshipMatrix.set(key, link.confidence);
+                });
+                
+                sampleData.nodes.forEach((nodeA, i) => {
+                    sampleData.nodes.forEach((nodeB, j) => {
+                        if (i >= j) return; // Skip self and already processed pairs
+                        
+                        const key = [nodeA.id, nodeB.id].sort().join('-');
+                        const relationshipStrength = relationshipMatrix.get(key) || 0;
+                        
+                        if (relationshipStrength > 0) {
+                            // Calculate desired distance based on relationship strength
+                            const desiredDistance = 200 - relationshipStrength * 150; // Closer for stronger relationships
+                            
+                            const dx = nodeB.x - nodeA.x;
+                            const dy = nodeB.y - nodeA.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance > 0) {
+                                const force = (distance - desiredDistance) * relationshipStrength * 0.01;
+                                const fx = (dx / distance) * force;
+                                const fy = (dy / distance) * force;
+                                
+                                nodeA.vx -= fx;
+                                nodeA.vy -= fy;
+                                nodeB.vx += fx;
+                                nodeB.vy += fy;
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Add custom forces
+            simulation.force("chronological", chronologicalForce);
+            simulation.force("relationship", relationshipForce);
+            
+            // Function to draw cluster backgrounds
+            function drawClusterBackgrounds() {
+                if (!document.getElementById('showAutoClusters').checked) {
+                    svg.selectAll(".cluster-background").remove();
+                    svg.selectAll(".cluster-label").remove();
+                    return;
+                }
+                
+                const opacity = document.getElementById('clusterOpacity').value / 100;
+                const curvature = document.getElementById('clusterCurvature').value / 100;
+                const tightness = document.getElementById('clusterTightness').value / 100;
+                
+                // Remove existing cluster backgrounds
+                svg.selectAll(".cluster-background").remove();
+                svg.selectAll(".cluster-label").remove();
+                
+                // Get all non-cluster nodes for avoidance
+                const allClusterNodeIds = new Set();
+                detectedClusters.forEach(cluster => {
+                    cluster.nodes.forEach(node => allClusterNodeIds.add(node.id));
+                });
+                const nonClusterNodes = sampleData.nodes.filter(node => !allClusterNodeIds.has(node.id));
+                
+                // Draw cluster backgrounds
+                detectedClusters.forEach(cluster => {
+                    if (cluster.nodes.length >= 2) {
+                        const clusterShape = createSmartClusterShape(cluster.nodes, nonClusterNodes, curvature, tightness);
+                        
+                        if (clusterShape) {
+                            // Calculate cluster center for label
+                            const centerX = d3.mean(cluster.nodes, d => d.x);
+                            const centerY = d3.mean(cluster.nodes, d => d.y);
+                            
+                            // Draw cluster background with current UI style
+                            svg.append("path")
+                                .attr("class", "cluster-background")
+                                .attr("d", clusterShape)
+                                .attr("fill", cluster.color)
+                                .attr("fill-opacity", opacity * 0.15) // Very subtle fill
+                                .attr("stroke", cluster.color)
+                                .attr("stroke-opacity", opacity * 0.4) // Subtle stroke
+                                .attr("stroke-width", 1.5)
+                                .attr("stroke-dasharray", "5,5"); // Dashed border like current UI
+                            
+                            // Add cluster label with current UI style
+                            svg.append("text")
+                                .attr("class", "cluster-label")
+                                .attr("x", centerX)
+                                .attr("y", centerY)
+                                .text(cluster.name)
+                                .style("font-size", "10px")
+                                .style("font-weight", "600")
+                                .style("fill", cluster.color)
+                                .style("text-shadow", "0px 0px 3px rgba(0,0,0,0.8)")
+                                .style("letter-spacing", "0.5px");
+                        }
+                    }
+                });
+            }
+            
+            // Create smart cluster shape that avoids non-cluster nodes
+            function createSmartClusterShape(clusterNodes, nonClusterNodes, curvature, tightness) {
+                const nodeRadius = 14;
+                const padding = 20 + (tightness * 30); // Adjustable padding based on tightness
+                const totalRadius = nodeRadius + padding;
+                
+                // Create organic flowing cluster that can connect distant nodes
+                return createOrganicFlowingCluster(clusterNodes, nonClusterNodes, totalRadius, curvature);
+            }
+            
+            // Create organic flowing cluster that connects distant nodes
+            function createOrganicFlowingCluster(clusterNodes, nonClusterNodes, radius, curvature) {
+                if (clusterNodes.length < 2) return null;
+                
+                // Find optimal paths between cluster nodes
+                const connectionPaths = findOptimalConnectionPaths(clusterNodes, nonClusterNodes, radius);
+                
+                // Create organic shape from connection paths
+                return createOrganicShapeFromPaths(connectionPaths, clusterNodes, radius, curvature);
+            }
+            
+            // Find optimal paths between cluster nodes
+            function findOptimalConnectionPaths(clusterNodes, nonClusterNodes, radius) {
+                const paths = [];
+                const nodeRadius = 14;
+                const avoidanceRadius = nodeRadius + radius + 10;
+                
+                // Create grid for pathfinding
+                const gridSize = 5;
+                const bounds = getBounds(clusterNodes);
+                const grid = createPathfindingGrid(bounds, gridSize, nonClusterNodes, avoidanceRadius);
+                
+                // Find paths between all cluster node pairs
+                for (let i = 0; i < clusterNodes.length; i++) {
+                    for (let j = i + 1; j < clusterNodes.length; j++) {
+                        const nodeA = clusterNodes[i];
+                        const nodeB = clusterNodes[j];
+                        
+                        // Only connect nodes that are reasonably close or have strong relationships
+                        const distance = Math.sqrt((nodeA.x - nodeB.x)**2 + (nodeA.y - nodeB.y)**2);
+                        if (distance < 300) { // Max connection distance
+                            const path = findPathBetweenNodes(nodeA, nodeB, grid, gridSize, bounds);
+                            if (path && path.length > 0) {
+                                paths.push({
+                                    start: nodeA,
+                                    end: nodeB,
+                                    points: path,
+                                    distance: distance
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                return paths;
+            }
+            
+            // Create pathfinding grid
+            function createPathfindingGrid(bounds, gridSize, nonClusterNodes, avoidanceRadius) {
+                const cols = Math.ceil((bounds.maxX - bounds.minX) / gridSize);
+                const rows = Math.ceil((bounds.maxY - bounds.minY) / gridSize);
+                const grid = Array(rows).fill().map(() => Array(cols).fill(0));
+                
+                // Mark obstacles (non-cluster nodes)
+                nonClusterNodes.forEach(node => {
+                    const col = Math.floor((node.x - bounds.minX) / gridSize);
+                    const row = Math.floor((node.y - bounds.minY) / gridSize);
+                    
+                    // Mark node and surrounding area as obstacles
+                    for (let r = Math.max(0, row - 3); r <= Math.min(rows - 1, row + 3); r++) {
+                        for (let c = Math.max(0, col - 3); c <= Math.min(cols - 1, col + 3); c++) {
+                            const dist = Math.sqrt((r - row)**2 + (c - col)**2);
+                            if (dist <= 3) {
+                                grid[r][c] = 1; // Obstacle
+                            }
+                        }
+                    }
+                });
+                
+                return grid;
+            }
+            
+            // Find path between two nodes using A* pathfinding
+            function findPathBetweenNodes(nodeA, nodeB, grid, gridSize, bounds) {
+                const startCol = Math.floor((nodeA.x - bounds.minX) / gridSize);
+                const startRow = Math.floor((nodeA.y - bounds.minY) / gridSize);
+                const endCol = Math.floor((nodeB.x - bounds.minX) / gridSize);
+                const endRow = Math.floor((nodeB.y - bounds.minY) / gridSize);
+                
+                if (startCol < 0 || startRow < 0 || endCol < 0 || endRow < 0 ||
+                    startCol >= grid[0].length || startRow >= grid.length ||
+                    endCol >= grid[0].length || endRow >= grid.length) {
+                    return null;
+                }
+                
+                // Simple A* pathfinding
+                const path = aStarPathfinding(grid, startRow, startCol, endRow, endCol);
+                
+                if (!path) return null;
+                
+                // Convert grid coordinates back to world coordinates
+                return path.map(point => ({
+                    x: bounds.minX + point.col * gridSize + gridSize / 2,
+                    y: bounds.minY + point.row * gridSize + gridSize / 2
+                }));
+            }
+            
+            // A* pathfinding algorithm
+            function aStarPathfinding(grid, startRow, startCol, endRow, endCol) {
+                const rows = grid.length;
+                const cols = grid[0].length;
+                
+                const openSet = [{row: startRow, col: startCol, g: 0, h: 0, f: 0, parent: null}];
+                const closedSet = new Set();
+                const cameFrom = new Map();
+                const gScore = new Map();
+                const fScore = new Map();
+                
+                gScore.set(`${startRow},${startCol}`, 0);
+                fScore.set(`${startRow},${startCol}`, heuristic(startRow, startCol, endRow, endCol));
+                
+                while (openSet.length > 0) {
+                    // Find node with lowest f score
+                    openSet.sort((a, b) => a.f - b.f);
+                    const current = openSet.shift();
+                    
+                    if (current.row === endRow && current.col === endCol) {
+                        // Reconstruct path
+                        const path = [];
+                        let node = current;
+                        while (node) {
+                            path.unshift({row: node.row, col: node.col});
+                            node = node.parent;
+                        }
+                        return path;
+                    }
+                    
+                    closedSet.add(`${current.row},${current.col}`);
+                    
+                    // Check neighbors
+                    const neighbors = [
+                        {row: current.row - 1, col: current.col},
+                        {row: current.row + 1, col: current.col},
+                        {row: current.row, col: current.col - 1},
+                        {row: current.row, col: current.col + 1},
+                        {row: current.row - 1, col: current.col - 1},
+                        {row: current.row - 1, col: current.col + 1},
+                        {row: current.row + 1, col: current.col - 1},
+                        {row: current.row + 1, col: current.col + 1}
+                    ];
+                    
+                    neighbors.forEach(neighbor => {
+                        if (neighbor.row < 0 || neighbor.row >= rows || 
+                            neighbor.col < 0 || neighbor.col >= cols ||
+                            grid[neighbor.row][neighbor.col] === 1 ||
+                            closedSet.has(`${neighbor.row},${neighbor.col}`)) {
+                            return;
+                        }
+                        
+                        const tentativeG = gScore.get(`${current.row},${current.col}`) + 
+                                         (neighbor.row !== current.row && neighbor.col !== current.col ? 1.4 : 1);
+                        
+                        if (!openSet.find(n => n.row === neighbor.row && n.col === neighbor.col) ||
+                            tentativeG < gScore.get(`${neighbor.row},${neighbor.col}`)) {
+                            
+                            const h = heuristic(neighbor.row, neighbor.col, endRow, endCol);
+                            const f = tentativeG + h;
+                            
+                            const neighborNode = {
+                                row: neighbor.row,
+                                col: neighbor.col,
+                                g: tentativeG,
+                                h: h,
+                                f: f,
+                                parent: current
+                            };
+                            
+                            if (!openSet.find(n => n.row === neighbor.row && n.col === neighbor.col)) {
+                                openSet.push(neighborNode);
+                            }
+                            
+                            gScore.set(`${neighbor.row},${neighbor.col}`, tentativeG);
+                            fScore.set(`${neighbor.row},${neighbor.col}`, f);
+                        }
+                    });
+                }
+                
+                return null; // No path found
+            }
+            
+            // Heuristic function for A*
+            function heuristic(row1, col1, row2, col2) {
+                return Math.sqrt((row1 - row2)**2 + (col1 - col2)**2);
+            }
+            
+            // Get bounds of cluster nodes
+            function getBounds(nodes) {
+                const xs = nodes.map(n => n.x);
+                const ys = nodes.map(n => n.y);
+                return {
+                    minX: Math.min(...xs) - 50,
+                    maxX: Math.max(...xs) + 50,
+                    minY: Math.min(...ys) - 50,
+                    maxY: Math.max(...ys) + 50
+                };
+            }
+            
+            // Create organic shape using alpha shapes
+            function createOrganicShapeFromPaths(connectionPaths, clusterNodes, radius, curvature) {
+                // Collect all points from cluster nodes and paths
+                const allPoints = collectClusterPoints(clusterNodes, connectionPaths, radius);
+                
+                if (allPoints.length < 3) {
+                    return createSimpleClusterShape(clusterNodes, radius, curvature);
+                }
+                
+                // Create alpha shape (concave hull)
+                const alpha = calculateOptimalAlpha(allPoints, radius, curvature);
+                const alphaShape = createAlphaShape(allPoints, alpha);
+                
+                if (alphaShape && alphaShape.length >= 3) {
+                    return createSmoothCurveFromPoints(alphaShape, curvature);
+                }
+                
+                // Fallback to simple shape
+                return createSimpleClusterShape(clusterNodes, radius, curvature);
+            }
+            
+            // Collect all points for the cluster
+            function collectClusterPoints(clusterNodes, connectionPaths, radius) {
+                const allPoints = [];
+                
+                // Add points around each cluster node
+                clusterNodes.forEach(node => {
+                    const pointCount = 12; // Fixed number for alpha shape
+                    for (let i = 0; i < pointCount; i++) {
+                        const angle = (2 * Math.PI * i) / pointCount;
+                        allPoints.push({
+                            x: node.x + Math.cos(angle) * radius,
+                            y: node.y + Math.sin(angle) * radius,
+                            type: 'node'
+                        });
+                    }
+                });
+                
+                // Add points along connection paths
+                connectionPaths.forEach(path => {
+                    const pathPoints = path.points;
+                    for (let i = 0; i < pathPoints.length; i += 2) { // Sample every other point
+                        const point = pathPoints[i];
+                        allPoints.push({
+                            x: point.x,
+                            y: point.y,
+                            type: 'path'
+                        });
+                    }
+                });
+                
+                return allPoints;
+            }
+            
+            // Calculate optimal alpha value
+            function calculateOptimalAlpha(points, radius, curvature) {
+                // Base alpha on radius and curvature
+                const baseAlpha = radius * 0.5;
+                const curvatureFactor = 1 - (curvature * 0.5); // Lower alpha for higher curvature
+                return baseAlpha * curvatureFactor;
+            }
+            
+            // Create alpha shape (concave hull)
+            function createAlphaShape(points, alpha) {
+                if (points.length < 3) return null;
+                
+                // Convert to array format for alpha shape algorithm
+                const pointArray = points.map(p => [p.x, p.y]);
+                
+                // Create Delaunay triangulation
+                const delaunay = d3.Delaunay.from(pointArray);
+                
+                // Filter triangles based on alpha value
+                const alphaTriangles = [];
+                const triangles = delaunay.triangles;
+                
+                for (let i = 0; i < triangles.length; i += 3) {
+                    const p1 = pointArray[triangles[i]];
+                    const p2 = pointArray[triangles[i + 1]];
+                    const p3 = pointArray[triangles[i + 2]];
+                    
+                    // Calculate circumradius of triangle
+                    const circumradius = calculateCircumradius(p1, p2, p3);
+                    
+                    // Include triangle if circumradius is less than alpha
+                    if (circumradius <= alpha) {
+                        alphaTriangles.push([p1, p2, p3]);
+                    }
+                }
+                
+                // Extract boundary edges
+                const boundaryEdges = extractBoundaryEdges(alphaTriangles);
+                
+                // Convert edges to ordered points
+                return orderBoundaryPoints(boundaryEdges);
+            }
+            
+            // Calculate circumradius of triangle
+            function calculateCircumradius(p1, p2, p3) {
+                const a = Math.sqrt((p2[0] - p3[0])**2 + (p2[1] - p3[1])**2);
+                const b = Math.sqrt((p1[0] - p3[0])**2 + (p1[1] - p3[1])**2);
+                const c = Math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2);
+                
+                const s = (a + b + c) / 2;
+                const area = Math.sqrt(s * (s - a) * (s - b) * (s - c));
+                
+                return (a * b * c) / (4 * area);
+            }
+            
+            // Extract boundary edges from triangles
+            function extractBoundaryEdges(triangles) {
+                const edgeCount = new Map();
+                
+                triangles.forEach(triangle => {
+                    for (let i = 0; i < 3; i++) {
+                        const p1 = triangle[i];
+                        const p2 = triangle[(i + 1) % 3];
+                        
+                        // Create edge key (sorted to ensure consistency)
+                        const edgeKey = [p1, p2].sort((a, b) => 
+                            a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]
+                        ).map(p => `${p[0]},${p[1]}`).join('|');
+                        
+                        edgeCount.set(edgeKey, (edgeCount.get(edgeKey) || 0) + 1);
+                    }
+                });
+                
+                // Return edges that appear only once (boundary edges)
+                const boundaryEdges = [];
+                edgeCount.forEach((count, edgeKey) => {
+                    if (count === 1) {
+                        const [p1Str, p2Str] = edgeKey.split('|');
+                        const p1 = p1Str.split(',').map(Number);
+                        const p2 = p2Str.split(',').map(Number);
+                        boundaryEdges.push([p1, p2]);
+                    }
+                });
+                
+                return boundaryEdges;
+            }
+            
+            // Order boundary edges into a continuous path
+            function orderBoundaryPoints(boundaryEdges) {
+                if (boundaryEdges.length === 0) return null;
+                
+                const orderedPoints = [];
+                const usedEdges = new Set();
+                
+                // Start with first edge
+                let currentEdge = boundaryEdges[0];
+                orderedPoints.push(currentEdge[0]);
+                orderedPoints.push(currentEdge[1]);
+                usedEdges.add(0);
+                
+                // Connect remaining edges
+                while (usedEdges.size < boundaryEdges.length) {
+                    let found = false;
+                    
+                    for (let i = 0; i < boundaryEdges.length; i++) {
+                        if (usedEdges.has(i)) continue;
+                        
+                        const edge = boundaryEdges[i];
+                        const lastPoint = orderedPoints[orderedPoints.length - 1];
+                        
+                        // Check if edge connects to current path
+                        if (pointsEqual(edge[0], lastPoint)) {
+                            orderedPoints.push(edge[1]);
+                            usedEdges.add(i);
+                            found = true;
+                            break;
+                        } else if (pointsEqual(edge[1], lastPoint)) {
+                            orderedPoints.push(edge[0]);
+                            usedEdges.add(i);
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) break;
+                }
+                
+                return orderedPoints.map(p => ({x: p[0], y: p[1]}));
+            }
+            
+            // Helper function to compare points
+            function pointsEqual(p1, p2) {
+                return Math.abs(p1[0] - p2[0]) < 0.001 && Math.abs(p1[1] - p2[1]) < 0.001;
+            }
+            
+            // Fallback simple cluster shape
+            function createSimpleClusterShape(clusterNodes, radius, curvature) {
+                const nodePoints = [];
+                clusterNodes.forEach(node => {
+                    const pointCount = Math.max(8, Math.floor(12 * curvature));
+                    for (let i = 0; i < pointCount; i++) {
+                        const angle = (2 * Math.PI * i) / pointCount;
+                        nodePoints.push({
+                            x: node.x + Math.cos(angle) * radius,
+                            y: node.y + Math.sin(angle) * radius
+                        });
+                    }
+                });
+                
+                const hullPoints = nodePoints.map(p => [p.x, p.y]);
+                const hull = d3.polygonHull(hullPoints);
+                
+                if (!hull || hull.length < 3) return null;
+                
+                const hullPointObjects = hull.map(point => {
+                    const closest = nodePoints.reduce((closest, p) => {
+                        const dist = Math.sqrt((p.x - point[0])**2 + (p.y - point[1])**2);
+                        return dist < closest.dist ? { point: p, dist } : closest;
+                    }, { point: null, dist: Infinity });
+                    return closest.point;
+                }).filter(Boolean);
+                
+                return createSmoothCurveFromPoints(hullPointObjects, curvature);
+            }
+            
+            // Create smooth curve from points
+            function createSmoothCurveFromPoints(points, curvature) {
+                if (points.length < 3) return null;
+                
+                // Close the path
+                const closedPoints = [...points, points[0]];
+                
+                // If curvature is very low, use simple lines
+                if (curvature < 0.1) {
+                    return `M ${closedPoints.map(p => `${p.x} ${p.y}`).join(" L ")} Z`;
+                }
+                
+                // Create smooth curve using quadratic Bézier curves
+                let pathString = `M ${closedPoints[0].x} ${closedPoints[0].y}`;
+                
+                for (let i = 1; i < closedPoints.length; i++) {
+                    const current = closedPoints[i];
+                    const prev = closedPoints[i - 1];
+                    const next = closedPoints[i + 1] || closedPoints[1];
+                    
+                    // Calculate smooth control point
+                    const tension = 0.3 + (curvature * 0.4);
+                    
+                    // Use the midpoint between current and next as control point
+                    const controlX = current.x + (next.x - current.x) * tension;
+                    const controlY = current.y + (next.y - current.y) * tension;
+                    
+                    pathString += ` Q ${controlX} ${controlY}, ${current.x} ${current.y}`;
+                }
+                
+                pathString += " Z";
+                return pathString;
+            }
+            
+
+            
+            // Create links
+            const link = svg.append("g")
+                .selectAll("line")
+                .data(allLinks)
+                .enter().append("line")
+                .attr("class", d => `link ${d.type}`)
+                .attr("stroke-width", d => d.type === "direct" ? 3 : 1);
+            
+            // Create nodes
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(sampleData.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+            
+            // Add circles to nodes
+            node.append("circle")
+                .attr("r", 14)
+                .attr("fill", d => d.category === 'main' ? "#3b82f6" : "#ef4444");
+            
+            // Add labels to nodes
+            node.append("text")
+                .attr("dy", 30)
+                .text(d => d.name.length > 20 ? d.name.substring(0, 20) + "..." : d.name);
+            
+            // Add year labels
+            node.append("text")
+                .attr("class", "year-label")
+                .attr("dy", 3)
+                .text(d => d.year);
+            
+            // Add hover effects
+            node.on("mouseover", function(event, d) {
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(`
+                    <strong>${d.name}</strong><br/>
+                    Year: ${d.year}<br/>
+                    Type: ${d.type}<br/>
+                    Category: ${d.category}
+                `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+            
+            // Update positions on tick
+            simulation.on("tick", () => {
+                // Check if simulation should be frozen
+                if (document.getElementById('freezeSimulation').checked) {
+                    simulation.stop();
+                    return;
+                }
+                
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+                
+                // Update cluster backgrounds
+                drawClusterBackgrounds();
+            });
+            
+            // Add simulation end handler for auto-freeze
+            simulation.on("end", () => {
+                // Auto-freeze when simulation naturally ends
+                if (simulation.alpha() < 0.01) {
+                    document.getElementById('freezeSimulation').checked = true;
+                }
+            });
+            
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+            
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+            
+            // Update simulation when controls change
+            function updateSimulation() {
+                const linkDistance = document.getElementById('linkDistance').value;
+                const collisionForce = document.getElementById('collisionForce').value;
+                const simulationSpeed = document.getElementById('simulationSpeed').value;
+                
+                // Update forces
+                simulation.force("link").distance(parseInt(linkDistance));
+                simulation.force("collision").radius(25 + parseInt(collisionForce) / 2);
+                
+                // Update simulation parameters based on speed
+                const speedFactor = simulationSpeed / 100;
+                simulation.alphaDecay(0.05 + (1 - speedFactor) * 0.15); // Slower decay for higher speed
+                simulation.velocityDecay(0.2 + (1 - speedFactor) * 0.6); // Less velocity decay for higher speed
+                
+                // Restart simulation with appropriate alpha
+                const alpha = 0.1 + speedFactor * 0.4; // Higher alpha for higher speed
+                simulation.alpha(alpha).restart();
+            }
+            
+            // Add event listeners to controls
+            document.getElementById('chronologicalForce').addEventListener('input', function() {
+                document.getElementById('chronologicalForceValue').textContent = this.value;
+                updateSimulation();
+            });
+            
+            document.getElementById('relationshipForce').addEventListener('input', function() {
+                document.getElementById('relationshipForceValue').textContent = this.value;
+                updateSimulation();
+            });
+            
+            document.getElementById('collisionForce').addEventListener('input', function() {
+                document.getElementById('collisionForceValue').textContent = this.value;
+                updateSimulation();
+            });
+            
+            document.getElementById('linkDistance').addEventListener('input', function() {
+                document.getElementById('linkDistanceValue').textContent = this.value;
+                updateSimulation();
+            });
+            
+            document.getElementById('showAutoClusters').addEventListener('change', function() {
+                drawClusterBackgrounds();
+            });
+            
+            document.getElementById('clusterOpacity').addEventListener('input', function() {
+                document.getElementById('clusterOpacityValue').textContent = this.value;
+                drawClusterBackgrounds();
+            });
+            
+            document.getElementById('clusterCurvature').addEventListener('input', function() {
+                document.getElementById('clusterCurvatureValue').textContent = this.value;
+                drawClusterBackgrounds();
+            });
+            
+            document.getElementById('clusterTightness').addEventListener('input', function() {
+                document.getElementById('clusterTightnessValue').textContent = this.value;
+                drawClusterBackgrounds();
+            });
+            
+            document.getElementById('simulationSpeed').addEventListener('input', function() {
+                document.getElementById('simulationSpeedValue').textContent = this.value;
+                updateSimulation();
+            });
+            
+            document.getElementById('freezeSimulation').addEventListener('change', function() {
+                if (this.checked) {
+                    simulation.stop();
+                } else {
+                    updateSimulation();
+                }
+            });
+        }
+        
+        // Initialize visualization when page loads
+        window.addEventListener('load', createVisualization);
+    </script>
+</body>
+</html> 

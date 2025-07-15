@@ -153,25 +153,45 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       });
 
     nodeGroups.append("circle")
-      .attr("r", 25)
+      .attr("r", 14)
       .attr("fill", d => d.category === 'main' ? "#3b82f6" : "#ef4444")
       .attr("stroke", d => d.id === accumulatedGraph.selectedNodeId ? "#ffffff" : "#1f2937")
       .attr("stroke-width", d => d.id === accumulatedGraph.selectedNodeId ? 3 : 2);
 
     nodeGroups.append("text")
-      .attr("dy", 45)
+      .attr("dy", 30)
       .attr("text-anchor", "middle")
       .style("font-size", "12px")
       .style("font-weight", "500")
       .style("fill", "#e5e7eb")
-      .text(d => d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name);
+      .each(function(d) {
+        const text = d3.select(this);
+        const name = d.name;
+        
+        if (name.length > 20) {
+          // Split into two lines for longer names
+          const words = name.split(' ');
+          const midPoint = Math.ceil(words.length / 2);
+          const line1 = words.slice(0, midPoint).join(' ');
+          const line2 = words.slice(midPoint).join(' ');
+          
+          text.text(line1);
+          text.append("tspan")
+            .attr("x", 0)
+            .attr("dy", "1.2em")
+            .text(line2);
+        } else {
+          text.text(name);
+        }
+      });
 
     nodeGroups.filter(d => d.year !== undefined && d.year !== null)
       .append("text")
-      .attr("dy", -35)
+      .attr("dy", 3)
       .attr("text-anchor", "middle")
-      .style("font-size", "10px")
-      .style("fill", "#9ca3af")
+      .style("font-size", "7px")
+      .style("font-weight", "500")
+      .style("fill", "#ffffff")
       .text(d => d.year?.toString() || "");
 
   }, [
