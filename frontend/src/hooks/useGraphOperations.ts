@@ -5,7 +5,7 @@ import { extractNodesAndRelationships } from '../utils/graphUtils';
 import type { GraphNode, GraphLink } from '../types/graph';
 
 export const useGraphOperations = () => {
-  const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
+  const { state, dispatch, addNodesAndLinks, clearGraph, selectNode, setLoading, setError, triggerLayoutRecalculation } = useGraph();
 
   // Helper function
   const checkIfItemExistsInGraph = useCallback((itemId: string, itemName?: string): string | null => {
@@ -217,6 +217,8 @@ export const useGraphOperations = () => {
       if (shouldPreserveLayout) {
         // Accumulate with position preservation - just add new nodes/links
         addNodesAndLinks(nodeArray, linkArray);
+        // Trigger layout recalculation to ensure optimal positioning
+        triggerLayoutRecalculation();
       } else {
         // Normal load - clear and set new data
         clearGraph();
@@ -228,7 +230,7 @@ export const useGraphOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [checkIfItemExistsInGraph, setLoading, setError, state.accumulatedGraph, addNodesAndLinks, clearGraph]);
+  }, [checkIfItemExistsInGraph, setLoading, setError, state.accumulatedGraph, addNodesAndLinks, clearGraph, triggerLayoutRecalculation]);
 
   // Used in MainLayout for topbar searches - always clear graph first
   const loadItemInfluencesFromTopbar = useCallback(async (itemId: string) => {
@@ -266,5 +268,6 @@ export const useGraphOperations = () => {
     loadItemWithAccumulation,
     checkIfItemExistsInGraph,
     loadItemInfluencesFromTopbar,
+    triggerLayoutRecalculation,
   };
 };

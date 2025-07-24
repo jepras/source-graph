@@ -96,6 +96,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
       }
     });
 
+    // Always recalculate positions when graph changes to ensure optimal layout
     positionNodes(nodes, width, height);
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()

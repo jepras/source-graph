@@ -120,27 +120,39 @@ class ItemService(BaseGraphService):
     def find_similar_items(self, name: str, creator_name: str = None) -> List[dict]:
         """Find existing items that might be the same as what user wants to create"""
         with neo4j_db.driver.session() as session:
-            # Loose matching using CONTAINS and fuzzy logic
+            # Normalize the search name for better matching
+            normalized_search_name = self._normalize_text(name)
+
+            # Word-based matching with stop word filtering
             fuzzy_query = """
             MATCH (i:Item) 
             OPTIONAL MATCH (i)-[:CREATED_BY]->(c:Creator)
-            WITH i, collect(c.name) as creators,
-                CASE 
-                    WHEN toLower(i.name) = toLower($name) THEN 100
-                    WHEN toLower(i.name) CONTAINS toLower($name) AND size($name) >= 4 THEN 80
-                    WHEN toLower($name) CONTAINS toLower(i.name) AND size(i.name) >= 4 THEN 70
-                    ELSE 0
-                END as name_score
-            WHERE name_score >= 70
+            WITH i, collect(c.name) as creators, 
+                 [word IN split(toLower(i.name), ' ') WHERE size(word) >= 3 AND NOT word IN ['the', 'and', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'a', 'an', 'as', 'is', 'it', 'that', 'this', 'was', 'will', 'be', 'have', 'had', 'has', 'do', 'does', 'did', 'or', 'but', 'not', 'so', 'if', 'then', 'else', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'only', 'own', 'same', 'than', 'too', 'very', 'can', 'may', 'must', 'shall', 'should', 'would', 'could']] as item_words
+            WITH i, creators, item_words, split($normalized_search_name, ' ') as search_words
+            WITH i, creators, item_words, 
+                 [word IN search_words WHERE size(word) >= 3 AND NOT word IN ['the', 'and', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'a', 'an', 'as', 'is', 'it', 'that', 'this', 'was', 'will', 'be', 'have', 'had', 'has', 'do', 'does', 'did', 'or', 'but', 'not', 'so', 'if', 'then', 'else', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'only', 'own', 'same', 'than', 'too', 'very', 'can', 'may', 'must', 'shall', 'should', 'would', 'could']] as filtered_search_words
+            WITH i, creators, item_words, filtered_search_words,
+                 size([word IN filtered_search_words WHERE word IN item_words]) as matches,
+                 size(filtered_search_words) as total_search_words
+            WHERE (matches > 0 AND matches >= total_search_words * 0.6)
+            OR (toLower(i.name) = toLower($normalized_search_name))
+            OR (toLower(i.name) CONTAINS toLower($normalized_search_name) AND size($normalized_search_name) >= 4)
+            OR (toLower($normalized_search_name) CONTAINS toLower(i.name) AND size(i.name) >= 4)
             OR ($creator_name IS NOT NULL AND $creator_name <> '' 
                 AND any(creator IN creators WHERE toLower(creator) CONTAINS toLower($creator_name)))
-            RETURN i, creators, name_score
-            ORDER BY name_score DESC
-            LIMIT 3
+            RETURN i, creators, item_words, filtered_search_words, matches, total_search_words
+            ORDER BY matches DESC, total_search_words ASC
+            LIMIT 5
             """
 
             results = session.run(
-                fuzzy_query, {"name": name, "creator_name": creator_name or ""}
+                fuzzy_query,
+                {
+                    "name": name,
+                    "normalized_search_name": normalized_search_name,
+                    "creator_name": creator_name or "",
+                },
             )
 
             similar_items = []
@@ -148,7 +160,37 @@ class ItemService(BaseGraphService):
             for record in results:
                 node = record["i"]
                 creators = record["creators"]
-                score = record["name_score"]
+                item_words = record["item_words"]
+                filtered_search_words = record["filtered_search_words"]
+                matches = record["matches"]
+                total_search_words = record["total_search_words"]
+
+                # Calculate similarity score
+                if total_search_words > 0:
+                    word_overlap_score = (matches / total_search_words) * 100
+                else:
+                    word_overlap_score = 0
+
+                # Calculate final score based on different matching criteria
+                item_name_normalized = self._normalize_text(node["name"])
+                search_name_normalized = normalized_search_name
+
+                if item_name_normalized == search_name_normalized:
+                    score = 100
+                elif (
+                    item_name_normalized in search_name_normalized
+                    and len(search_name_normalized) >= 4
+                ):
+                    score = 90
+                elif (
+                    search_name_normalized in item_name_normalized
+                    and len(item_name_normalized) >= 4
+                ):
+                    score = 85
+                elif word_overlap_score >= 60:
+                    score = min(80, word_overlap_score)
+                else:
+                    score = 0
 
                 # Get existing influences count
                 influence_count = session.run(
@@ -275,3 +317,30 @@ class ItemService(BaseGraphService):
 
             except Exception as e:
                 raise Exception(f"Failed to merge items: {str(e)}")
+
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text for better matching by removing punctuation and normalizing spaces"""
+        if not text:
+            return ""
+
+        # Convert to lowercase
+        normalized = text.lower()
+
+        # Replace common punctuation with spaces
+        normalized = normalized.replace("'", " ")  # Handle apostrophes
+        normalized = normalized.replace("&", " ")  # Handle ampersands
+        normalized = normalized.replace("-", " ")  # Handle hyphens
+        normalized = normalized.replace("_", " ")  # Handle underscores
+
+        # Remove other punctuation
+        import re
+
+        normalized = re.sub(r"[^\w\s]", " ", normalized)
+
+        # Normalize multiple spaces to single space
+        normalized = re.sub(r"\s+", " ", normalized)
+
+        # Strip leading/trailing spaces
+        normalized = normalized.strip()
+
+        return normalized

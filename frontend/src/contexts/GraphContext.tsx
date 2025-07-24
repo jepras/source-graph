@@ -41,7 +41,8 @@ type GraphAction =
   | { type: 'PRESERVE_POSITIONS'; payload: Map<string, { x: number; y: number }> }
   | { type: 'MARK_NODE_EXPANDED'; payload: string }
   | { type: 'ACCUMULATE_GRAPH'; payload: { graphData: any; preservePositions: boolean } }
-  | { type: 'REMOVE_NODE'; payload: string };
+  | { type: 'REMOVE_NODE'; payload: string }
+  | { type: 'TRIGGER_LAYOUT_RECALCULATION' }; // New: action to trigger layout recalculation
 
 // Initial State
 const initialState: GraphState = {
@@ -186,6 +187,8 @@ function graphReducer(state: GraphState, action: GraphAction): GraphState {
         selectedNodeId: newSelectedNodeId,
         customClusters: updatedCustomClusters,
       };
+    case 'TRIGGER_LAYOUT_RECALCULATION':
+      return { ...state, nodePositions: new Map() }; // Clear positions to force recalculation
     default:
       return state;
   }
@@ -207,6 +210,7 @@ interface GraphContextType {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   removeNodeFromGraph: (nodeId: string) => void;
+  triggerLayoutRecalculation: () => void; // New: expose triggerLayoutRecalculation
 }
 
 const GraphContext = createContext<GraphContextType | undefined>(undefined);
@@ -289,6 +293,14 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
         });
       }
     }
+
+    // Trigger layout recalculation after adding new nodes
+    triggerLayoutRecalculation();
+  };
+
+  const triggerLayoutRecalculation = () => {
+    // Dispatch an action to trigger layout recalculation
+    dispatch({ type: 'TRIGGER_LAYOUT_RECALCULATION' });
   };
 
   const clearGraph = () => {
@@ -322,6 +334,7 @@ export const GraphProvider: React.FC<GraphProviderProps> = ({ children }) => {
     setLoading,
     setError,
     removeNodeFromGraph,
+    triggerLayoutRecalculation,
   };
 
   return (
