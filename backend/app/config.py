@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     # MCP Server Paths (for stdio clients)
     YOUTUBE_MCP_SERVER_PATH: str = (
-        "/Users/jepperasmussen/Documents/workspace/mcp-servers/youtube-mcp-server"
+        "/Users/jepperasmussen/workspace/mcp-servers/youtube-mcp-server"
     )
     SPOTIFY_MCP_SERVER_PATH: str = "./spotify-mcp-server.js"
     WIKIPEDIA_MCP_SERVER_PATH: str = "./wikipedia-mcp-server.js"
