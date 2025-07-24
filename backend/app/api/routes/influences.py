@@ -162,6 +162,94 @@ async def merge_with_existing(merge_request: dict):
         )
 
 
+@router.post("/save-with-resolutions")
+async def save_with_comprehensive_resolutions(save_request: dict):
+    """Save new item with comprehensive influence-level resolutions"""
+    try:
+        # Validate required fields
+        if "new_data" not in save_request:
+            raise HTTPException(status_code=400, detail="Missing new_data")
+
+        influence_resolutions = save_request.get("influence_resolutions", {})
+
+        # Parse new_data more safely
+        try:
+            new_data = StructuredOutput(**save_request["new_data"])
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid new_data format: {e}")
+
+        # Process influence resolutions
+        processed_influences = []
+
+        for i, influence in enumerate(new_data.influences):
+            influence_key = str(i)
+
+            if influence_key in influence_resolutions:
+                resolution = influence_resolutions[influence_key]
+
+                if resolution.get("resolution") == "merge" and resolution.get(
+                    "selectedItemId"
+                ):
+                    # Skip this influence - it will be handled by creating relationships
+                    # The relationship will be created after the main item is saved
+                    continue
+                else:
+                    # Create new influence item
+                    processed_influences.append(influence)
+            else:
+                # No resolution specified, create new
+                processed_influences.append(influence)
+
+        # Update new_data with processed influences (only the ones to create new)
+        new_data.influences = processed_influences
+
+        # Save the main item with the filtered influences
+        main_item_id = graph_service.save_structured_influences(new_data)
+
+        # Now handle the merge relationships
+        for i, influence in enumerate(save_request["new_data"]["influences"]):
+            influence_key = str(i)
+
+            if influence_key in influence_resolutions:
+                resolution = influence_resolutions[influence_key]
+
+                if resolution.get("resolution") == "merge" and resolution.get(
+                    "selectedItemId"
+                ):
+                    # Create influence relationship from the existing influence item to the main item
+                    selected_item_id = resolution["selectedItemId"]
+
+                    graph_service.create_influence_relationship(
+                        from_item_id=selected_item_id,  # The existing influence item
+                        to_item_id=main_item_id,  # The newly created main item
+                        confidence=influence["confidence"],
+                        influence_type=influence["influence_type"],
+                        explanation=influence["explanation"],
+                        category=influence["category"],
+                        scope=influence["scope"],
+                        source=influence.get("source"),
+                        year_of_influence=influence.get("year"),
+                        clusters=influence.get("clusters"),
+                    )
+
+        return {
+            "success": True,
+            "item_id": main_item_id,
+            "message": f"Successfully created new item with comprehensive resolutions. Created {len(processed_influences)} new influences.",
+        }
+
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save with comprehensive resolutions: {str(e)}",
+        )
+
+
 @router.get("/test")
 async def test_save():
     """Test endpoint to verify influences routes work"""

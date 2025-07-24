@@ -381,6 +381,24 @@ export const influenceApi = {
     if (!response.ok) throw new Error('Failed to merge with comprehensive resolutions');
     return response.json();
   },
+
+  saveWithComprehensiveResolutions: async (
+    newData: StructuredOutput, 
+    influenceResolutions: Record<string, any>
+  ): Promise<{ success: boolean; item_id: string; message: string }> => {
+    const response = await fetch(`${API_BASE}/influences/save-with-resolutions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        new_data: newData,
+        influence_resolutions: influenceResolutions
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to save with comprehensive resolutions');
+    return response.json();
+  },
 };
 
 // ============================================================================

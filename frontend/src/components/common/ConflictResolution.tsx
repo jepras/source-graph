@@ -57,24 +57,10 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
       return 'merge';
     }
     
-    // If there are only influence conflicts, check the resolutions
+    // If there are only influence conflicts (no main item conflicts),
+    // the main item is always created new, regardless of influence resolutions
     if (conflicts.main_item_conflicts.length === 0 && Object.keys(conflicts.influence_conflicts).length > 0) {
-      const allInfluenceResolutions = Object.values(influenceResolutions);
-      
-      // If all influences are set to create_new, use create_new
-      const allCreateNew = allInfluenceResolutions.length > 0 && 
-        allInfluenceResolutions.every(resolution => resolution.resolution === 'create_new');
-      
-      if (allCreateNew) {
-        return 'create_new';
-      }
-      
-      // If any influence is set to merge, we need to use merge strategy
-      // but we'll need to handle this differently since there's no main item conflict
-      const anyMerge = allInfluenceResolutions.some(resolution => resolution.resolution === 'merge');
-      if (anyMerge) {
-        return 'merge';
-      }
+      return 'create_new';
     }
     
     // Default to create_new for safety
@@ -248,7 +234,12 @@ export const ConflictResolution: React.FC<ConflictResolutionProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 pt-2 border-t border-design-gray-800">
         <button
-          onClick={() => onResolve(getOverallResolutionType(), selectedMainItem || undefined, influenceResolutions)}
+          onClick={() => {
+            const resolutionType = getOverallResolutionType();
+            // Only pass selectedItemId if there are main item conflicts
+            const itemId = conflicts.main_item_conflicts.length > 0 ? selectedMainItem || undefined : undefined;
+            onResolve(resolutionType, itemId, influenceResolutions);
+          }}
           disabled={!areAllConflictsResolved()}
           className="px-3 py-2 text-sm bg-design-red text-white rounded hover:bg-design-red-hover disabled:opacity-50"
         >

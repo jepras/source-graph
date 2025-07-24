@@ -26,13 +26,35 @@ export function useConflictResolution({ loadItemWithAccumulation, onItemSaved }:
     if (!conflictData) return;
     try {
       if (resolution === 'create_new') {
-        const result = await influenceApi.forceSaveAsNew(conflictData.newData);
-        if (result.success && result.item_id) {
-          await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
-          onItemSaved(result.item_id);
+        // Check if we have influence resolutions that include merges
+        const hasMergeResolutions = influenceResolutions && 
+          Object.values(influenceResolutions).some(resolution => resolution.resolution === 'merge');
+        
+        if (hasMergeResolutions) {
+          // Use the comprehensive save API that can handle mixed resolutions
+          const result = await influenceApi.saveWithComprehensiveResolutions(
+            conflictData.newData,
+            influenceResolutions || {}
+          );
+          if (result.success && result.item_id) {
+            // For comprehensive saves, always accumulate to existing graph
+            // since this is a new item being added to the current research context
+            await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+            onItemSaved(result.item_id);
+          } else {
+            console.error('Failed to save with comprehensive resolutions:', result.message);
+            throw new Error(result.message || 'Failed to save with comprehensive resolutions');
+          }
         } else {
-          console.error('Failed to create new item:', result.message);
-          throw new Error(result.message || 'Failed to create new item');
+          // All influences are create_new, use simple force save
+          const result = await influenceApi.forceSaveAsNew(conflictData.newData);
+          if (result.success && result.item_id) {
+            await loadItemWithAccumulation(result.item_id, conflictData.newData.main_item);
+            onItemSaved(result.item_id);
+          } else {
+            console.error('Failed to create new item:', result.message);
+            throw new Error(result.message || 'Failed to create new item');
+          }
         }
       } else if (resolution === 'merge' && selectedItemId) {
         const result = await influenceApi.mergeWithComprehensiveResolutions(

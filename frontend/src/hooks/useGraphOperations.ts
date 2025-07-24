@@ -205,6 +205,11 @@ export const useGraphOperations = () => {
       const existingItemId = checkIfItemExistsInGraph(itemId, itemName);
       const shouldPreserveLayout = existingItemId !== null;
       
+      // If there's already a graph with nodes, we should accumulate rather than clear
+      // This handles the case where we're adding a new item to an existing research context
+      const hasExistingGraph = state.accumulatedGraph.nodes.size > 0;
+      const shouldAccumulate = shouldPreserveLayout || hasExistingGraph;
+      
       const response = await api.getInfluences(itemId);
       
       // Use the existing utility function to convert API response to graph format
@@ -214,7 +219,7 @@ export const useGraphOperations = () => {
       const nodeArray = Array.from(nodes.values());
       const linkArray = Array.from(relationships.values());
 
-      if (shouldPreserveLayout) {
+      if (shouldAccumulate) {
         // Accumulate with position preservation - just add new nodes/links
         addNodesAndLinks(nodeArray, linkArray);
         // Trigger layout recalculation to ensure optimal positioning
