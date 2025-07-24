@@ -140,6 +140,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
         selectNode(d.id);
         highlightEdgesForNode(d.id);
         setShowSelectedPanel(true);
+        setHoveredNode(null); // Clear hover card when clicking
       })
       .on("mouseenter", (event, d) => {
         setHoveredNode(d);
@@ -201,8 +202,7 @@ export const InfluenceGraph: React.FC<InfluenceGraphProps> = ({
     isChronologicalOrder, 
     isClusteringEnabled,
     clusteringMode,
-    customClusters,
-    highlightedEdgeIds
+    customClusters
   ]);
 
   useEffect(() => {

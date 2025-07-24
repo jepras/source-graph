@@ -8,13 +8,20 @@ export const useGraphOperations = () => {
   const { state, selectNode, addNodesAndLinks, setLoading, setError, clearGraph } = useGraph();
 
   // Helper function
-  const checkIfItemExistsInGraph = useCallback((itemName: string): string | null => {
+  const checkIfItemExistsInGraph = useCallback((itemId: string, itemName?: string): string | null => {
     if (!state.accumulatedGraph.nodes.size) return null;
     
-    // Check all nodes in the accumulated graph
-    for (const [nodeId, node] of state.accumulatedGraph.nodes.entries()) {
-      if (node.name.toLowerCase() === itemName.toLowerCase()) {
-        return nodeId;
+    // First check by item ID (most reliable)
+    if (state.accumulatedGraph.nodes.has(itemId)) {
+      return itemId;
+    }
+    
+    // Fall back to checking by name if provided
+    if (itemName) {
+      for (const [nodeId, node] of state.accumulatedGraph.nodes.entries()) {
+        if (node.name.toLowerCase() === itemName.toLowerCase()) {
+          return nodeId;
+        }
       }
     }
     
@@ -194,14 +201,9 @@ export const useGraphOperations = () => {
     try {
       setLoading(true);
       
-      // Check if item already exists in current graph
-      const existingItemId = checkIfItemExistsInGraph(itemName);
+      // Check if item already exists in current graph by ID first, then by name
+      const existingItemId = checkIfItemExistsInGraph(itemId, itemName);
       const shouldPreserveLayout = existingItemId !== null;
-      
-      if (shouldPreserveLayout) {
-        // Mark this node as expanded for visual indication
-        // Note: This would need to be implemented in the context if needed
-      }
       
       const response = await api.getInfluences(itemId);
       
